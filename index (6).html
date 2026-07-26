@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Your Friend - AI Assistant</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root{
+      --bg-main:#0f1115;
+      --bg-sidebar:#0c0e12;
+      --bg-card:#161922;
+      --bg-input:#161922;
+      --text-main:#e8eaf0;
+      --text-sub:#a7adbd;
+      --border:rgba(255,255,255,.08);
+      --accent:#f55036;
+      --accent-hover:#ff6a52;
+      --shadow: 0 14px 40px rgba(0,0,0,.35);
+
+      --radius-lg:18px;
+      --radius-md:14px;
+      --radius-sm:10px;
+
+      --bubble-border: rgba(255,255,255,.08);
+      --bubble-bg-ai: rgba(255,255,255,.03);
+      --bubble-bg-user: rgba(245,80,54,.10);
+
+      --chat-scrollbar-thumb: rgba(255,255,255,.08);
+      --history-scrollbar-thumb: rgba(255,255,255,.08);
+      --grid-opacity: .18;
+      --overlay-dim: rgba(0,0,0,.6);
+      --overlay-modal: rgba(0,0,0,.72);
+    }
+
+    html[data-theme="light"]{
+      --bg-main:#f6f7fb;
+      --bg-sidebar:#ffffff;
+      --bg-card:#ffffff;
+      --bg-input:#ffffff;
+
+      --text-main:#111827;
+      --text-sub:#4b5563;
+
+      --border:rgba(17,24,39,.10);
+      --shadow: 0 14px 40px rgba(17,24,39,.12);
+
+      --accent:#f55036;
+      --accent-hover:#ff6a52;
+
+      --bubble-border: rgba(17,24,39,.10);
+      --bubble-bg-ai: rgba(17,24,39,.03);
+      --bubble-bg-user: rgba(245,80,54,.10);
+
+      --chat-scrollbar-thumb: rgba(17,24,39,.10);
+      --history-scrollbar-thumb: rgba(17,24,39,.10);
+      --grid-opacity: .10;
+      --overlay-dim: rgba(17,24,39,.45);
+      --overlay-modal: rgba(17,24,39,.62);
+    }
+
+    html[data-theme="system"]{ color-scheme: light dark; }
+    @media (prefers-color-scheme: light){
+      html[data-theme="system"]{
+        --bg-main:#f6f7fb;
+        --bg-sidebar:#ffffff;
+        --bg-card:#ffffff;
+        --bg-input:#ffffff;
+
+        --text-main:#111827;
+        --text-sub:#4b5563;
+
+        --border:rgba(17,24,39,.10);
+        --shadow: 0 14px 40px rgba(17,24,39,.12);
+
+        --bubble-border: rgba(17,24,39,.10);
+        --bubble-bg-ai: rgba(17,24,39,.03);
+        --bubble-bg-user: rgba(245,80,54,.10);
+
+        --chat-scrollbar-thumb: rgba(17,24,39,.10);
+        --history-scrollbar-thumb: rgba(17,24,39,.10);
+        --grid-opacity: .10;
+        --overlay-dim: rgba(17,24,39,.45);
+        --overlay-modal: rgba(17,24,39,.62);
+      }
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html, body { height: 100%; }
+
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
+      background: radial-gradient(1200px 700px at 20% 10%, rgba(245,80,54,.14), transparent 60%),
+                  radial-gradient(900px 600px at 80% 20%, rgba(90,120,255,.12), transparent 55%),
+                  var(--bg-main);
+      color:var(--text-main);
+      display:flex;
+      height:100vh;
+      height:100dvh;
+      overflow:hidden;
+      transition: background-color .2s ease, color .2s ease;
+    }
+
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background:
+        linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
+      background-size: 60px 60px;
+      opacity:var(--grid-opacity);
+      pointer-events:none;
+    }
+
+    #sidebar-overlay{
+      display:none;
+      position:fixed; inset:0;
+      background: var(--overlay-dim);
+      z-index:90;
+      backdrop-filter: blur(6px);
+    }
+
+    #auth-modal, #settings-modal{
+      position:fixed; inset:0;
+      background: var(--overlay-modal);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:1000;
+      padding:20px;
+      backdrop-filter: blur(8px);
+    }
+
+    .auth-card, .settings-card{
+      background: linear-gradient(180deg, rgba(22,25,34,.92), rgba(12,14,18,.92));
+      padding:26px 22px;
+      border-radius: 16px;
+      border:1px solid var(--border);
+      width:100%;
+      max-width:420px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      text-align:center;
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    html[data-theme="light"] .auth-card,
+    html[data-theme="light"] .settings-card{
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,255,.96));
+    }
+
+    .auth-card::after, .settings-card::after{
+      content:"";
+      position:absolute;
+      width:240px; height:240px;
+      right:-120px; top:-140px;
+      background: radial-gradient(circle, rgba(245,80,54,.35), transparent 62%);
+      pointer-events:none;
+    }
+
+    .auth-card h2{
+      font-size:1.3rem;
+      letter-spacing:.2px;
+      position:relative;
+    }
+
+    .auth-card input, .settings-card input{
+      padding:12px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      color:var(--text-main);
+      outline:none;
+      font-size:1rem;
+      transition: border-color .15s ease, transform .08s ease;
+      text-align:left;
+    }
+    html[data-theme="light"] .auth-card input,
+    html[data-theme="light"] .settings-card input{
+      background: rgba(17,24,39,.04);
+    }
+
+    .auth-card input:focus{
+      border-color: rgba(245,80,54,.55);
+      box-shadow: 0 0 0 4px rgba(245,80,54,.12);
+    }
+
+    .auth-card button, .settings-card button{
+      padding:12px 14px;
+      border-radius:10px;
+      border:none;
+      background: linear-gradient(135deg, var(--accent), #ff7a5c);
+      color:white;
+      font-weight:800;
+      font-size:1rem;
+      cursor:pointer;
+      transition: transform .1s ease, filter .2s ease;
+    }
+    .auth-card button:hover, .settings-card button:hover{ filter: brightness(1.05); }
+    .auth-card button:active, .settings-card button:active{ transform: translateY(1px); }
+
+    .settings-row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius: 14px;
+      background: rgba(255,255,255,.03);
+    }
+    html[data-theme="light"] .settings-row{
+      background: rgba(17,24,39,.03);
+    }
+    .settings-row .label{ font-weight:900; letter-spacing:.1px; }
+    .settings-row .sub{
+      color: var(--text-sub);
+      font-size:.9rem;
+      margin-top:2px;
+      text-align:left;
+      font-weight:600;
+    }
+
+    .segmented{
+      display:flex;
+      background: rgba(255,255,255,.04);
+      border:1px solid var(--border);
+      border-radius: 14px;
+      overflow:hidden;
+    }
+    html[data-theme="light"] .segmented{ background: rgba(17,24,39,.03); }
+    .segmented button{
+      border-radius:0;
+      border:none;
+      background: transparent;
+      color: var(--text-main);
+      padding:10px 12px;
+      font-weight:900;
+      font-size:.92rem;
+      transition: background .2s ease, color .2s ease;
+      box-shadow:none;
+    }
+    .segmented button.active{
+      background: rgba(245,80,54,.16);
+      color: var(--text-main);
+    }
+
+    aside{
+      width:280px;
+      background: linear-gradient(180deg, rgba(12,14,18,.92), rgba(12,14,18,.82));
+      display:flex;
+      flex-direction:column;
+      padding:14px;
+      border-right:1px solid var(--border);
+      flex-shrink:0;
+      position:fixed;
+      top:0; bottom:0; left:0;
+      z-index:100;
+      transform:translateX(-100%);
+      transition: transform .28s cubic-bezier(.2,.9,.2,1);
+      backdrop-filter: blur(10px);
+    }
+    html[data-theme="light"] aside{
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,255,.94));
+    }
+    @media (min-width: 768px){
+      aside{ position:relative; transform:translateX(0) !important; }
+      #sidebar-overlay{ display:none !important; }
+      .menu-btn{ display:none !important; }
+    }
+    aside.open{ transform:translateX(0); }
+
+    .sidebar-top{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:10px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid transparent;
+      background: rgba(255,255,255,.03);
+    }
+    html[data-theme="light"] .brand{ background: rgba(17,24,39,.03); }
+    .brand .dot{
+      width:12px; height:12px; border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(245,80,54,.16);
+    }
+    .brand .name{ font-weight:900; letter-spacing:.2px; }
+
+    .new-chat-btn{
+      background: rgba(255,255,255,.03);
+      border:1px solid var(--border);
+      color:var(--text-main);
+      padding:10px 12px;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-size:.95rem;
+      cursor:pointer;
+      transition: transform .1s ease, background .2s ease, border-color .2s ease;
+      width:100%;
+      justify-content:flex-start;
+      font-weight:700;
+    }
+    html[data-theme="light"] .new-chat-btn{ background: rgba(17,24,39,.03); }
+    .new-chat-btn:hover{
+      background: rgba(245,80,54,.08);
+      border-color: rgba(245,80,54,.35);
+    }
+    .new-chat-btn:active{ transform: translateY(1px); }
+    .new-chat-btn span{
+      width:26px; height:26px;
+      border-radius:9px;
+      background: rgba(245,80,54,.18);
+      display:flex;
+      align-items:center; justify-content:center;
+      font-weight:900;
+      color: var(--accent-hover);
+    }
+
+    .history-list{
+      flex:1;
+      margin-top:12px;
+      overflow-y:auto;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding-right:6px;
+    }
+    .history-list::-webkit-scrollbar{ width: 10px; }
+    .history-list::-webkit-scrollbar-thumb{ background: var(--history-scrollbar-thumb); border-radius: 20px; }
+    .history-list::-webkit-scrollbar-track{ background: transparent; }
+
+    .history-item{
+      padding:12px 12px;
+      font-size:.92rem;
+      color: var(--text-sub);
+      border-radius: 14px;
+      cursor:pointer;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border:1px solid rgba(255,255,255,.02);
+      background: rgba(255,255,255,.02);
+      transition: background .2s ease, border-color .2s ease, color .2s ease, transform .08s ease, ;
+      user-select:none;
+    }
+    html[data-theme="light"] .history-item{
+      background: rgba(17,24,39,.02);
+      border-color: rgba(17,24,39,.06);
+    }
+    .history-item:hover{
+      background: rgba(255,255,255,.04);
+      border-color: rgba(255,255,255,.06);
+      color: var(--text-main);
+    }
+    html[data-theme="light"] .history-item:hover{
+      background: rgba(17,24,39,.04);
+      border-color: rgba(17,24,39,.08);
+    }
+    .history-item:active{ transform: translateY(1px); }
+    .history-item.active{
+      background: rgba(245,80,54,.10);
+      border-color: rgba(245,80,54,.35);
+      color: var(--text-main);
+    }
+    .history-pill{
+      font-size:.78rem;
+      padding:4px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      color: rgba(232,234,240,.85);
+      background: rgba(255,255,255,.03);
+      flex-shrink:0;
+    }
+    html[data-theme="light"] .history-pill{
+      border-color: rgba(17,24,39,.10);
+      color: rgba(17,24,39,.75);
+      background: rgba(17,24,39,.03);
+    }
+
+    .user-profile{
+      border-top:1px solid var(--border);
+      padding-top:12px;
+      margin-top:12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      font-size:.95rem;
+      gap:10px;
+    }
+    .user-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+    .user-avatar{
+      width:34px; height:34px;
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900;
+      background: rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.08);
+      flex-shrink:0;
+    }
+    html[data-theme="light"] .user-avatar{
+      background: rgba(17,24,39,.04);
+      border-color: rgba(17,24,39,.08);
+    }
+    #userDisplay{
+      font-weight:850;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+    }
+
+    .logout-btn{
+      background: rgba(255,85,85,.08);
+      border:1px solid rgba(255,85,85,.22);
+      color:#ff6b6b;
+      cursor:pointer;
+      padding:8px 10px;
+      border-radius: 12px;
+      transition: transform .1s ease, background .2s ease;
+      font-weight:800;
+    }
+    .logout-btn:hover{ background: rgba(255,85,85,.14); }
+    .logout-btn:active{ transform: translateY(1px); }
+
+    main{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      height:100%;
+      width:100%;
+      position:relative;
+      overflow:hidden;
+    }
+
+    header{
+      padding:14px 16px;
+      font-size:1rem;
+      font-weight:900;
+      color: var(--text-sub);
+      border-bottom:1px solid var(--border);
+      display:flex;
+      align-items:center;
+      gap:12px;
+      background: rgba(0,0,0,.10);
+      backdrop-filter: blur(10px);
+      position:relative;
+      z-index:1;
+    }
+    html[data-theme="light"] header{ background: rgba(255,255,255,.55); }
+
+    header .title-wrap{ display:flex; align-items:center; gap:10px; }
+    header .spark{
+      width:10px; height:10px; border-radius:50%;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(245,80,54,.15);
+    }
+
+    .header-actions{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+    .icon-btn{
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.1rem;
+      cursor:pointer;
+      padding: 8px 10px;
+      border-radius: 12px;
+      transition: background .2s ease;
+      font-weight:900;
+    }
+    .icon-btn:hover{ background: rgba(255,255,255,.06); }
+    html[data-theme="light"] .icon-btn:hover{ background: rgba(17,24,39,.06); }
+
+    .menu-btn{
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-size: 1.35rem;
+      cursor:pointer;
+      padding: 6px 8px;
+      border-radius: 12px;
+      transition: background .2s ease;
+    }
+    .menu-btn:hover{ background: rgba(255,255,255,.06); }
+
+    #chat-container{
+      flex:1;
+      overflow-y:auto;
+      padding: 18px 0;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      scroll-behavior:smooth;
+      position:relative;
+    }
+    #chat-container::-webkit-scrollbar{ width: 10px; }
+    #chat-container::-webkit-scrollbar-thumb{ background: var(--chat-scrollbar-thumb); border-radius: 20px; }
+    #chat-container::-webkit-scrollbar-track{ background: transparent; }
+
+    .message-row{ width:100%; display:flex; justify-content:center; padding: 0 16px; }
+    .message-content{
+      width: 100%;
+      max-width: 820px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .avatar{
+      width:36px; height:36px;
+      border-radius: 14px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900;
+      font-size:.85rem;
+      flex-shrink:0;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    html[data-theme="light"] .avatar{
+      border-color: rgba(17,24,39,.10);
+      background: rgba(17,24,39,.04);
+    }
+    .user .avatar{ background: rgba(84,54,218,.18); color: white; border-color: rgba(84,54,218,.35); }
+    .ai .avatar{ background: rgba(245,80,54,.22); color: white; border-color: rgba(245,80,54,.40); }
+
+    .text{
+      flex:1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.55;
+      font-size: .96rem;
+      padding-top: 2px;
+    }
+
+    .bubble{
+      border-radius: 18px;
+      padding: 10px 14px;
+      border:1px solid var(--bubble-border);
+      background: var(--bubble-bg-ai);
+      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+    }
+    .message-row.user .bubble{
+      background: linear-gradient(180deg, rgba(245,80,54,.14), rgba(245,80,54,.06));
+      border-color: rgba(245,80,54,.28);
+    }
+    .message-row.ai .bubble{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border-color: rgba(255,255,255,.10);
+    }
+    html[data-theme="light"] .message-row.ai .bubble{
+      background: linear-gradient(180deg, rgba(17,24,39,.05), rgba(17,24,39,.02));
+      border-color: rgba(17,24,39,.10);
+    }
+
+    .typing{
+      display:flex;
+      gap:6px;
+      align-items:center;
+    }
+    .typing span{
+      width:7px; height:7px;
+      border-radius:50%;
+      background: rgba(245,80,54,.9);
+      animation: bounce 1.1s infinite ease-in-out;
+      opacity:.8;
+    }
+    .typing span:nth-child(2){ animation-delay:.12s; }
+    .typing span:nth-child(3){ animation-delay:.24s; }
+    @keyframes bounce{
+      0%,80%,100%{ transform: translateY(0); opacity:.55; }
+      40%{ transform: translateY(-5px); opacity:1; }
+    }
+
+    footer{
+      padding: 12px 12px 16px 12px;
+      display:flex;
+      justify-content:center;
+      background: rgba(0,0,0,.10);
+      border-top:1px solid var(--border);
+      backdrop-filter: blur(10px);
+    }
+    html[data-theme="light"] footer{ background: rgba(255,255,255,.55); }
+
+    .input-container{
+      width: 100%;
+      max-width: 820px;
+      background: linear-gradient(180deg, rgba(22,25,34,.92), rgba(16,18,24,.9));
+      border-radius: 22px;
+      padding: 10px 12px;
+      display:flex;
+      align-items:flex-end;
+      gap:10px;
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 18px 50px rgba(0,0,0,.30);
+    }
+    html[data-theme="light"] .input-container{
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,255,.94));
+      border-color: rgba(17,24,39,.10);
+      box-shadow: 0 18px 50px rgba(17,24,39,.12);
+    }
+
+    textarea{
+      flex:1;
+      background: transparent;
+      border:none;
+      outline:none;
+      color: var(--text-main);
+      font-size: 1rem;
+      font-family: inherit;
+      resize:none;
+      max-height: 120px;
+      height: 26px;
+      padding: 2px 0;
+    }
+    textarea::placeholder{ color: rgba(167,173,189,.85); }
+    html[data-theme="light"] textarea::placeholder{ color: rgba(75,85,99,.85); }
+
+    .send-btn{
+      background: linear-gradient(135deg, var(--text-main), rgba(232,234,240,.85));
+      color: var(--bg-main);
+      border:none;
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      flex-shrink:0;
+      font-weight:900;
+      transition: transform .1s ease, filter .2s ease;
+    }
+    html[data-theme="light"] .send-btn{
+      background: linear-gradient(135deg, var(--text-main), rgba(17,24,39,.25));
+    }
+    .send-btn:hover{ filter: brightness(1.05); }
+    .send-btn:active{ transform: translateY(1px); }
+    .send-btn:disabled{ opacity:.35; cursor:not-allowed; filter:none; }
+
+    .error-message{
+      color: #ff6b6b;
+      padding: 10px 12px;
+      background: rgba(255,0,0,.10);
+      border-radius: 12px;
+      border:1px solid rgba(255,0,0,.18);
+      margin: 8px 16px 0 16px;
+      align-self:center;
+      width: 100%;
+      max-width: 820px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Auth Modal -->
+  <div id="auth-modal" aria-modal="true" role="dialog">
+    <div class="auth-card">
+      <h2 id="authTitle">Sign in</h2>
+
+      <div class="settings-row" style="border-radius:12px; padding:8px 10px;">
+        <span style="color:var(--text-sub); font-weight:800;">Mode</span>
+        <div class="segmented" role="tablist" aria-label="Auth selector" style="margin-left:auto;">
+          <button type="button" id="mode-login" class="active" onclick="setAuthMode('login')">Login</button>
+          <button type="button" id="mode-signup" onclick="setAuthMode('signup')">Sign up</button>
+        </div>
+      </div>
+
+      <input type="email" id="email" placeholder="Email" autocomplete="email" />
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
+
+      <input type="text" id="username" placeholder="Username (for new accounts)" style="display:none;" />
+
+      <button id="authActionBtn" type="button" onclick="handleAuth()">
+        Continue
+      </button>
+      <div id="authHint" class="sub" style="color:var(--text-sub); font-size:.9rem; text-align:center;">
+        Your Friend will use Supabase auth.
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" aria-modal="true" role="dialog">
+    <div class="settings-card">
+      <h2 style="font-size:1.2rem; letter-spacing:.2px; position:relative;">Settings</h2>
+
+      <div class="settings-row" style="text-align:left;">
+        <div>
+          <div class="label">Theme</div>
+          <div class="sub">Choose Light, Dark, or follow System</div>
+        </div>
+        <div class="segmented" role="tablist" aria-label="Theme selector">
+          <button type="button" id="theme-system" class="active" onclick="setTheme('system')">System</button>
+          <button type="button" id="theme-light" onclick="setTheme('light')">Light</button>
+          <button type="button" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+        </div>
+      </div>
+
+      <button type="button" onclick="closeSettings()" style="width:100%;">Done</button>
+    </div>
+  </div>
+
+  <!-- Mobile Overlay -->
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <!-- Responsive Sidebar -->
+  <aside id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand" aria-hidden="true">
+        <span class="dot"></span>
+        <span class="name">Your Friend</span>
+      </div>
+    </div>
+
+    <button class="new-chat-btn" onclick="createNewChat()">
+      <span>+</span> New Chat
+    </button>
+
+    <div class="history-list" id="historyList"></div>
+
+    <div class="user-profile">
+      <div class="user-left">
+        <div class="user-avatar" aria-hidden="true">U</div>
+        <span id="userDisplay">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </aside>
+
+  <!-- Main Workspace -->
+  <main>
+    <header>
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="title-wrap">
+        <span class="spark"></span>
+        <span>Your Friend</span>
+      </div>
+
+      <div class="header-actions">
+        <button class="icon-btn" title="Settings" onclick="openSettings()">⚙️</button>
+      </div>
+    </header>
+
+    <div id="chat-container"></div>
+
+    <footer>
+      <div class="input-container">
+        <textarea id="userInput" placeholder="Message Your Friend..." rows="1" oninput="autoResize(this)"></textarea>
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send (Enter)">↑</button>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://mxhmcapcmeatnmwiwnri.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_zAZ8LWIFxUX8cF0H6Gy9uw_H0Yc0BgD";
+
+    // GitHub Pages + refresh-safe session persistence (Requirement #9)
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    });
+
+    const PROXY_URL = 'https://groq-proxy.mr-hackerdon808.workers.dev/api/chat';
+
+    let currentUser = null;
+    let currentUserId = null;
+
+    // session_id for grouping conversation in UI
+    let currentSessionId = null;
+    let userSessions = {}; // { [sessionId]: { title, messages: [{role, content, createdAtMs}], createdAtMs, lastCreatedAtMs } }
+
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    const authModal = document.getElementById('auth-modal');
+
+    const settingsModal = document.getElementById('settings-modal');
+    const themeSystemBtn = document.getElementById('theme-system');
+    const themeLightBtn = document.getElementById('theme-light');
+    const themeDarkBtn = document.getElementById('theme-dark');
+
+    const usernameInput = document.getElementById('username');
+    const historyList = document.getElementById('historyList');
+    const chatContainer = document.getElementById('chat-container');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const authTitle = document.getElementById('authTitle');
+    const authActionBtn = document.getElementById('authActionBtn');
+
+    const modeLoginBtn = document.getElementById('mode-login');
+    const modeSignupBtn = document.getElementById('mode-signup');
+
+    let authMode = 'login';
+    const THEME_DEFAULT = 'system'; // no localStorage
+    const DEFAULT_SYSTEM_PROMPT = 'You are a helpful, warm, and smart companion named Your Friend.';
+
+    // Prevent duplicate inserts on fast double-send / re-entry
+    let sendInFlight = false;
+    let lastUserMessageSignature = null; // `${sessionId}|${message}|${createdAtMsRounded}`
+
+    function setAuthModalVisible(visible) {
+      authModal.style.display = visible ? 'flex' : 'none';
+    }
+
+    function clearChatUI() {
+      chatContainer.innerHTML = '';
+      historyList.innerHTML = '';
+    }
+
+    function resetStateForLogout() {
+      currentUser = null;
+      currentUserId = null;
+
+      currentSessionId = null;
+      userSessions = {};
+    }
+
+    function isAuthMissingError(err) {
+      const msg = (err && (err.message || err.error_description || err.error)) ? String(err.message || err.error_description || err.error) : '';
+      const name = (err && err.name) ? String(err.name) : '';
+      return (
+        msg.toLowerCase().includes('auth session missing') ||
+        msg.toLowerCase().includes('session') && msg.toLowerCase().includes('missing') ||
+        name.toLowerCase().includes('authsessionmissingerror')
+      );
+    }
+
+    function isRlsOrAuthDenied(err) {
+      const status = err && err.status;
+      const msg = (err && (err.message || err.error)) ? String(err.message || err.error) : '';
+      const code = err && err.code ? String(err.code) : '';
+
+      return (
+        status === 401 ||
+        status === 403 ||
+        msg.includes('JWT') ||
+        msg.toLowerCase().includes('rls') ||
+        msg.toLowerCase().includes('permission denied') ||
+        msg.toLowerCase().includes('not authorized') ||
+        code === '42501'
+      );
+    }
+
+    window.onload = async () => {
+      setTheme(THEME_DEFAULT, true);
+
+      // Auth state listener (Requirement #1)
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        if (!session || !session.user) {
+          // logout / expired token
+          resetStateForLogout();
+          clearChatUI();
+          setAuthModalVisible(true);
+          return;
+        }
+
+        // login / refresh success
+        try {
+          await hydrateUserAndLoadChats(session.user);
+        } catch (e) {
+          console.error('Auth listener hydrate error:', e);
+          resetStateForLogout();
+          clearChatUI();
+          setAuthModalVisible(true);
+        }
+      });
+
+      try {
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession(); // never getUser (Requirement #1)
+
+        if (!session) {
+          setAuthModalVisible(true);
+          setAuthMode('login');
+          resetStateForLogout();
+          clearChatUI();
+          return;
+        }
+
+        await hydrateUserAndLoadChats(session.user);
+      } catch (err) {
+        console.error('Init error:', err);
+        setAuthMode('login');
+        resetStateForLogout();
+        clearChatUI();
+        setAuthModalVisible(true);
+      }
+    };
+
+    function setTheme(theme, silent = false){
+      const root = document.documentElement;
+      const mode = (theme === 'light' || theme === 'dark' || theme === 'system') ? theme : 'system';
+      root.setAttribute('data-theme', mode);
+
+      themeSystemBtn.classList.toggle('active', mode === 'system');
+      themeLightBtn.classList.toggle('active', mode === 'light');
+      themeDarkBtn.classList.toggle('active', mode === 'dark');
+      void silent;
+    }
+
+    function openSettings(){ settingsModal.style.display = 'flex'; }
+    function closeSettings(){ settingsModal.style.display = 'none'; }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape'){
+        settingsModal.style.display = 'none';
+        authModal.style.display = 'none';
+      }
+    });
+
+    settingsModal.addEventListener('click', (e) => {
+      if (e.target === settingsModal) closeSettings();
+    });
+
+    function toggleSidebar() {
+      const isOpen = sidebar.classList.contains('open');
+      if (isOpen) {
+        sidebar.classList.remove('open');
+        overlay.style.display = 'none';
+      } else {
+        sidebar.classList.add('open');
+        overlay.style.display = 'block';
+      }
+    }
+
+    function setAuthMode(mode){
+      authMode = mode;
+
+      const isLogin = mode === 'login';
+      modeLoginBtn.classList.toggle('active', isLogin);
+      modeSignupBtn.classList.toggle('active', !isLogin);
+
+      authTitle.innerText = isLogin ? 'Sign in' : 'Create account';
+      authActionBtn.innerText = isLogin ? 'Sign in' : 'Create account';
+
+      usernameInput.style.display = isLogin ? 'none' : 'block';
+    }
+
+    async function signUp(email, password, username) {
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) { alert(error.message); return; }
+
+        const userId = data?.user?.id;
+        if (!userId) { alert("Sign up succeeded, but user id was not returned."); return; }
+
+        // Profile insert/create (Requirement #5: maybeSingle + create if missing)
+        const { error: insertErr } = await supabaseClient
+          .from("profiles")
+          .upsert({ id: userId, username: username }, { onConflict: 'id' });
+
+        if (insertErr) {
+          console.warn('Profile upsert error:', insertErr.message);
+          // Do not block auth; requirement says never throw for missing profile
+        }
+
+        alert("Account created successfully!");
+
+        // After signup, login automatically (we fetch current session and hydrate, no reload)
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession();
+
+        if (session?.user) {
+          await hydrateUserAndLoadChats(session.user);
+          setAuthModalVisible(false);
+        } else {
+          // If signup didn't create a session immediately, show login modal
+          setAuthMode('login');
+          setAuthModalVisible(true);
+        }
+      } catch (err) {
+        console.error('Sign up error:', err);
+        alert('Sign up failed. Please try again.');
+      }
+    }
+
+    async function login(email, password) {
+      try {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) { alert(error.message); return; }
+
+        // No reload (Requirement #2)
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession();
+
+        if (!session?.user) {
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return;
+        }
+
+        await hydrateUserAndLoadChats(session.user);
+        setAuthModalVisible(false);
+      } catch (err) {
+        console.error('Login error:', err);
+        alert('Login failed. Please try again.');
+      }
+    }
+
+    async function handleAuth() {
+      const email = (emailInput.value || '').trim();
+      const password = (passwordInput.value || '').trim();
+      const username = (usernameInput.value || '').trim();
+
+      if (!email) return alert("Please enter your email.");
+      if (!password) return alert("Please enter your password.");
+
+      if (authMode === 'signup') {
+        if (!username) return alert("Please enter your username.");
+        await signUp(email, password, username);
+      } else {
+        await login(email, password);
+      }
+    }
+
+    async function logout() {
+      try {
+        await supabaseClient.auth.signOut();
+      } catch (e) {
+        console.warn('Sign out error:', e);
+      } finally {
+        // After logout: Clear state + UI + auth modal, no reload (Requirement #4)
+        resetStateForLogout();
+        clearChatUI();
+        setAuthMode('login');
+        setAuthModalVisible(true);
+      }
+    }
+
+    function randomSessionId() {
+      if (crypto?.randomUUID) return crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    function formatMaybeDateMs(dateVal){
+      if (!dateVal) return 0;
+      try{
+        const t = new Date(dateVal).getTime();
+        return Number.isFinite(t) ? t : 0;
+      }catch{
+        return 0;
+      }
+    }
+
+    function getChatTitleFromMessages(messages){
+      const firstUser = (messages || []).find(m => m.role === 'user' && (m.content || '').trim());
+      if (!firstUser) return 'New Chat';
+      const t = (firstUser.content || '').trim();
+      return t.length > 22 ? t.substring(0, 22) + '...' : t;
+    }
+
+    function appendErrorUI(text) {
+      const existing = chatContainer.querySelector('.error-message');
+      if (existing) existing.remove();
+
+      const div = document.createElement('div');
+      div.className = 'error-message';
+      div.innerText = text;
+      chatContainer.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    async function ensureProfileForUser(user) {
+      // Requirement #5: maybeSingle + create if missing, never throw
+      const userId = user?.id;
+      if (!userId) return;
+
+      const unameFallback = user.email?.split('@')[0] || 'User';
+
+      try {
+        const { data: profile, error } = await supabaseClient
+          .from('profiles')
+          .select('username')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (error) {
+          // If RLS denies reads, don't crash; just proceed to create
+          console.warn('Profile select error:', error.message);
+        }
+
+        if (!profile) {
+          const toInsert = { id: userId, username: unameFallback };
+          const { error: upsertErr } = await supabaseClient
+            .from('profiles')
+            .upsert(toInsert, { onConflict: 'id' });
+
+          if (upsertErr) {
+            console.warn('Profile upsert error:', upsertErr.message);
+          }
+        }
+
+        return profile || { username: unameFallback };
+      } catch (err) {
+        console.warn('ensureProfileForUser error:', err);
+        return { username: unameFallback };
+      }
+    }
+
+    async function hydrateUserAndLoadChats(user) {
+      if (!user?.id) return;
+
+      currentUserId = user.id;
+      currentUser = null;
+
+      // If session missing/expired, show auth
+      // (Requirement #7 & #8)
+      try {
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession();
+        if (!session?.user) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return;
+        }
+      } catch (e) {
+        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return;
+        }
+      }
+
+      // Profile load with maybeSingle + auto create
+      const profile = await ensureProfileForUser(user);
+
+      const uname = profile?.username || user.email?.split('@')[0] || 'User';
+      currentUser = uname;
+      document.getElementById('userDisplay').innerText = currentUser;
+      setAuthModalVisible(false);
+
+      await loadAllChatsFromSupabase();
+
+      // Requirement #6: If zero chats, create a blank chat.
+      if (!Object.keys(userSessions).length) {
+        createNewChat(true);
+      } else {
+        const sessionIds = Object.keys(userSessions).sort((a, b) => {
+          const ta = Number(userSessions[a]?.lastCreatedAtMs || 0);
+          const tb = Number(userSessions[b]?.lastCreatedAtMs || 0);
+          return tb - ta; // newest first
+        });
+        currentSessionId = sessionIds[0] || null;
+        renderHistorySidebar();
+        renderActiveChat();
+      }
+    }
+
+    async function loadAllChatsFromSupabase() {
+      userSessions = {};
+      currentSessionId = null;
+
+      try {
+        const { data: rows, error } = await supabaseClient
+          .from('chats')
+          .select('*')
+          .eq('user_id', currentUserId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (!rows) return;
+
+        for (const row of rows) {
+          const sessionId = row.session_id;
+          if (!sessionId) continue;
+
+          if (!userSessions[sessionId]) {
+            userSessions[sessionId] = {
+              title: 'Chat',
+              messages: [],
+              createdAtMs: formatMaybeDateMs(row.created_at),
+              lastCreatedAtMs: formatMaybeDateMs(row.created_at)
+            };
+          }
+
+          const createdAtMs = formatMaybeDateMs(row.created_at);
+          userSessions[sessionId].lastCreatedAtMs = Math.max(userSessions[sessionId].lastCreatedAtMs || 0, createdAtMs);
+
+          const exists = userSessions[sessionId].messages.some(m =>
+            m.role === row.role &&
+            m.content === row.message &&
+            Number(m.createdAtMs) === createdAtMs
+          );
+          if (exists) continue;
+
+          if (row.role === 'system') {
+            userSessions[sessionId].messages.push({ role: 'system', content: row.message, createdAtMs });
+          } else if (row.role === 'user') {
+            userSessions[sessionId].messages.push({ role: 'user', content: row.message, createdAtMs });
+            if (userSessions[sessionId].title === 'Chat') {
+              userSessions[sessionId].title = getChatTitleFromMessages(userSessions[sessionId].messages);
+            }
+          } else if (row.role === 'assistant') {
+            userSessions[sessionId].messages.push({ role: 'assistant', content: row.message, createdAtMs });
+          } else {
+            userSessions[sessionId].messages.push({ role: row.role, content: row.message, createdAtMs });
+          }
+        }
+
+        for (const sid of Object.keys(userSessions)) {
+          userSessions[sid].title = getChatTitleFromMessages(userSessions[sid].messages);
+        }
+      } catch (err) {
+        console.error('Load chats error:', err);
+
+        if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return;
+        }
+
+        // Only show errors for real DB failures (Requirement #6)
+        appendErrorUI('❌ Failed to load your chat history. Please try again.');
+        userSessions = {};
+      }
+    }
+
+    function createNewChat(silent = false) {
+      currentSessionId = randomSessionId();
+
+      // In-memory blank chat until first message is sent
+      userSessions[currentSessionId] = {
+        title: 'New Chat',
+        messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }],
+        createdAtMs: Date.now(),
+        lastCreatedAtMs: Date.now()
+      };
+
+      if (!silent) {
+        renderHistorySidebar();
+        renderActiveChat();
+        if (window.innerWidth < 768) toggleSidebar();
+      }
+    }
+
+    function renderHistorySidebar() {
+      historyList.innerHTML = '';
+
+      const sessionIds = Object.keys(userSessions).sort((a, b) => {
+        const ta = Number(userSessions[a]?.createdAtMs || 0);
+        const tb = Number(userSessions[b]?.createdAtMs || 0);
+        return tb - ta; // newest first
+      });
+
+      if (!sessionIds.length) {
+        // Requirement #6: never leave history broken when empty
+        return;
+      }
+
+      sessionIds.forEach((id) => {
+        const session = userSessions[id];
+        const item = document.createElement('div');
+        item.className = `history-item ${id === currentSessionId ? 'active' : ''}`;
+
+        const title = session?.title ?? 'Chat';
+        const userCount = (session?.messages || []).filter(m => m.role === 'user').length;
+
+        const left = document.createElement('span');
+        left.style.minWidth = '0';
+        left.style.overflow = 'hidden';
+        left.style.textOverflow = 'ellipsis';
+        left.style.whiteSpace = 'nowrap';
+        left.innerText = title;
+
+        const pill = document.createElement('span');
+        pill.className = 'history-pill';
+        pill.innerText = userCount ? `${userCount} msg` : 'Empty';
+
+        item.appendChild(left);
+        item.appendChild(pill);
+
+        item.onclick = () => switchSession(id);
+        historyList.appendChild(item);
+      });
+    }
+
+    async function switchSession(id) {
+      currentSessionId = id;
+      await loadSessionMessagesFromSupabase(id);
+      renderHistorySidebar();
+      renderActiveChat();
+      if (window.innerWidth < 768) toggleSidebar();
+    }
+
+    async function loadSessionMessagesFromSupabase(sessionId) {
+      if (!currentUserId) return;
+
+      try {
+        const { data: rows, error } = await supabaseClient
+          .from('chats')
+          .select('*')
+          .eq('user_id', currentUserId)
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        if (!rows || rows.length === 0) {
+          // Requirement #6: if empty, keep in-memory blank chat / system prompt, no history failure UI
+          if (!userSessions[sessionId]) {
+            userSessions[sessionId] = {
+              title: 'New Chat',
+              messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }],
+              createdAtMs: Date.now(),
+              lastCreatedAtMs: Date.now()
+            };
+          } else if (!userSessions[sessionId].messages || !userSessions[sessionId].messages.length) {
+            userSessions[sessionId].messages = [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }];
+          }
+
+          userSessions[sessionId].title = getChatTitleFromMessages(userSessions[sessionId].messages);
+          return;
+        }
+
+        const createdAtMs = formatMaybeDateMs(rows[0].created_at);
+        const lastCreatedAtMs = formatMaybeDateMs(rows[rows.length - 1].created_at);
+
+        const messages = [];
+        const seen = new Set();
+
+        for (const row of rows) {
+          const created = formatMaybeDateMs(row.created_at);
+          const key = `${row.role}|${row.message}|${created}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          messages.push({ role: row.role, content: row.message, createdAtMs: created });
+        }
+
+        if (!userSessions[sessionId]) userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: createdAtMs, lastCreatedAtMs: lastCreatedAtMs };
+        userSessions[sessionId].createdAtMs = createdAtMs || userSessions[sessionId].createdAtMs || Date.now();
+        userSessions[sessionId].lastCreatedAtMs = lastCreatedAtMs || userSessions[sessionId].lastCreatedAtMs || Date.now();
+        userSessions[sessionId].messages = messages;
+        userSessions[sessionId].title = getChatTitleFromMessages(messages);
+      } catch (err) {
+        console.error('Load session error:', err);
+
+        if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return;
+        }
+
+        appendErrorUI('❌ Failed to load this conversation. Please try again.');
+      }
+    }
+
+    function renderActiveChat() {
+      chatContainer.innerHTML = '';
+      const session = userSessions[currentSessionId];
+      if (!session) return;
+
+      session.messages.forEach((msg) => {
+        if (msg.role !== 'system') appendMessageUI(msg.role === 'user' ? 'user' : 'ai', msg.content, false);
+      });
+
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function appendMessageUI(role, text, doScroll = true) {
+      const row = document.createElement('div');
+      row.className = `message-row ${role}`;
+
+      const content = document.createElement('div');
+      content.className = 'message-content';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.innerText = role === 'user' ? 'You' : 'YF';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+
+      if (text && text.trim() === '__TYPING__') {
+        const typing = document.createElement('div');
+        typing.className = 'typing';
+        typing.innerHTML = '<span></span><span></span><span></span>';
+        textDiv.appendChild(typing);
+      } else {
+        textDiv.innerText = text;
+      }
+
+      bubble.appendChild(textDiv);
+      content.appendChild(avatar);
+      content.appendChild(bubble);
+      row.appendChild(content);
+
+      chatContainer.appendChild(row);
+      if (doScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
+
+      return textDiv;
+    }
+
+    function autoResize(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    async function insertChatMessage({ sessionId, role, message }) {
+      if (!currentUserId) return [];
+
+      const payload = {
+        session_id: sessionId,
+        user_id: currentUserId,
+        role: role,
+        message: message
+      };
+
+      const { data, error } = await supabaseClient
+        .from("chats")
+        .insert(payload)
+        .select();
+
+      if (error) throw error;
+      return data;
+    }
+
+    async function ensureValidSessionOrPrompt() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session?.user) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return null;
+        }
+        return session;
+      } catch (e) {
+        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return null;
+        }
+        return null;
+      }
+    }
+
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text || !currentSessionId) return;
+
+      if (sendInFlight) return;
+      sendInFlight = true;
+      sendBtn.disabled = true;
+
+      try {
+        // Requirement #7/#8: if session missing, show login and return (no throw)
+        const session = await ensureValidSessionOrPrompt();
+        if (!session?.user) return;
+
+        const currentSession = userSessions[currentSessionId];
+        if (!currentSession) throw new Error('Missing current session in UI state.');
+
+        if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') {
+          currentSession.title = text.length > 22 ? text.substring(0, 22) + '...' : text;
+        }
+
+        appendMessageUI('user', text);
+        userInput.value = '';
+        userInput.style.height = 'auto';
+
+        const createdAtMsLocal = Date.now();
+        lastUserMessageSignature = `${currentSessionId}|${text}|${Math.floor(createdAtMsLocal/1000)}`;
+
+        const insertedUserRows = await insertChatMessage({
+          sessionId: currentSessionId,
+          role: 'user',
+          message: text
+        });
+
+        if (!insertedUserRows || !insertedUserRows.length) {
+          throw new Error('Supabase insert returned no rows for user message.');
+        }
+
+        const userRow = insertedUserRows[insertedUserRows.length - 1];
+        const insertedUserCreatedAtMs = formatMaybeDateMs(userRow.created_at) || createdAtMsLocal;
+
+        const alreadyInMem = currentSession.messages.some(m =>
+          m.role === 'user' && m.content === text && Number(m.createdAtMs) === insertedUserCreatedAtMs
+        );
+        if (!alreadyInMem) {
+          currentSession.messages.push({ role: 'user', content: text, createdAtMs: insertedUserCreatedAtMs });
+        }
+        currentSession.lastCreatedAtMs = Math.max(currentSession.lastCreatedAtMs || 0, insertedUserCreatedAtMs);
+
+        renderHistorySidebar();
+
+        const aiTextNode = appendMessageUI('ai', '__TYPING__');
+
+        const aiMessages = currentSession.messages.map(m => ({ role: m.role, content: m.content }));
+
+        const response = await fetch(PROXY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: aiMessages,
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.7,
+            max_tokens: 1024
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const errorMsg = data?.error || `Request failed with status ${response.status}`;
+          throw new Error(errorMsg);
+        }
+
+        if (!data?.choices?.[0]?.message?.content) {
+          throw new Error("AI response is missing choices[0].message.content");
+        }
+
+        const reply = data.choices[0].message.content;
+
+        const insertedAssistantRows = await insertChatMessage({
+          sessionId: currentSessionId,
+          role: 'assistant',
+          message: reply
+        });
+
+        if (!insertedAssistantRows || !insertedAssistantRows.length) {
+          throw new Error('Supabase insert returned no rows for assistant message.');
+        }
+
+        const assistantRow = insertedAssistantRows[insertedAssistantRows.length - 1];
+        const insertedAssistantCreatedAtMs = formatMaybeDateMs(assistantRow.created_at) || Date.now();
+
+        const assistantAlreadyInMem = currentSession.messages.some(m =>
+          m.role === 'assistant' && m.content === reply && Number(m.createdAtMs) === insertedAssistantCreatedAtMs
+        );
+        if (!assistantAlreadyInMem) {
+          currentSession.messages.push({ role: 'assistant', content: reply, createdAtMs: insertedAssistantCreatedAtMs });
+        }
+        currentSession.lastCreatedAtMs = Math.max(currentSession.lastCreatedAtMs || 0, insertedAssistantCreatedAtMs);
+
+        aiTextNode.innerText = reply;
+
+        renderHistorySidebar();
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      } catch (err) {
+        console.error('Send message error:', err);
+
+        if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return;
+        }
+
+        const msg = (err && err.message) ? err.message : '❌ Failed to send message. Please try again.';
+        aiSafeReplaceTypingWithError(msg);
+        appendErrorUI('❌ ' + msg);
+      } finally {
+        sendInFlight = false;
+        sendBtn.disabled = false;
+        lastUserMessageSignature = null;
+      }
+    }
+
+    function aiSafeReplaceTypingWithError(msg){
+      const typing = chatContainer.querySelector('.message-row.ai .text');
+      if (typing && typing.innerText && typing.innerText.includes('__TYPING__')) {
+        typing.innerText = '❌ ' + (msg || 'Network/Server error');
+        typing.style.color = '#ff6b6b';
+      } else {
+        const typingNodes = Array.from(chatContainer.querySelectorAll('.message-row.ai .text'))
+          .filter(n => n.childNodes && n.childNodes.length && n.querySelector && n.querySelector('.typing'));
+        if (typingNodes.length) {
+          const node = typingNodes[typingNodes.length - 1];
+          node.innerText = '❌ ' + (msg || 'Network/Server error');
+          node.style.color = '#ff6b6b';
+        }
+      }
+    }
+
+    userInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Expose functions used by inline HTML handlers
+    window.createNewChat = createNewChat;
+    window.toggleSidebar = toggleSidebar;
+    window.openSettings = openSettings;
+    window.closeSettings = closeSettings;
+    window.setAuthMode = setAuthMode;
+    window.setTheme = setTheme;
+    window.logout = logout;
+    window.handleAuth = handleAuth;
+    window.sendMessage = sendMessage;
+  </script>
+</body>
+</html>
