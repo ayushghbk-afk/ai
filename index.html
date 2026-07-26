@@ -766,9 +766,8 @@
 
   <script>
     const SUPABASE_URL = "https://mxhmcapcmeatnmwiwnri.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_zAZ8LWIFxUX8cF0H6Gy9uw_H0Yc0BgD";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14aG1jYXBjbWVhdG5td2l3bnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDk5MTIsImV4cCI6MjEwMDYyNTkxMn0.9BT5bFLnHC7UMqW2hfCEdzxjIV0O6l-Eblp1-sCshnE";
 
-    // GitHub Pages + refresh-safe session persistence (Requirement #9)
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: {
         persistSession: true,
@@ -782,9 +781,8 @@
     let currentUser = null;
     let currentUserId = null;
 
-    // session_id for grouping conversation in UI
     let currentSessionId = null;
-    let userSessions = {}; // { [sessionId]: { title, messages: [{role, content, createdAtMs}], createdAtMs, lastCreatedAtMs } }
+    let userSessions = {};
 
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
@@ -810,12 +808,10 @@
     const modeSignupBtn = document.getElementById('mode-signup');
 
     let authMode = 'login';
-    const THEME_DEFAULT = 'system'; // no localStorage
+    const THEME_DEFAULT = 'system';
     const DEFAULT_SYSTEM_PROMPT = 'You are a helpful, warm, and smart companion named Your Friend.';
 
-    // Prevent duplicate inserts on fast double-send / re-entry
     let sendInFlight = false;
-    let lastUserMessageSignature = null; // `${sessionId}|${message}|${createdAtMsRounded}`
 
     function setAuthModalVisible(visible) {
       authModal.style.display = visible ? 'flex' : 'none';
@@ -863,17 +859,14 @@
     window.onload = async () => {
       setTheme(THEME_DEFAULT, true);
 
-      // Auth state listener (Requirement #1)
       supabaseClient.auth.onAuthStateChange(async (_event, session) => {
         if (!session || !session.user) {
-          // logout / expired token
           resetStateForLogout();
           clearChatUI();
           setAuthModalVisible(true);
           return;
         }
 
-        // login / refresh success
         try {
           await hydrateUserAndLoadChats(session.user);
         } catch (e) {
@@ -885,9 +878,7 @@
       });
 
       try {
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession(); // never getUser (Requirement #1)
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (!session) {
           setAuthModalVisible(true);
@@ -964,28 +955,22 @@
         const userId = data?.user?.id;
         if (!userId) { alert("Sign up succeeded, but user id was not returned."); return; }
 
-        // Profile insert/create (Requirement #5: maybeSingle + create if missing)
         const { error: insertErr } = await supabaseClient
           .from("profiles")
           .upsert({ id: userId, username: username }, { onConflict: 'id' });
 
         if (insertErr) {
           console.warn('Profile upsert error:', insertErr.message);
-          // Do not block auth; requirement says never throw for missing profile
         }
 
         alert("Account created successfully!");
 
-        // After signup, login automatically (we fetch current session and hydrate, no reload)
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (session?.user) {
           await hydrateUserAndLoadChats(session.user);
           setAuthModalVisible(false);
         } else {
-          // If signup didn't create a session immediately, show login modal
           setAuthMode('login');
           setAuthModalVisible(true);
         }
@@ -1000,10 +985,7 @@
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
         if (error) { alert(error.message); return; }
 
-        // No reload (Requirement #2)
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
 
         if (!session?.user) {
           setAuthMode('login');
@@ -1041,7 +1023,6 @@
       } catch (e) {
         console.warn('Sign out error:', e);
       } finally {
-        // After logout: Clear state + UI + auth modal, no reload (Requirement #4)
         resetStateForLogout();
         clearChatUI();
         setAuthMode('login');
@@ -1087,7 +1068,6 @@
     }
 
     async function ensureProfileForUser(user) {
-      // Requirement #5: maybeSingle + create if missing, never throw
       const userId = user?.id;
       if (!userId) return;
 
@@ -1101,7 +1081,6 @@
           .maybeSingle();
 
         if (error) {
-          // If RLS denies reads, don't crash; just proceed to create
           console.warn('Profile select error:', error.message);
         }
 
@@ -1129,12 +1108,8 @@
       currentUserId = user.id;
       currentUser = null;
 
-      // If session missing/expired, show auth
-      // (Requirement #7 & #8)
       try {
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession();
+        const { data: { session } } = await supabaseClient.auth.getSession();
         if (!session?.user) {
           resetStateForLogout();
           clearChatUI();
@@ -1152,7 +1127,6 @@
         }
       }
 
-      // Profile load with maybeSingle + auto create
       const profile = await ensureProfileForUser(user);
 
       const uname = profile?.username || user.email?.split('@')[0] || 'User';
@@ -1162,14 +1136,13 @@
 
       await loadAllChatsFromSupabase();
 
-      // Requirement #6: If zero chats, create a blank chat.
       if (!Object.keys(userSessions).length) {
         createNewChat(true);
       } else {
         const sessionIds = Object.keys(userSessions).sort((a, b) => {
           const ta = Number(userSessions[a]?.lastCreatedAtMs || 0);
           const tb = Number(userSessions[b]?.lastCreatedAtMs || 0);
-          return tb - ta; // newest first
+          return tb - ta;
         });
         currentSessionId = sessionIds[0] || null;
         renderHistorySidebar();
@@ -1189,7 +1162,6 @@
           .order('created_at', { ascending: true });
 
         if (error) throw error;
-
         if (!rows) return;
 
         for (const row of rows) {
@@ -1243,7 +1215,6 @@
           return;
         }
 
-        // Only show errors for real DB failures (Requirement #6)
         appendErrorUI('❌ Failed to load your chat history. Please try again.');
         userSessions = {};
       }
@@ -1252,7 +1223,6 @@
     function createNewChat(silent = false) {
       currentSessionId = randomSessionId();
 
-      // In-memory blank chat until first message is sent
       userSessions[currentSessionId] = {
         title: 'New Chat',
         messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }],
@@ -1273,13 +1243,10 @@
       const sessionIds = Object.keys(userSessions).sort((a, b) => {
         const ta = Number(userSessions[a]?.createdAtMs || 0);
         const tb = Number(userSessions[b]?.createdAtMs || 0);
-        return tb - ta; // newest first
+        return tb - ta;
       });
 
-      if (!sessionIds.length) {
-        // Requirement #6: never leave history broken when empty
-        return;
-      }
+      if (!sessionIds.length) return;
 
       sessionIds.forEach((id) => {
         const session = userSessions[id];
@@ -1330,7 +1297,6 @@
         if (error) throw error;
 
         if (!rows || rows.length === 0) {
-          // Requirement #6: if empty, keep in-memory blank chat / system prompt, no history failure UI
           if (!userSessions[sessionId]) {
             userSessions[sessionId] = {
               title: 'New Chat',
@@ -1434,25 +1400,6 @@
       textarea.style.height = textarea.scrollHeight + 'px';
     }
 
-    async function insertChatMessage({ sessionId, role, message }) {
-      if (!currentUserId) return [];
-
-      const payload = {
-        session_id: sessionId,
-        user_id: currentUserId,
-        role: role,
-        message: message
-      };
-
-      const { data, error } = await supabaseClient
-        .from("chats")
-        .insert(payload)
-        .select();
-
-      if (error) throw error;
-      return data;
-    }
-
     async function ensureValidSessionOrPrompt() {
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -1485,7 +1432,6 @@
       sendBtn.disabled = true;
 
       try {
-        // Requirement #7/#8: if session missing, show login and return (no throw)
         const session = await ensureValidSessionOrPrompt();
         if (!session?.user) return;
 
@@ -1500,35 +1446,32 @@
         userInput.value = '';
         userInput.style.height = 'auto';
 
-        const createdAtMsLocal = Date.now();
-        lastUserMessageSignature = `${currentSessionId}|${text}|${Math.floor(createdAtMsLocal/1000)}`;
-
-        const insertedUserRows = await insertChatMessage({
-          sessionId: currentSessionId,
+        const userMessage = {
+          session_id: currentSessionId,
+          user_id: currentUserId,
           role: 'user',
-          message: text
+          message: text,
+          created_at: new Date().toISOString()
+        };
+
+        const { error: userError } = await supabaseClient
+          .from('chats')
+          .insert(userMessage)
+          .select();
+
+        if (userError) throw userError;
+
+        currentSession.messages.push({
+          role: 'user',
+          content: text,
+          createdAtMs: Date.now()
         });
-
-        if (!insertedUserRows || !insertedUserRows.length) {
-          throw new Error('Supabase insert returned no rows for user message.');
-        }
-
-        const userRow = insertedUserRows[insertedUserRows.length - 1];
-        const insertedUserCreatedAtMs = formatMaybeDateMs(userRow.created_at) || createdAtMsLocal;
-
-        const alreadyInMem = currentSession.messages.some(m =>
-          m.role === 'user' && m.content === text && Number(m.createdAtMs) === insertedUserCreatedAtMs
-        );
-        if (!alreadyInMem) {
-          currentSession.messages.push({ role: 'user', content: text, createdAtMs: insertedUserCreatedAtMs });
-        }
-        currentSession.lastCreatedAtMs = Math.max(currentSession.lastCreatedAtMs || 0, insertedUserCreatedAtMs);
-
-        renderHistorySidebar();
 
         const aiTextNode = appendMessageUI('ai', '__TYPING__');
 
-        const aiMessages = currentSession.messages.map(m => ({ role: m.role, content: m.content }));
+        const aiMessages = currentSession.messages
+          .filter(m => m.role !== 'system')
+          .map(m => ({ role: m.role, content: m.content }));
 
         const response = await fetch(PROXY_URL, {
           method: "POST",
@@ -1543,42 +1486,37 @@
 
         const data = await response.json();
 
-        if (!response.ok) {
-          const errorMsg = data?.error || `Request failed with status ${response.status}`;
-          throw new Error(errorMsg);
-        }
-
-        if (!data?.choices?.[0]?.message?.content) {
-          throw new Error("AI response is missing choices[0].message.content");
-        }
+        if (!response.ok) throw new Error(data?.error || `Request failed with status ${response.status}`);
+        if (!data?.choices?.[0]?.message?.content) throw new Error("AI response is missing content");
 
         const reply = data.choices[0].message.content;
 
-        const insertedAssistantRows = await insertChatMessage({
-          sessionId: currentSessionId,
+        const assistantMessage = {
+          session_id: currentSessionId,
+          user_id: currentUserId,
           role: 'assistant',
-          message: reply
+          message: reply,
+          created_at: new Date().toISOString()
+        };
+
+        const { error: assistantError } = await supabaseClient
+          .from('chats')
+          .insert(assistantMessage)
+          .select();
+
+        if (assistantError) throw assistantError;
+
+        currentSession.messages.push({
+          role: 'assistant',
+          content: reply,
+          createdAtMs: Date.now()
         });
-
-        if (!insertedAssistantRows || !insertedAssistantRows.length) {
-          throw new Error('Supabase insert returned no rows for assistant message.');
-        }
-
-        const assistantRow = insertedAssistantRows[insertedAssistantRows.length - 1];
-        const insertedAssistantCreatedAtMs = formatMaybeDateMs(assistantRow.created_at) || Date.now();
-
-        const assistantAlreadyInMem = currentSession.messages.some(m =>
-          m.role === 'assistant' && m.content === reply && Number(m.createdAtMs) === insertedAssistantCreatedAtMs
-        );
-        if (!assistantAlreadyInMem) {
-          currentSession.messages.push({ role: 'assistant', content: reply, createdAtMs: insertedAssistantCreatedAtMs });
-        }
-        currentSession.lastCreatedAtMs = Math.max(currentSession.lastCreatedAtMs || 0, insertedAssistantCreatedAtMs);
+        currentSession.lastCreatedAtMs = Date.now();
 
         aiTextNode.innerText = reply;
-
         renderHistorySidebar();
         chatContainer.scrollTop = chatContainer.scrollHeight;
+
       } catch (err) {
         console.error('Send message error:', err);
 
@@ -1590,13 +1528,13 @@
           return;
         }
 
-        const msg = (err && err.message) ? err.message : '❌ Failed to send message. Please try again.';
+        const msg = err.message || 'Failed to send message. Please try again.';
         aiSafeReplaceTypingWithError(msg);
         appendErrorUI('❌ ' + msg);
+
       } finally {
         sendInFlight = false;
         sendBtn.disabled = false;
-        lastUserMessageSignature = null;
       }
     }
 
@@ -1623,7 +1561,6 @@
       }
     });
 
-    // Expose functions used by inline HTML handlers
     window.createNewChat = createNewChat;
     window.toggleSidebar = toggleSidebar;
     window.openSettings = openSettings;
