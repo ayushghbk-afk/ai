@@ -9,92 +9,66 @@
 
   <style>
     :root{
-      --bg-main:#0f1115;
-      --bg-sidebar:#0c0e12;
-      --bg-card:#161922;
-      --bg-input:#161922;
-      --text-main:#e8eaf0;
-      --text-sub:#a7adbd;
-      --border:rgba(255,255,255,.08);
-      --accent:#f55036;
-      --accent-hover:#ff6a52;
-      --shadow: 0 14px 40px rgba(0,0,0,.35);
+      --bg-main:#0b1020;
+      --bg-sidebar:#0a0f1b;
+      --bg-card:#11182a;
+      --bg-input:#11182a;
+      --text-main:#f4f7ff;
+      --text-sub:#a9b4d0;
+      --border:rgba(255,255,255,.10);
+      --accent:#7c5cff;
+      --accent-2:#ff4d8d;
+      --accent-3:#26d6a6;
+      --warning:#ffcc66;
+      --danger:#ff6b6b;
+      --shadow: 0 18px 50px rgba(0,0,0,.40);
 
-      --radius-lg:18px;
-      --radius-md:14px;
-      --radius-sm:10px;
+      --bubble-border: rgba(255,255,255,.10);
+      --bubble-bg-ai: rgba(255,255,255,.04);
+      --bubble-bg-user: rgba(124,92,255,.16);
 
-      --bubble-border: rgba(255,255,255,.08);
-      --bubble-bg-ai: rgba(255,255,255,.03);
-      --bubble-bg-user: rgba(245,80,54,.10);
-
-      --chat-scrollbar-thumb: rgba(255,255,255,.08);
-      --history-scrollbar-thumb: rgba(255,255,255,.08);
-      --grid-opacity: .18;
-      --overlay-dim: rgba(0,0,0,.6);
-      --overlay-modal: rgba(0,0,0,.72);
+      --chat-scrollbar-thumb: rgba(255,255,255,.16);
+      --history-scrollbar-thumb: rgba(255,255,255,.16);
+      --grid-opacity: .12;
+      --overlay-dim: rgba(4,8,18,.68);
+      --overlay-modal: rgba(4,8,18,.80);
+      --glass: rgba(15,20,35,.72);
     }
 
     html[data-theme="light"]{
-      --bg-main:#f6f7fb;
+      --bg-main:#f3f6ff;
       --bg-sidebar:#ffffff;
       --bg-card:#ffffff;
       --bg-input:#ffffff;
 
-      --text-main:#111827;
-      --text-sub:#4b5563;
+      --text-main:#101828;
+      --text-sub:#5b657d;
 
-      --border:rgba(17,24,39,.10);
-      --shadow: 0 14px 40px rgba(17,24,39,.12);
+      --border:rgba(16,24,40,.10);
+      --shadow: 0 18px 50px rgba(16,24,40,.12);
 
-      --accent:#f55036;
-      --accent-hover:#ff6a52;
+      --bubble-border: rgba(16,24,40,.10);
+      --bubble-bg-ai: rgba(16,24,40,.04);
+      --bubble-bg-user: rgba(124,92,255,.12);
 
-      --bubble-border: rgba(17,24,39,.10);
-      --bubble-bg-ai: rgba(17,24,39,.03);
-      --bubble-bg-user: rgba(245,80,54,.10);
-
-      --chat-scrollbar-thumb: rgba(17,24,39,.10);
-      --history-scrollbar-thumb: rgba(17,24,39,.10);
-      --grid-opacity: .10;
-      --overlay-dim: rgba(17,24,39,.45);
-      --overlay-modal: rgba(17,24,39,.62);
-    }
-
-    html[data-theme="system"]{ color-scheme: light dark; }
-    @media (prefers-color-scheme: light){
-      html[data-theme="system"]{
-        --bg-main:#f6f7fb;
-        --bg-sidebar:#ffffff;
-        --bg-card:#ffffff;
-        --bg-input:#ffffff;
-
-        --text-main:#111827;
-        --text-sub:#4b5563;
-
-        --border:rgba(17,24,39,.10);
-        --shadow: 0 14px 40px rgba(17,24,39,.12);
-
-        --bubble-border: rgba(17,24,39,.10);
-        --bubble-bg-ai: rgba(17,24,39,.03);
-        --bubble-bg-user: rgba(245,80,54,.10);
-
-        --chat-scrollbar-thumb: rgba(17,24,39,.10);
-        --history-scrollbar-thumb: rgba(17,24,39,.10);
-        --grid-opacity: .10;
-        --overlay-dim: rgba(17,24,39,.45);
-        --overlay-modal: rgba(17,24,39,.62);
-      }
+      --chat-scrollbar-thumb: rgba(16,24,40,.14);
+      --history-scrollbar-thumb: rgba(16,24,40,.14);
+      --grid-opacity: .08;
+      --overlay-dim: rgba(16,24,40,.42);
+      --overlay-modal: rgba(16,24,40,.58);
+      --glass: rgba(255,255,255,.82);
     }
 
     *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
     html, body { height: 100%; }
 
     body{
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;
-      background: radial-gradient(1200px 700px at 20% 10%, rgba(245,80,54,.14), transparent 60%),
-                  radial-gradient(900px 600px at 80% 20%, rgba(90,120,255,.12), transparent 55%),
-                  var(--bg-main);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+      background:
+        radial-gradient(1000px 500px at 15% 10%, rgba(124,92,255,.22), transparent 60%),
+        radial-gradient(900px 500px at 85% 18%, rgba(255,77,141,.18), transparent 55%),
+        radial-gradient(700px 500px at 50% 95%, rgba(38,214,166,.12), transparent 55%),
+        var(--bg-main);
       color:var(--text-main);
       display:flex;
       height:100vh;
@@ -107,11 +81,12 @@
       content:"";
       position:fixed; inset:0;
       background:
-        linear-gradient(to right, rgba(255,255,255,.04) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255,255,255,.04) 1px, transparent 1px);
-      background-size: 60px 60px;
+        linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 64px 64px;
       opacity:var(--grid-opacity);
       pointer-events:none;
+      mask-image: radial-gradient(circle at center, black 45%, transparent 100%);
     }
 
     #sidebar-overlay{
@@ -119,7 +94,7 @@
       position:fixed; inset:0;
       background: var(--overlay-dim);
       z-index:90;
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
     }
 
     #auth-modal, #settings-modal{
@@ -129,20 +104,20 @@
       align-items:center;
       justify-content:center;
       z-index:1000;
-      padding:20px;
-      backdrop-filter: blur(8px);
+      padding:16px;
+      backdrop-filter: blur(10px);
     }
 
     .auth-card, .settings-card{
-      background: linear-gradient(180deg, rgba(22,25,34,.92), rgba(12,14,18,.92));
-      padding:26px 22px;
-      border-radius: 16px;
-      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(17,24,42,.96), rgba(10,15,27,.96));
+      padding:22px 18px;
+      border-radius: 24px;
+      border:1px solid rgba(255,255,255,.12);
       width:100%;
       max-width:420px;
       display:flex;
       flex-direction:column;
-      gap:14px;
+      gap:12px;
       text-align:center;
       box-shadow: var(--shadow);
       position:relative;
@@ -150,55 +125,56 @@
     }
     html[data-theme="light"] .auth-card,
     html[data-theme="light"] .settings-card{
-      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,255,.96));
+      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,247,255,.96));
     }
 
     .auth-card::after, .settings-card::after{
       content:"";
       position:absolute;
-      width:240px; height:240px;
+      width:260px; height:260px;
       right:-120px; top:-140px;
-      background: radial-gradient(circle, rgba(245,80,54,.35), transparent 62%);
+      background: radial-gradient(circle, rgba(124,92,255,.34), transparent 62%);
       pointer-events:none;
     }
 
     .auth-card h2{
-      font-size:1.3rem;
+      font-size:1.35rem;
       letter-spacing:.2px;
       position:relative;
     }
 
     .auth-card input, .settings-card input{
-      padding:12px 12px;
-      border-radius:10px;
+      padding:13px 14px;
+      border-radius:14px;
       border:1px solid var(--border);
-      background: rgba(0,0,0,.18);
+      background: rgba(255,255,255,.05);
       color:var(--text-main);
       outline:none;
       font-size:1rem;
-      transition: border-color .15s ease, transform .08s ease;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .08s ease;
       text-align:left;
     }
     html[data-theme="light"] .auth-card input,
     html[data-theme="light"] .settings-card input{
-      background: rgba(17,24,39,.04);
+      background: rgba(16,24,40,.04);
     }
 
     .auth-card input:focus{
-      border-color: rgba(245,80,54,.55);
-      box-shadow: 0 0 0 4px rgba(245,80,54,.12);
+      border-color: rgba(124,92,255,.62);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.14);
     }
 
     .auth-card button, .settings-card button{
       padding:12px 14px;
-      border-radius:10px;
+      border-radius:14px;
       border:none;
-      background: linear-gradient(135deg, var(--accent), #ff7a5c);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       color:white;
-      font-weight:800;
+      font-weight:850;
       font-size:1rem;
       cursor:pointer;
-      transition: transform .1s ease, filter .2s ease;
+      transition: transform .1s ease, filter .2s ease, box-shadow .2s ease;
+      box-shadow: 0 12px 25px rgba(124,92,255,.22);
     }
     .auth-card button:hover, .settings-card button:hover{ filter: brightness(1.05); }
     .auth-card button:active, .settings-card button:active{ transform: translateY(1px); }
@@ -210,11 +186,11 @@
       justify-content:space-between;
       padding:10px 12px;
       border:1px solid var(--border);
-      border-radius: 14px;
-      background: rgba(255,255,255,.03);
+      border-radius: 16px;
+      background: rgba(255,255,255,.04);
     }
     html[data-theme="light"] .settings-row{
-      background: rgba(17,24,39,.03);
+      background: rgba(16,24,40,.03);
     }
     .settings-row .label{ font-weight:900; letter-spacing:.1px; }
     .settings-row .sub{
@@ -227,12 +203,12 @@
 
     .segmented{
       display:flex;
-      background: rgba(255,255,255,.04);
+      background: rgba(255,255,255,.05);
       border:1px solid var(--border);
       border-radius: 14px;
       overflow:hidden;
     }
-    html[data-theme="light"] .segmented{ background: rgba(17,24,39,.03); }
+    html[data-theme="light"] .segmented{ background: rgba(16,24,40,.03); }
     .segmented button{
       border-radius:0;
       border:none;
@@ -245,27 +221,28 @@
       box-shadow:none;
     }
     .segmented button.active{
-      background: rgba(245,80,54,.16);
+      background: linear-gradient(135deg, rgba(124,92,255,.20), rgba(255,77,141,.18));
       color: var(--text-main);
     }
 
     aside{
       width:280px;
-      background: linear-gradient(180deg, rgba(12,14,18,.92), rgba(12,14,18,.82));
+      background: linear-gradient(180deg, rgba(10,15,27,.96), rgba(8,12,22,.90));
       display:flex;
       flex-direction:column;
       padding:14px;
-      border-right:1px solid var(--border);
+      border-right:1px solid rgba(255,255,255,.08);
       flex-shrink:0;
       position:fixed;
       top:0; bottom:0; left:0;
       z-index:100;
       transform:translateX(-100%);
       transition: transform .28s cubic-bezier(.2,.9,.2,1);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(14px);
     }
     html[data-theme="light"] aside{
-      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,255,.94));
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,247,255,.95));
+      border-right:1px solid rgba(16,24,40,.08);
     }
     @media (min-width: 768px){
       aside{ position:relative; transform:translateX(0) !important; }
@@ -283,25 +260,25 @@
     }
     .brand{
       display:flex; align-items:center; gap:10px;
-      padding:10px 10px;
+      padding:10px 12px;
       border-radius:14px;
-      border:1px solid transparent;
-      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(255,255,255,.04);
     }
-    html[data-theme="light"] .brand{ background: rgba(17,24,39,.03); }
+    html[data-theme="light"] .brand{ background: rgba(16,24,40,.03); border-color: rgba(16,24,40,.08); }
     .brand .dot{
       width:12px; height:12px; border-radius:50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(245,80,54,.16);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px rgba(124,92,255,.14);
     }
     .brand .name{ font-weight:900; letter-spacing:.2px; }
 
     .new-chat-btn{
-      background: rgba(255,255,255,.03);
-      border:1px solid var(--border);
+      background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14));
+      border:1px solid rgba(124,92,255,.26);
       color:var(--text-main);
-      padding:10px 12px;
-      border-radius:12px;
+      padding:11px 12px;
+      border-radius:14px;
       display:flex;
       align-items:center;
       gap:10px;
@@ -310,22 +287,25 @@
       transition: transform .1s ease, background .2s ease, border-color .2s ease;
       width:100%;
       justify-content:flex-start;
-      font-weight:700;
+      font-weight:800;
     }
-    html[data-theme="light"] .new-chat-btn{ background: rgba(17,24,39,.03); }
+    html[data-theme="light"] .new-chat-btn{
+      background: linear-gradient(135deg, rgba(124,92,255,.10), rgba(255,77,141,.08));
+      border-color: rgba(124,92,255,.18);
+    }
     .new-chat-btn:hover{
-      background: rgba(245,80,54,.08);
-      border-color: rgba(245,80,54,.35);
+      background: linear-gradient(135deg, rgba(124,92,255,.24), rgba(255,77,141,.18));
+      border-color: rgba(124,92,255,.35);
     }
     .new-chat-btn:active{ transform: translateY(1px); }
     .new-chat-btn span{
       width:26px; height:26px;
       border-radius:9px;
-      background: rgba(245,80,54,.18);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       display:flex;
       align-items:center; justify-content:center;
       font-weight:900;
-      color: var(--accent-hover);
+      color: white;
     }
 
     .history-list{
@@ -353,47 +333,48 @@
       display:flex;
       align-items:center;
       justify-content:space-between;
-      border:1px solid rgba(255,255,255,.02);
-      background: rgba(255,255,255,.02);
-      transition: background .2s ease, border-color .2s ease, color .2s ease, transform .08s ease, ;
+      border:1px solid rgba(255,255,255,.04);
+      background: rgba(255,255,255,.03);
+      transition: background .2s ease, border-color .2s ease, color .2s ease, transform .08s ease;
       user-select:none;
+      gap:10px;
     }
     html[data-theme="light"] .history-item{
-      background: rgba(17,24,39,.02);
-      border-color: rgba(17,24,39,.06);
+      background: rgba(16,24,40,.03);
+      border-color: rgba(16,24,40,.06);
     }
     .history-item:hover{
-      background: rgba(255,255,255,.04);
-      border-color: rgba(255,255,255,.06);
+      background: rgba(124,92,255,.10);
+      border-color: rgba(124,92,255,.20);
       color: var(--text-main);
     }
     html[data-theme="light"] .history-item:hover{
-      background: rgba(17,24,39,.04);
-      border-color: rgba(17,24,39,.08);
+      background: rgba(124,92,255,.08);
+      border-color: rgba(124,92,255,.16);
     }
     .history-item:active{ transform: translateY(1px); }
     .history-item.active{
-      background: rgba(245,80,54,.10);
-      border-color: rgba(245,80,54,.35);
+      background: linear-gradient(135deg, rgba(124,92,255,.16), rgba(255,77,141,.14));
+      border-color: rgba(124,92,255,.32);
       color: var(--text-main);
     }
     .history-pill{
       font-size:.78rem;
       padding:4px 8px;
       border-radius:999px;
-      border:1px solid rgba(255,255,255,.08);
-      color: rgba(232,234,240,.85);
-      background: rgba(255,255,255,.03);
+      border:1px solid rgba(255,255,255,.10);
+      color: rgba(244,247,255,.90);
+      background: rgba(255,255,255,.05);
       flex-shrink:0;
     }
     html[data-theme="light"] .history-pill{
-      border-color: rgba(17,24,39,.10);
-      color: rgba(17,24,39,.75);
-      background: rgba(17,24,39,.03);
+      border-color: rgba(16,24,40,.10);
+      color: rgba(16,24,40,.74);
+      background: rgba(16,24,40,.03);
     }
 
     .user-profile{
-      border-top:1px solid var(--border);
+      border-top:1px solid rgba(255,255,255,.08);
       padding-top:12px;
       margin-top:12px;
       display:flex;
@@ -402,19 +383,21 @@
       font-size:.95rem;
       gap:10px;
     }
+    html[data-theme="light"] .user-profile{ border-top:1px solid rgba(16,24,40,.08); }
+
     .user-left{ display:flex; align-items:center; gap:10px; min-width:0; }
     .user-avatar{
       width:34px; height:34px;
       border-radius:12px;
       display:flex; align-items:center; justify-content:center;
       font-weight:900;
-      background: rgba(255,255,255,.05);
-      border:1px solid rgba(255,255,255,.08);
+      background: linear-gradient(135deg, rgba(124,92,255,.22), rgba(255,77,141,.16));
+      border:1px solid rgba(124,92,255,.22);
       flex-shrink:0;
     }
     html[data-theme="light"] .user-avatar{
-      background: rgba(17,24,39,.04);
-      border-color: rgba(17,24,39,.08);
+      background: linear-gradient(135deg, rgba(124,92,255,.12), rgba(255,77,141,.10));
+      border-color: rgba(124,92,255,.18);
     }
     #userDisplay{
       font-weight:850;
@@ -425,16 +408,16 @@
     }
 
     .logout-btn{
-      background: rgba(255,85,85,.08);
-      border:1px solid rgba(255,85,85,.22);
-      color:#ff6b6b;
+      background: rgba(255,107,107,.10);
+      border:1px solid rgba(255,107,107,.22);
+      color: var(--danger);
       cursor:pointer;
       padding:8px 10px;
       border-radius: 12px;
       transition: transform .1s ease, background .2s ease;
       font-weight:800;
     }
-    .logout-btn:hover{ background: rgba(255,85,85,.14); }
+    .logout-btn:hover{ background: rgba(255,107,107,.16); }
     .logout-btn:active{ transform: translateY(1px); }
 
     main{
@@ -448,54 +431,65 @@
     }
 
     header{
-      padding:14px 16px;
+      padding:12px 14px;
       font-size:1rem;
       font-weight:900;
-      color: var(--text-sub);
-      border-bottom:1px solid var(--border);
+      color: var(--text-main);
+      border-bottom:1px solid rgba(255,255,255,.08);
       display:flex;
       align-items:center;
-      gap:12px;
-      background: rgba(0,0,0,.10);
-      backdrop-filter: blur(10px);
+      gap:10px;
+      background: rgba(10,15,27,.70);
+      backdrop-filter: blur(14px);
       position:relative;
       z-index:1;
     }
-    html[data-theme="light"] header{ background: rgba(255,255,255,.55); }
+    html[data-theme="light"] header{
+      background: rgba(255,255,255,.72);
+      border-bottom:1px solid rgba(16,24,40,.08);
+    }
 
     header .title-wrap{ display:flex; align-items:center; gap:10px; }
     header .spark{
       width:10px; height:10px; border-radius:50%;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(245,80,54,.15);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px rgba(124,92,255,.14);
     }
 
     .header-actions{ margin-left:auto; display:flex; gap:8px; align-items:center; }
     .icon-btn{
-      background: transparent;
-      border: none;
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
       color: var(--text-main);
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       cursor:pointer;
       padding: 8px 10px;
       border-radius: 12px;
-      transition: background .2s ease;
+      transition: background .2s ease, transform .1s ease;
       font-weight:900;
     }
-    .icon-btn:hover{ background: rgba(255,255,255,.06); }
-    html[data-theme="light"] .icon-btn:hover{ background: rgba(17,24,39,.06); }
+    html[data-theme="light"] .icon-btn{
+      background: rgba(16,24,40,.03);
+      border-color: rgba(16,24,40,.08);
+    }
+    .icon-btn:hover{ background: rgba(124,92,255,.10); }
+    .icon-btn:active{ transform: translateY(1px); }
 
     .menu-btn{
-      background: transparent;
-      border: none;
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
       color: var(--text-main);
-      font-size: 1.35rem;
+      font-size: 1.25rem;
       cursor:pointer;
-      padding: 6px 8px;
+      padding: 7px 10px;
       border-radius: 12px;
       transition: background .2s ease;
     }
-    .menu-btn:hover{ background: rgba(255,255,255,.06); }
+    html[data-theme="light"] .menu-btn{
+      background: rgba(16,24,40,.03);
+      border-color: rgba(16,24,40,.08);
+    }
+    .menu-btn:hover{ background: rgba(124,92,255,.10); }
 
     #chat-container{
       flex:1;
@@ -511,12 +505,12 @@
     #chat-container::-webkit-scrollbar-thumb{ background: var(--chat-scrollbar-thumb); border-radius: 20px; }
     #chat-container::-webkit-scrollbar-track{ background: transparent; }
 
-    .message-row{ width:100%; display:flex; justify-content:center; padding: 0 16px; }
+    .message-row{ width:100%; display:flex; justify-content:center; padding: 0 12px; }
     .message-content{
       width: 100%;
-      max-width: 820px;
+      max-width: 860px;
       display:flex;
-      gap:12px;
+      gap:10px;
       align-items:flex-start;
     }
 
@@ -525,45 +519,55 @@
       border-radius: 14px;
       display:flex; align-items:center; justify-content:center;
       font-weight:900;
-      font-size:.85rem;
+      font-size:.82rem;
       flex-shrink:0;
       border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.04);
+      background: rgba(255,255,255,.05);
+      box-shadow: 0 8px 16px rgba(0,0,0,.16);
     }
     html[data-theme="light"] .avatar{
-      border-color: rgba(17,24,39,.10);
-      background: rgba(17,24,39,.04);
+      border-color: rgba(16,24,40,.10);
+      background: rgba(16,24,40,.04);
     }
-    .user .avatar{ background: rgba(84,54,218,.18); color: white; border-color: rgba(84,54,218,.35); }
-    .ai .avatar{ background: rgba(245,80,54,.22); color: white; border-color: rgba(245,80,54,.40); }
+    .user .avatar{
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border-color: transparent;
+    }
+    .ai .avatar{
+      background: linear-gradient(135deg, var(--accent-3), var(--accent));
+      color: white;
+      border-color: transparent;
+    }
 
     .text{
       flex:1;
       white-space: pre-wrap;
       word-break: break-word;
-      line-height: 1.55;
-      font-size: .96rem;
-      padding-top: 2px;
+      line-height: 1.6;
+      font-size: .98rem;
+      padding-top: 1px;
     }
 
     .bubble{
       border-radius: 18px;
-      padding: 10px 14px;
+      padding: 11px 14px;
       border:1px solid var(--bubble-border);
       background: var(--bubble-bg-ai);
-      box-shadow: 0 8px 20px rgba(0,0,0,.18);
+      box-shadow: 0 10px 28px rgba(0,0,0,.18);
+      backdrop-filter: blur(10px);
     }
     .message-row.user .bubble{
-      background: linear-gradient(180deg, rgba(245,80,54,.14), rgba(245,80,54,.06));
-      border-color: rgba(245,80,54,.28);
+      background: linear-gradient(180deg, rgba(124,92,255,.18), rgba(255,77,141,.10));
+      border-color: rgba(124,92,255,.28);
     }
     .message-row.ai .bubble{
-      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
       border-color: rgba(255,255,255,.10);
     }
     html[data-theme="light"] .message-row.ai .bubble{
-      background: linear-gradient(180deg, rgba(17,24,39,.05), rgba(17,24,39,.02));
-      border-color: rgba(17,24,39,.10);
+      background: linear-gradient(180deg, rgba(16,24,40,.05), rgba(16,24,40,.02));
+      border-color: rgba(16,24,40,.10);
     }
 
     .typing{
@@ -574,9 +578,9 @@
     .typing span{
       width:7px; height:7px;
       border-radius:50%;
-      background: rgba(245,80,54,.9);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
       animation: bounce 1.1s infinite ease-in-out;
-      opacity:.8;
+      opacity:.85;
     }
     .typing span:nth-child(2){ animation-delay:.12s; }
     .typing span:nth-child(3){ animation-delay:.24s; }
@@ -586,21 +590,24 @@
     }
 
     footer{
-      padding: 12px 12px 16px 12px;
+      padding: 10px 10px 14px 10px;
       display:flex;
       justify-content:center;
-      background: rgba(0,0,0,.10);
-      border-top:1px solid var(--border);
-      backdrop-filter: blur(10px);
+      background: rgba(10,15,27,.72);
+      border-top:1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(14px);
     }
-    html[data-theme="light"] footer{ background: rgba(255,255,255,.55); }
+    html[data-theme="light"] footer{
+      background: rgba(255,255,255,.75);
+      border-top:1px solid rgba(16,24,40,.08);
+    }
 
     .input-container{
       width: 100%;
-      max-width: 820px;
-      background: linear-gradient(180deg, rgba(22,25,34,.92), rgba(16,18,24,.9));
+      max-width: 860px;
+      background: var(--glass);
       border-radius: 22px;
-      padding: 10px 12px;
+      padding: 10px 10px 10px 14px;
       display:flex;
       align-items:flex-end;
       gap:10px;
@@ -608,9 +615,8 @@
       box-shadow: 0 18px 50px rgba(0,0,0,.30);
     }
     html[data-theme="light"] .input-container{
-      background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(245,247,255,.94));
-      border-color: rgba(17,24,39,.10);
-      box-shadow: 0 18px 50px rgba(17,24,39,.12);
+      border-color: rgba(16,24,40,.10);
+      box-shadow: 0 18px 50px rgba(16,24,40,.10);
     }
 
     textarea{
@@ -622,19 +628,19 @@
       font-size: 1rem;
       font-family: inherit;
       resize:none;
-      max-height: 120px;
+      max-height: 130px;
       height: 26px;
-      padding: 2px 0;
+      padding: 3px 0;
     }
-    textarea::placeholder{ color: rgba(167,173,189,.85); }
-    html[data-theme="light"] textarea::placeholder{ color: rgba(75,85,99,.85); }
+    textarea::placeholder{ color: rgba(169,180,208,.86); }
+    html[data-theme="light"] textarea::placeholder{ color: rgba(91,101,125,.86); }
 
     .send-btn{
-      background: linear-gradient(135deg, var(--text-main), rgba(232,234,240,.85));
-      color: var(--bg-main);
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
       border:none;
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 16px;
       display:flex;
       align-items:center;
@@ -643,33 +649,88 @@
       flex-shrink:0;
       font-weight:900;
       transition: transform .1s ease, filter .2s ease;
-    }
-    html[data-theme="light"] .send-btn{
-      background: linear-gradient(135deg, var(--text-main), rgba(17,24,39,.25));
+      box-shadow: 0 12px 25px rgba(124,92,255,.26);
     }
     .send-btn:hover{ filter: brightness(1.05); }
     .send-btn:active{ transform: translateY(1px); }
     .send-btn:disabled{ opacity:.35; cursor:not-allowed; filter:none; }
 
     .error-message{
-      color: #ff6b6b;
+      color: #ffd1d1;
       padding: 10px 12px;
-      background: rgba(255,0,0,.10);
+      background: rgba(255,107,107,.12);
       border-radius: 12px;
-      border:1px solid rgba(255,0,0,.18);
-      margin: 8px 16px 0 16px;
+      border:1px solid rgba(255,107,107,.22);
+      margin: 8px 12px 0 12px;
       align-self:center;
       width: 100%;
-      max-width: 820px;
+      max-width: 860px;
+    }
+
+    @media (max-width: 768px){
+      aside{
+        width: 88vw;
+        max-width: 320px;
+      }
+
+      header{
+        padding: 12px;
+      }
+
+      .message-row{
+        padding: 0 10px;
+      }
+
+      .message-content{
+        gap:8px;
+      }
+
+      .avatar{
+        width:32px;
+        height:32px;
+        border-radius: 12px;
+      }
+
+      .bubble{
+        padding: 10px 12px;
+        border-radius: 16px;
+      }
+
+      .text{
+        font-size: .96rem;
+        line-height: 1.55;
+      }
+
+      .input-container{
+        border-radius: 18px;
+        padding: 9px 9px 9px 12px;
+      }
+
+      textarea{
+        font-size: .98rem;
+      }
+
+      .send-btn{
+        width: 42px;
+        height: 42px;
+        border-radius: 14px;
+      }
+
+      .history-item{
+        padding: 11px 12px;
+      }
+
+      .auth-card, .settings-card{
+        border-radius: 22px;
+        padding: 18px 14px;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- Auth Modal -->
   <div id="auth-modal" aria-modal="true" role="dialog">
     <div class="auth-card">
       <h2 id="authTitle">Sign in</h2>
-
       <div class="settings-row" style="border-radius:12px; padding:8px 10px;">
         <span style="color:var(--text-sub); font-weight:800;">Mode</span>
         <div class="segmented" role="tablist" aria-label="Auth selector" style="margin-left:auto;">
@@ -677,38 +738,27 @@
           <button type="button" id="mode-signup" onclick="setAuthMode('signup')">Sign up</button>
         </div>
       </div>
-
       <input type="email" id="email" placeholder="Email" autocomplete="email" />
       <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
-
       <input type="text" id="username" placeholder="Username (for new accounts)" style="display:none;" />
-
-      <button id="authActionBtn" type="button" onclick="handleAuth()">
-        Continue
-      </button>
-      <div id="authHint" class="sub" style="color:var(--text-sub); font-size:.9rem; text-align:center;">
-        Your Friend will use Supabase auth.
-      </div>
+      <button id="authActionBtn" type="button" onclick="handleAuth()">Continue</button>
+      <div id="authHint" class="sub" style="color:var(--text-sub); font-size:.9rem; text-align:center;">Your Friend will use Supabase auth.</div>
     </div>
   </div>
 
-  <!-- Settings Modal -->
   <div id="settings-modal" aria-modal="true" role="dialog">
     <div class="settings-card">
       <h2 style="font-size:1.2rem; letter-spacing:.2px; position:relative;">Settings</h2>
-
       <div class="settings-row" style="text-align:left;">
         <div>
           <div class="label">Theme</div>
-          <div class="sub">Choose Light, Dark, or follow System</div>
+          <div class="sub">Choose Light or Dark</div>
         </div>
         <div class="segmented" role="tablist" aria-label="Theme selector">
-          <button type="button" id="theme-system" class="active" onclick="setTheme('system')">System</button>
-          <button type="button" id="theme-light" onclick="setTheme('light')">Light</button>
+          <button type="button" id="theme-light" class="active" onclick="setTheme('light')">Light</button>
           <button type="button" id="theme-dark" onclick="setTheme('dark')">Dark</button>
         </div>
       </div>
-
       <button type="button" onclick="closeSettings()" style="width:100%;">Done</button>
     </div>
   </div>
@@ -722,13 +772,10 @@
         <span class="name">Your Friend</span>
       </div>
     </div>
-
     <button class="new-chat-btn" onclick="createNewChat()">
       <span>+</span> New Chat
     </button>
-
     <div class="history-list" id="historyList"></div>
-
     <div class="user-profile">
       <div class="user-left">
         <div class="user-avatar" aria-hidden="true">U</div>
@@ -745,7 +792,6 @@
         <span class="spark"></span>
         <span>Your Friend</span>
       </div>
-
       <div class="header-actions">
         <button class="icon-btn" title="Settings" onclick="openSettings()">⚙️</button>
       </div>
@@ -764,27 +810,17 @@
   <script>
     const SUPABASE_URL = "https://mxhmcapcmeatnmwiwnri.supabase.co";
     const SUPABASE_KEY = "sb_publishable_zAZ8LWIFxUX8cF0H6Gy9uw_H0Yc0BgD";
-
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true
-      }
-    });
-
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
     const PROXY_URL = 'https://groq-proxy.mr-hackerdon808.workers.dev/api/chat';
 
     let currentUser = null;
     let currentUserId = null;
     let currentSessionId = null;
     let userSessions = {};
-
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     const authModal = document.getElementById('auth-modal');
     const settingsModal = document.getElementById('settings-modal');
-    const themeSystemBtn = document.getElementById('theme-system');
     const themeLightBtn = document.getElementById('theme-light');
     const themeDarkBtn = document.getElementById('theme-dark');
     const usernameInput = document.getElementById('username');
@@ -800,7 +836,7 @@
     const modeSignupBtn = document.getElementById('mode-signup');
 
     let authMode = 'login';
-    const THEME_DEFAULT = 'system';
+    const THEME_DEFAULT = 'dark';
     const DEFAULT_SYSTEM_PROMPT = 'You are a helpful, warm, and smart companion named Your Friend.';
     let sendInFlight = false;
 
@@ -812,114 +848,33 @@
       if (err.details) return err.details;
       if (err.msg) return err.msg;
       if (err.statusText) return err.statusText;
-      try {
-        return JSON.stringify(err);
-      } catch {
-        return String(err);
-      }
+      try { return JSON.stringify(err); } catch { return String(err); }
     }
 
-    function setAuthModalVisible(visible) {
-      authModal.style.display = visible ? 'flex' : 'none';
-    }
-
-    function clearChatUI() {
-      chatContainer.innerHTML = '';
-      historyList.innerHTML = '';
-    }
-
-    function resetStateForLogout() {
-      currentUser = null;
-      currentUserId = null;
-      currentSessionId = null;
-      userSessions = {};
-    }
-
-    function isAuthMissingError(err) {
-      const msg = getErrorMessage(err);
-      const name = (err && err.name) ? String(err.name) : '';
-      return (
-        msg.toLowerCase().includes('auth session missing') ||
-        msg.toLowerCase().includes('session') && msg.toLowerCase().includes('missing') ||
-        name.toLowerCase().includes('authsessionmissingerror')
-      );
-    }
-
-    function isRlsOrAuthDenied(err) {
-      const status = err && err.status;
-      const msg = getErrorMessage(err);
-      const code = err && err.code ? String(err.code) : '';
-      return (
-        status === 401 ||
-        status === 403 ||
-        msg.includes('JWT') ||
-        msg.toLowerCase().includes('rls') ||
-        msg.toLowerCase().includes('permission denied') ||
-        msg.toLowerCase().includes('not authorized') ||
-        code === '42501'
-      );
-    }
-
-    async function getValidSession() {
-      try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        return session;
-      } catch (e) {
-        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) return null;
-        throw e;
-      }
-    }
+    function setAuthModalVisible(visible) { authModal.style.display = visible ? 'flex' : 'none'; }
+    function clearChatUI() { chatContainer.innerHTML = ''; historyList.innerHTML = ''; }
+    function resetStateForLogout() { currentUser = null; currentUserId = null; currentSessionId = null; userSessions = {}; }
+    function isAuthMissingError(err) { const msg = getErrorMessage(err); const name = (err && err.name) ? String(err.name) : ''; return (msg.toLowerCase().includes('auth session missing') || msg.toLowerCase().includes('session') && msg.toLowerCase().includes('missing') || name.toLowerCase().includes('authsessionmissingerror')); }
+    function isRlsOrAuthDenied(err) { const status = err && err.status; const msg = getErrorMessage(err); const code = err && err.code ? String(err.code) : ''; return (status === 401 || status === 403 || msg.includes('JWT') || msg.toLowerCase().includes('rls') || msg.toLowerCase().includes('permission denied') || msg.toLowerCase().includes('not authorized') || code === '42501'); }
+    async function getValidSession() { try { const { data: { session } } = await supabaseClient.auth.getSession(); return session; } catch (e) { if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) return null; throw e; } }
 
     window.onload = async () => {
       setTheme(THEME_DEFAULT, true);
-
       supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-        if (!session || !session.user) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthModalVisible(true);
-          return;
-        }
-
-        try {
-          await hydrateUserAndLoadChats(session.user);
-        } catch (e) {
-          console.error('Auth listener hydrate error:', e);
-          resetStateForLogout();
-          clearChatUI();
-          setAuthModalVisible(true);
-        }
+        if (!session || !session.user) { resetStateForLogout(); clearChatUI(); setAuthModalVisible(true); return; }
+        try { await hydrateUserAndLoadChats(session.user); } catch (e) { console.error('Auth listener hydrate error:', e); resetStateForLogout(); clearChatUI(); setAuthModalVisible(true); }
       });
-
       try {
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession();
-
-        if (!session) {
-          setAuthModalVisible(true);
-          setAuthMode('login');
-          resetStateForLogout();
-          clearChatUI();
-          return;
-        }
-
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) { setAuthModalVisible(true); setAuthMode('login'); resetStateForLogout(); clearChatUI(); return; }
         await hydrateUserAndLoadChats(session.user);
-      } catch (err) {
-        console.error('Init error:', err);
-        setAuthMode('login');
-        resetStateForLogout();
-        clearChatUI();
-        setAuthModalVisible(true);
-      }
+      } catch (err) { console.error('Init error:', err); setAuthMode('login'); resetStateForLogout(); clearChatUI(); setAuthModalVisible(true); }
     };
 
     function setTheme(theme, silent = false){
       const root = document.documentElement;
-      const mode = (theme === 'light' || theme === 'dark' || theme === 'system') ? theme : 'system';
+      const mode = theme === 'light' || theme === 'dark' ? theme : 'dark';
       root.setAttribute('data-theme', mode);
-
-      themeSystemBtn.classList.toggle('active', mode === 'system');
       themeLightBtn.classList.toggle('active', mode === 'light');
       themeDarkBtn.classList.toggle('active', mode === 'dark');
       void silent;
@@ -927,331 +882,26 @@
 
     function openSettings(){ settingsModal.style.display = 'flex'; }
     function closeSettings(){ settingsModal.style.display = 'none'; }
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape'){ settingsModal.style.display = 'none'; authModal.style.display = 'none'; } });
+    settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
+    function toggleSidebar() { const isOpen = sidebar.classList.contains('open'); if (isOpen) { sidebar.classList.remove('open'); overlay.style.display = 'none'; } else { sidebar.classList.add('open'); overlay.style.display = 'block'; } }
+    function setAuthMode(mode){ authMode = mode; const isLogin = mode === 'login'; modeLoginBtn.classList.toggle('active', isLogin); modeSignupBtn.classList.toggle('active', !isLogin); authTitle.innerText = isLogin ? 'Sign in' : 'Create account'; authActionBtn.innerText = isLogin ? 'Sign in' : 'Create account'; usernameInput.style.display = isLogin ? 'none' : 'block'; }
 
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape'){
-        settingsModal.style.display = 'none';
-        authModal.style.display = 'none';
-      }
-    });
+    async function signUp(email, password, username) { try { const { data, error } = await supabaseClient.auth.signUp({ email, password }); if (error) { alert(getErrorMessage(error)); return; } const userId = data?.user?.id; if (!userId) { alert("Sign up succeeded, but user id was not returned."); return; } const { error: insertErr } = await supabaseClient.from("profiles").upsert({ id: userId, username: username }, { onConflict: 'id' }); if (insertErr) console.warn('Profile upsert error:', getErrorMessage(insertErr)); alert("Account created successfully!"); const { data: { session } } = await supabaseClient.auth.getSession(); if (session?.user) { await hydrateUserAndLoadChats(session.user); setAuthModalVisible(false); } else { setAuthMode('login'); setAuthModalVisible(true); } } catch (err) { console.error('Sign up error:', err); alert('Sign up failed. Please try again.'); } }
+    async function login(email, password) { try { const { error } = await supabaseClient.auth.signInWithPassword({ email, password }); if (error) { alert(getErrorMessage(error)); return; } const { data: { session } } = await supabaseClient.auth.getSession(); if (!session?.user) { setAuthMode('login'); setAuthModalVisible(true); return; } await hydrateUserAndLoadChats(session.user); setAuthModalVisible(false); } catch (err) { console.error('Login error:', err); alert('Login failed. Please try again.'); } }
+    async function handleAuth() { const email = (emailInput.value || '').trim(); const password = (passwordInput.value || '').trim(); const username = (usernameInput.value || '').trim(); if (!email) return alert("Please enter your email."); if (!password) return alert("Please enter your password."); if (authMode === 'signup') { if (!username) return alert("Please enter your username."); await signUp(email, password, username); } else { await login(email, password); } }
+    async function logout() { try { await supabaseClient.auth.signOut(); } catch (e) { console.warn('Sign out error:', e); } finally { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); } }
 
-    settingsModal.addEventListener('click', (e) => {
-      if (e.target === settingsModal) closeSettings();
-    });
+    function randomSessionId() { if (crypto?.randomUUID) return crypto.randomUUID(); return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random() * 16 | 0; const v = c === 'x' ? r : (r & 0x3 | 0x8); return v.toString(16); }); }
+    function formatMaybeDateMs(dateVal){ if (!dateVal) return 0; try{ const t = new Date(dateVal).getTime(); return Number.isFinite(t) ? t : 0; }catch{ return 0; } }
+    function getChatTitleFromMessages(messages){ const firstUser = (messages || []).find(m => m.role === 'user' && (m.content || '').trim()); if (!firstUser) return 'New Chat'; const t = (firstUser.content || '').trim(); return t.length > 22 ? t.substring(0, 22) + '...' : t; }
+    function appendErrorUI(text) { const existing = chatContainer.querySelector('.error-message'); if (existing) existing.remove(); const div = document.createElement('div'); div.className = 'error-message'; div.innerText = text; chatContainer.appendChild(div); chatContainer.scrollTop = chatContainer.scrollHeight; }
 
-    function toggleSidebar() {
-      const isOpen = sidebar.classList.contains('open');
-      if (isOpen) {
-        sidebar.classList.remove('open');
-        overlay.style.display = 'none';
-      } else {
-        sidebar.classList.add('open');
-        overlay.style.display = 'block';
-      }
-    }
+    async function ensureProfileForUser(user) { const userId = user?.id; if (!userId) return; const unameFallback = user.email?.split('@')[0] || 'User'; try { const { data: profile, error } = await supabaseClient.from('profiles').select('username').eq('id', userId).maybeSingle(); if (error) console.warn('Profile select error:', getErrorMessage(error)); if (!profile) { const toInsert = { id: userId, username: unameFallback }; const { error: upsertErr } = await supabaseClient.from('profiles').upsert(toInsert, { onConflict: 'id' }); if (upsertErr) console.warn('Profile upsert error:', getErrorMessage(upsertErr)); } return profile || { username: unameFallback }; } catch (err) { console.warn('ensureProfileForUser error:', err); return { username: unameFallback }; } }
+    async function hydrateUserAndLoadChats(user) { if (!user?.id) return; currentUserId = user.id; currentUser = null; try { const { data: { session } } = await supabaseClient.auth.getSession(); if (!session?.user) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return; } } catch (e) { if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return; } } const profile = await ensureProfileForUser(user); const uname = profile?.username || user.email?.split('@')[0] || 'User'; currentUser = uname; document.getElementById('userDisplay').innerText = currentUser; setAuthModalVisible(false); await loadAllChatsFromSupabase(); if (!Object.keys(userSessions).length) { createNewChat(true); } else { const sessionIds = Object.keys(userSessions).sort((a, b) => { const ta = Number(userSessions[a]?.lastCreatedAtMs || 0); const tb = Number(userSessions[b]?.lastCreatedAtMs || 0); return tb - ta; }); currentSessionId = sessionIds[0] || null; renderHistorySidebar(); renderActiveChat(); } }
+    async function loadAllChatsFromSupabase() { userSessions = {}; currentSessionId = null; try { const { data: rows, error } = await supabaseClient.from('chats').select('*').eq('user_id', currentUserId).order('created_at', { ascending: true }); if (error) throw error; if (!rows) return; for (const row of rows) { const sessionId = row.session_id; if (!sessionId) continue; if (!userSessions[sessionId]) { userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: formatMaybeDateMs(row.created_at), lastCreatedAtMs: formatMaybeDateMs(row.created_at) }; } const createdAtMs = formatMaybeDateMs(row.created_at); userSessions[sessionId].lastCreatedAtMs = Math.max(userSessions[sessionId].lastCreatedAtMs || 0, createdAtMs); const exists = userSessions[sessionId].messages.some(m => m.role === row.role && m.content === row.message && Number(m.createdAtMs) === createdAtMs); if (exists) continue; if (row.role === 'system') { userSessions[sessionId].messages.push({ role: 'system', content: row.message, createdAtMs }); } else if (row.role === 'user') { userSessions[sessionId].messages.push({ role: 'user', content: row.message, createdAtMs }); if (userSessions[sessionId].title === 'Chat') { userSessions[sessionId].title = getChatTitleFromMessages(userSessions[sessionId].messages); } } else if (row.role === 'assistant') { userSessions[sessionId].messages.push({ role: 'assistant', content: row.message, createdAtMs }); } else { userSessions[sessionId].messages.push({ role: row.role, content: row.message, createdAtMs }); } } for (const sid of Object.keys(userSessions)) { userSessions[sid].title = getChatTitleFromMessages(userSessions[sid].messages); } } catch (err) { console.error('Load chats error:', err); if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return; } appendErrorUI('❌ Failed to load your chat history. Please try again.'); userSessions = {}; } }
 
-    function setAuthMode(mode){
-      authMode = mode;
-
-      const isLogin = mode === 'login';
-      modeLoginBtn.classList.toggle('active', isLogin);
-      modeSignupBtn.classList.toggle('active', !isLogin);
-
-      authTitle.innerText = isLogin ? 'Sign in' : 'Create account';
-      authActionBtn.innerText = isLogin ? 'Sign in' : 'Create account';
-
-      usernameInput.style.display = isLogin ? 'none' : 'block';
-    }
-
-    async function signUp(email, password, username) {
-      try {
-        const { data, error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) { alert(getErrorMessage(error)); return; }
-
-        const userId = data?.user?.id;
-        if (!userId) { alert("Sign up succeeded, but user id was not returned."); return; }
-
-        const { error: insertErr } = await supabaseClient
-          .from("profiles")
-          .upsert({ id: userId, username: username }, { onConflict: 'id' });
-
-        if (insertErr) console.warn('Profile upsert error:', getErrorMessage(insertErr));
-
-        alert("Account created successfully!");
-
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession();
-
-        if (session?.user) {
-          await hydrateUserAndLoadChats(session.user);
-          setAuthModalVisible(false);
-        } else {
-          setAuthMode('login');
-          setAuthModalVisible(true);
-        }
-      } catch (err) {
-        console.error('Sign up error:', err);
-        alert('Sign up failed. Please try again.');
-      }
-    }
-
-    async function login(email, password) {
-      try {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) { alert(getErrorMessage(error)); return; }
-
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession();
-
-        if (!session?.user) {
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return;
-        }
-
-        await hydrateUserAndLoadChats(session.user);
-        setAuthModalVisible(false);
-      } catch (err) {
-        console.error('Login error:', err);
-        alert('Login failed. Please try again.');
-      }
-    }
-
-    async function handleAuth() {
-      const email = (emailInput.value || '').trim();
-      const password = (passwordInput.value || '').trim();
-      const username = (usernameInput.value || '').trim();
-
-      if (!email) return alert("Please enter your email.");
-      if (!password) return alert("Please enter your password.");
-
-      if (authMode === 'signup') {
-        if (!username) return alert("Please enter your username.");
-        await signUp(email, password, username);
-      } else {
-        await login(email, password);
-      }
-    }
-
-    async function logout() {
-      try {
-        await supabaseClient.auth.signOut();
-      } catch (e) {
-        console.warn('Sign out error:', e);
-      } finally {
-        resetStateForLogout();
-        clearChatUI();
-        setAuthMode('login');
-        setAuthModalVisible(true);
-      }
-    }
-
-    function randomSessionId() {
-      if (crypto?.randomUUID) return crypto.randomUUID();
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    }
-
-    function formatMaybeDateMs(dateVal){
-      if (!dateVal) return 0;
-      try{
-        const t = new Date(dateVal).getTime();
-        return Number.isFinite(t) ? t : 0;
-      }catch{
-        return 0;
-      }
-    }
-
-    function getChatTitleFromMessages(messages){
-      const firstUser = (messages || []).find(m => m.role === 'user' && (m.content || '').trim());
-      if (!firstUser) return 'New Chat';
-      const t = (firstUser.content || '').trim();
-      return t.length > 22 ? t.substring(0, 22) + '...' : t;
-    }
-
-    function appendErrorUI(text) {
-      const existing = chatContainer.querySelector('.error-message');
-      if (existing) existing.remove();
-
-      const div = document.createElement('div');
-      div.className = 'error-message';
-      div.innerText = text;
-      chatContainer.appendChild(div);
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    async function ensureProfileForUser(user) {
-      const userId = user?.id;
-      if (!userId) return;
-
-      const unameFallback = user.email?.split('@')[0] || 'User';
-
-      try {
-        const { data: profile, error } = await supabaseClient
-          .from('profiles')
-          .select('username')
-          .eq('id', userId)
-          .maybeSingle();
-
-        if (error) console.warn('Profile select error:', getErrorMessage(error));
-
-        if (!profile) {
-          const toInsert = { id: userId, username: unameFallback };
-          const { error: upsertErr } = await supabaseClient
-            .from('profiles')
-            .upsert(toInsert, { onConflict: 'id' });
-
-          if (upsertErr) console.warn('Profile upsert error:', getErrorMessage(upsertErr));
-        }
-
-        return profile || { username: unameFallback };
-      } catch (err) {
-        console.warn('ensureProfileForUser error:', err);
-        return { username: unameFallback };
-      }
-    }
-
-    async function hydrateUserAndLoadChats(user) {
-      if (!user?.id) return;
-
-      currentUserId = user.id;
-      currentUser = null;
-
-      try {
-        const {
-          data: { session }
-        } = await supabaseClient.auth.getSession();
-        if (!session?.user) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return;
-        }
-      } catch (e) {
-        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return;
-        }
-      }
-
-      const profile = await ensureProfileForUser(user);
-
-      const uname = profile?.username || user.email?.split('@')[0] || 'User';
-      currentUser = uname;
-      document.getElementById('userDisplay').innerText = currentUser;
-      setAuthModalVisible(false);
-
-      await loadAllChatsFromSupabase();
-
-      if (!Object.keys(userSessions).length) {
-        createNewChat(true);
-      } else {
-        const sessionIds = Object.keys(userSessions).sort((a, b) => {
-          const ta = Number(userSessions[a]?.lastCreatedAtMs || 0);
-          const tb = Number(userSessions[b]?.lastCreatedAtMs || 0);
-          return tb - ta;
-        });
-        currentSessionId = sessionIds[0] || null;
-        renderHistorySidebar();
-        renderActiveChat();
-      }
-    }
-
-    async function loadAllChatsFromSupabase() {
-      userSessions = {};
-      currentSessionId = null;
-
-      try {
-        const { data: rows, error } = await supabaseClient
-          .from('chats')
-          .select('*')
-          .eq('user_id', currentUserId)
-          .order('created_at', { ascending: true });
-
-        if (error) throw error;
-        if (!rows) return;
-
-        for (const row of rows) {
-          const sessionId = row.session_id;
-          if (!sessionId) continue;
-
-          if (!userSessions[sessionId]) {
-            userSessions[sessionId] = {
-              title: 'Chat',
-              messages: [],
-              createdAtMs: formatMaybeDateMs(row.created_at),
-              lastCreatedAtMs: formatMaybeDateMs(row.created_at)
-            };
-          }
-
-          const createdAtMs = formatMaybeDateMs(row.created_at);
-          userSessions[sessionId].lastCreatedAtMs = Math.max(userSessions[sessionId].lastCreatedAtMs || 0, createdAtMs);
-
-          const exists = userSessions[sessionId].messages.some(m =>
-            m.role === row.role &&
-            m.content === row.message &&
-            Number(m.createdAtMs) === createdAtMs
-          );
-          if (exists) continue;
-
-          if (row.role === 'system') {
-            userSessions[sessionId].messages.push({ role: 'system', content: row.message, createdAtMs });
-          } else if (row.role === 'user') {
-            userSessions[sessionId].messages.push({ role: 'user', content: row.message, createdAtMs });
-            if (userSessions[sessionId].title === 'Chat') {
-              userSessions[sessionId].title = getChatTitleFromMessages(userSessions[sessionId].messages);
-            }
-          } else if (row.role === 'assistant') {
-            userSessions[sessionId].messages.push({ role: 'assistant', content: row.message, createdAtMs });
-          } else {
-            userSessions[sessionId].messages.push({ role: row.role, content: row.message, createdAtMs });
-          }
-        }
-
-        for (const sid of Object.keys(userSessions)) {
-          userSessions[sid].title = getChatTitleFromMessages(userSessions[sid].messages);
-        }
-      } catch (err) {
-        console.error('Load chats error:', err);
-
-        if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return;
-        }
-
-        appendErrorUI('❌ Failed to load your chat history. Please try again.');
-        userSessions = {};
-      }
-    }
-
-    function createNewChat(silent = false) {
-      currentSessionId = randomSessionId();
-
-      userSessions[currentSessionId] = {
-        title: 'New Chat',
-        messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }],
-        createdAtMs: Date.now(),
-        lastCreatedAtMs: Date.now()
-      };
-
-      if (!silent) {
-        renderHistorySidebar();
-        renderActiveChat();
-        if (window.innerWidth < 768) toggleSidebar();
-      }
-    }
+    function createNewChat(silent = false) { currentSessionId = randomSessionId(); userSessions[currentSessionId] = { title: 'New Chat', messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }], createdAtMs: Date.now(), lastCreatedAtMs: Date.now() }; if (!silent) { renderHistorySidebar(); renderActiveChat(); if (window.innerWidth < 768) toggleSidebar(); } }
 
     function renderHistorySidebar() {
       historyList.innerHTML = '';
@@ -1263,6 +913,10 @@
       });
 
       if (!sessionIds.length) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.cssText = 'text-align:center;color:var(--text-sub);padding:20px;font-size:.9rem;';
+        emptyDiv.innerText = 'No chats yet. Start a new conversation!';
+        historyList.appendChild(emptyDiv);
         return;
       }
 
@@ -1270,6 +924,7 @@
         const session = userSessions[id];
         const item = document.createElement('div');
         item.className = `history-item ${id === currentSessionId ? 'active' : ''}`;
+        item.style.position = 'relative';
 
         const title = session?.title ?? 'Chat';
         const userCount = (session?.messages || []).filter(m => m.role === 'user').length;
@@ -1279,429 +934,117 @@
         left.style.overflow = 'hidden';
         left.style.textOverflow = 'ellipsis';
         left.style.whiteSpace = 'nowrap';
+        left.style.flex = '1';
         left.innerText = title;
+
+        const right = document.createElement('div');
+        right.style.display = 'flex';
+        right.style.alignItems = 'center';
+        right.style.gap = '8px';
+        right.style.flexShrink = '0';
 
         const pill = document.createElement('span');
         pill.className = 'history-pill';
         pill.innerText = userCount ? `${userCount} msg` : 'Empty';
 
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '×';
+        deleteBtn.style.cssText = `
+          background: transparent;
+          border: none;
+          color: var(--text-sub);
+          font-size: 1.2rem;
+          cursor: pointer;
+          padding: 4px 6px;
+          border-radius: 6px;
+          transition: all 0.2s ease;
+          line-height: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 24px;
+          height: 24px;
+        `;
+        deleteBtn.onmouseover = () => {
+          deleteBtn.style.background = 'rgba(255,107,107,0.15)';
+          deleteBtn.style.color = 'var(--danger)';
+        };
+        deleteBtn.onmouseout = () => {
+          deleteBtn.style.background = 'transparent';
+          deleteBtn.style.color = 'var(--text-sub)';
+        };
+        deleteBtn.onclick = (e) => {
+          e.stopPropagation();
+          deleteChat(id);
+        };
+
+        right.appendChild(pill);
+        right.appendChild(deleteBtn);
         item.appendChild(left);
-        item.appendChild(pill);
+        item.appendChild(right);
 
         item.onclick = () => switchSession(id);
         historyList.appendChild(item);
       });
     }
 
-    async function switchSession(id) {
-      currentSessionId = id;
-      await loadSessionMessagesFromSupabase(id);
-      renderHistorySidebar();
-      renderActiveChat();
-      if (window.innerWidth < 768) toggleSidebar();
-    }
-
-    async function loadSessionMessagesFromSupabase(sessionId) {
-      if (!currentUserId) return;
+    async function deleteChat(sessionId) {
+      if (!sessionId) return;
+      const session = userSessions[sessionId];
+      const title = session?.title || 'Chat';
+      if (!confirm(`Delete "${title}"? This action cannot be undone.`)) return;
 
       try {
-        const { data: rows, error } = await supabaseClient
+        const { error } = await supabaseClient
           .from('chats')
-          .select('*')
+          .delete()
           .eq('user_id', currentUserId)
-          .eq('session_id', sessionId)
-          .order('created_at', { ascending: true });
+          .eq('session_id', sessionId);
 
-        if (error) throw error;
-
-        if (!rows || rows.length === 0) {
-          if (!userSessions[sessionId]) {
-            userSessions[sessionId] = {
-              title: 'New Chat',
-              messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }],
-              createdAtMs: Date.now(),
-              lastCreatedAtMs: Date.now()
-            };
-          } else if (!userSessions[sessionId].messages || !userSessions[sessionId].messages.length) {
-            userSessions[sessionId].messages = [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }];
-          }
-
-          userSessions[sessionId].title = getChatTitleFromMessages(userSessions[sessionId].messages);
+        if (error) {
+          console.error('Delete error:', error);
+          alert('Failed to delete chat. Please try again.');
           return;
         }
 
-        const createdAtMs = formatMaybeDateMs(rows[0].created_at);
-        const lastCreatedAtMs = formatMaybeDateMs(rows[rows.length - 1].created_at);
+        delete userSessions[sessionId];
 
-        const messages = [];
-        const seen = new Set();
-
-        for (const row of rows) {
-          const created = formatMaybeDateMs(row.created_at);
-          const key = `${row.role}|${row.message}|${created}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          messages.push({ role: row.role, content: row.message, createdAtMs: created });
-        }
-
-        if (!userSessions[sessionId]) userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: createdAtMs, lastCreatedAtMs: lastCreatedAtMs };
-        userSessions[sessionId].createdAtMs = createdAtMs || userSessions[sessionId].createdAtMs || Date.now();
-        userSessions[sessionId].lastCreatedAtMs = lastCreatedAtMs || userSessions[sessionId].lastCreatedAtMs || Date.now();
-        userSessions[sessionId].messages = messages;
-        userSessions[sessionId].title = getChatTitleFromMessages(messages);
-      } catch (err) {
-        console.error('Load session error:', err);
-
-        if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return;
-        }
-
-        appendErrorUI('❌ Failed to load this conversation. Please try again.');
-      }
-    }
-
-    function renderActiveChat() {
-      chatContainer.innerHTML = '';
-      const session = userSessions[currentSessionId];
-      if (!session) return;
-
-      session.messages.forEach((msg) => {
-        if (msg.role !== 'system') appendMessageUI(msg.role === 'user' ? 'user' : 'ai', msg.content, false);
-      });
-
-      chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    function appendMessageUI(role, text, doScroll = true) {
-      const row = document.createElement('div');
-      row.className = `message-row ${role}`;
-
-      const content = document.createElement('div');
-      content.className = 'message-content';
-
-      const avatar = document.createElement('div');
-      avatar.className = 'avatar';
-      avatar.innerText = role === 'user' ? 'You' : 'YF';
-
-      const bubble = document.createElement('div');
-      bubble.className = 'bubble';
-
-      const textDiv = document.createElement('div');
-      textDiv.className = 'text';
-
-      if (text && text.trim() === '__TYPING__') {
-        const typing = document.createElement('div');
-        typing.className = 'typing';
-        typing.innerHTML = '<span></span><span></span><span></span>';
-        textDiv.appendChild(typing);
-      } else {
-        textDiv.innerText = text;
-      }
-
-      bubble.appendChild(textDiv);
-      content.appendChild(avatar);
-      content.appendChild(bubble);
-      row.appendChild(content);
-
-      chatContainer.appendChild(row);
-      if (doScroll) chatContainer.scrollTop = chatContainer.scrollHeight;
-
-      return textDiv;
-    }
-
-    function autoResize(textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = textarea.scrollHeight + 'px';
-    }
-
-    async function sendMessage() {
-      const text = userInput.value.trim();
-      if (!text || !currentSessionId) return;
-      if (sendInFlight) return;
-
-      sendInFlight = true;
-      sendBtn.disabled = true;
-
-      let aiTextNode = null;
-
-      try {
-        // Check session with mobile-friendly method
-        const session = await getValidSession();
-        
-        if (!session?.user) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          sendBtn.disabled = false;
-          sendInFlight = false;
-          return;
-        }
-
-        currentUserId = session.user.id;
-
-        const currentSession = userSessions[currentSessionId];
-        if (!currentSession) {
-          createNewChat(true);
-          return;
-        }
-
-        if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') {
-          currentSession.title = text.length > 22 ? text.substring(0, 22) + '...' : text;
-        }
-
-        appendMessageUI('user', text);
-        userInput.value = '';
-        userInput.style.height = 'auto';
-
-        // Save user message to DB with detailed error logging
-        try {
-          const userMessageData = {
-            session_id: currentSessionId,
-            user_id: currentUserId,
-            role: 'user',
-            message: text,
-            created_at: new Date().toISOString()
-          };
-          
-          console.log('Saving user message:', userMessageData);
-          
-          const { error: userError } = await supabaseClient
-            .from('chats')
-            .insert(userMessageData);
-
-          if (userError) {
-            console.error('User message save error - Full error:', userError);
-            console.error('Error message:', userError.message);
-            console.error('Error details:', userError.details);
-            console.error('Error hint:', userError.hint);
-            console.error('Error code:', userError.code);
-            
-            const errorMsg = userError.message || userError.details || 'Failed to save message';
-            appendErrorUI('⚠️ ' + errorMsg);
+        if (currentSessionId === sessionId) {
+          const sessionIds = Object.keys(userSessions);
+          if (sessionIds.length > 0) {
+            const sortedIds = sessionIds.sort((a, b) => {
+              const ta = Number(userSessions[a]?.lastCreatedAtMs || 0);
+              const tb = Number(userSessions[b]?.lastCreatedAtMs || 0);
+              return tb - ta;
+            });
+            currentSessionId = sortedIds[0];
+            await loadSessionMessagesFromSupabase(currentSessionId);
           } else {
-            console.log('User message saved successfully');
+            createNewChat(true);
           }
-        } catch (dbErr) {
-          console.error('DB save exception:', dbErr);
-          console.error('Exception type:', typeof dbErr);
-          console.error('Exception message:', dbErr.message);
-          console.error('Exception stack:', dbErr.stack);
-          
-          const errorMsg = dbErr?.message || dbErr?.details || 'Database error occurred';
-          appendErrorUI('⚠️ ' + errorMsg);
         }
 
-        currentSession.messages.push({
-          role: 'user',
-          content: text,
-          createdAtMs: Date.now()
-        });
-
-        aiTextNode = appendMessageUI('ai', '__TYPING__');
-
-        // Get AI response
-        console.log('Calling AI proxy...');
-        
-        const aiMessages = currentSession.messages
-          .filter(m => m.role !== 'system')
-          .map(m => ({ role: m.role, content: m.content }));
-
-        console.log('AI Messages:', aiMessages);
-
-        try {
-          const response = await fetch(PROXY_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              messages: aiMessages,
-              model: "llama-3.3-70b-versatile",
-              temperature: 0.7,
-              max_tokens: 1024
-            })
-          });
-
-          console.log('AI Response status:', response.status);
-
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error('AI Error response:', errorText);
-            let errorMsg;
-            try {
-              const errorJson = JSON.parse(errorText);
-              errorMsg = errorJson?.error || errorJson?.message || `HTTP ${response.status}`;
-            } catch {
-              errorMsg = errorText || `HTTP ${response.status}`;
-            }
-            throw new Error(errorMsg);
-          }
-
-          const data = await response.json();
-          console.log('AI Response data:', data);
-
-          const reply = data?.choices?.[0]?.message?.content;
-          if (!reply) {
-            throw new Error('AI response missing content: ' + JSON.stringify(data));
-          }
-
-          // Save AI response
-          try {
-            const assistantMessageData = {
-              session_id: currentSessionId,
-              user_id: currentUserId,
-              role: 'assistant',
-              message: reply,
-              created_at: new Date().toISOString()
-            };
-            
-            console.log('Saving assistant message:', assistantMessageData);
-            
-            const { error: assistantError } = await supabaseClient
-              .from('chats')
-              .insert(assistantMessageData);
-
-            if (assistantError) {
-              console.error('Assistant save error:', assistantError);
-              const errorMsg = assistantError.message || assistantError.details || 'Failed to save AI response';
-              appendErrorUI('⚠️ ' + errorMsg);
-            } else {
-              console.log('Assistant message saved successfully');
-            }
-          } catch (dbErr) {
-            console.error('DB save exception:', dbErr);
-            const errorMsg = dbErr?.message || dbErr?.details || 'Database error';
-            appendErrorUI('⚠️ ' + errorMsg);
-          }
-
-          currentSession.messages.push({
-            role: 'assistant',
-            content: reply,
-            createdAtMs: Date.now()
-          });
-          currentSession.lastCreatedAtMs = Date.now();
-
-          if (aiTextNode) {
-            aiTextNode.innerText = reply;
-          }
-          renderHistorySidebar();
-          chatContainer.scrollTop = chatContainer.scrollHeight;
-
-        } catch (fetchError) {
-          console.error('Fetch/AI error:', fetchError);
-          throw fetchError;
-        }
-
+        renderHistorySidebar();
+        renderActiveChat();
+        appendErrorUI(`✅ Chat "${title}" deleted successfully`);
       } catch (err) {
-        console.error('Send message error:', err);
-        console.error('Error type:', typeof err);
-        console.error('Error constructor:', err.constructor.name);
-        
-        let errorMsg = 'Unknown error occurred';
-        
-        if (err instanceof Error) {
-          errorMsg = err.message;
-        } else if (typeof err === 'string') {
-          errorMsg = err;
-        } else if (err.message) {
-          errorMsg = err.message;
-        } else if (err.error) {
-          errorMsg = typeof err.error === 'string' ? err.error : JSON.stringify(err.error);
-        } else if (err.details) {
-          errorMsg = err.details;
-        } else {
-          try {
-            errorMsg = JSON.stringify(err);
-          } catch {
-            errorMsg = String(err);
-          }
-        }
-
-        if (errorMsg.toLowerCase().includes('jwt') || 
-            errorMsg.toLowerCase().includes('auth') || 
-            errorMsg.toLowerCase().includes('session') ||
-            errorMsg.toLowerCase().includes('unauthorized') ||
-            errorMsg.toLowerCase().includes('401') ||
-            errorMsg.toLowerCase().includes('403')) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return;
-        }
-
-        if (aiTextNode) {
-          aiTextNode.innerText = '❌ Error: ' + errorMsg;
-          aiTextNode.style.color = '#ff6b6b';
-        } else {
-          appendErrorUI('❌ ' + errorMsg);
-        }
-
-      } finally {
-        sendInFlight = false;
-        sendBtn.disabled = false;
+        console.error('Delete chat error:', err);
+        alert('Error deleting chat. Please try again.');
       }
     }
 
-    function aiSafeReplaceTypingWithError(msg){
-      const typing = chatContainer.querySelector('.message-row.ai .text');
-      if (typing && typing.innerText && typing.innerText.includes('__TYPING__')) {
-        typing.innerText = '❌ ' + (msg || 'Network/Server error');
-        typing.style.color = '#ff6b6b';
-      } else {
-        const typingNodes = Array.from(chatContainer.querySelectorAll('.message-row.ai .text'))
-          .filter(n => n.childNodes && n.childNodes.length && n.querySelector && n.querySelector('.typing'));
-        if (typingNodes.length) {
-          const node = typingNodes[typingNodes.length - 1];
-          node.innerText = '❌ ' + (msg || 'Network/Server error');
-          node.style.color = '#ff6b6b';
-        }
-      }
-    }
+    async function switchSession(id) { currentSessionId = id; await loadSessionMessagesFromSupabase(id); renderHistorySidebar(); renderActiveChat(); if (window.innerWidth < 768) toggleSidebar(); }
+    async function loadSessionMessagesFromSupabase(sessionId) { if (!currentUserId) return; try { const { data: rows, error } = await supabaseClient.from('chats').select('*').eq('user_id', currentUserId).eq('session_id', sessionId).order('created_at', { ascending: true }); if (error) throw error; if (!rows || rows.length === 0) { if (!userSessions[sessionId]) { userSessions[sessionId] = { title: 'New Chat', messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }], createdAtMs: Date.now(), lastCreatedAtMs: Date.now() }; } else if (!userSessions[sessionId].messages || !userSessions[sessionId].messages.length) { userSessions[sessionId].messages = [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }]; } userSessions[sessionId].title = getChatTitleFromMessages(userSessions[sessionId].messages); return; } const createdAtMs = formatMaybeDateMs(rows[0].created_at); const lastCreatedAtMs = formatMaybeDateMs(rows[rows.length - 1].created_at); const messages = []; const seen = new Set(); for (const row of rows) { const created = formatMaybeDateMs(row.created_at); const key = `${row.role}|${row.message}|${created}`; if (seen.has(key)) continue; seen.add(key); messages.push({ role: row.role, content: row.message, createdAtMs: created }); } if (!userSessions[sessionId]) userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: createdAtMs, lastCreatedAtMs: lastCreatedAtMs }; userSessions[sessionId].createdAtMs = createdAtMs || userSessions[sessionId].createdAtMs || Date.now(); userSessions[sessionId].lastCreatedAtMs = lastCreatedAtMs || userSessions[sessionId].lastCreatedAtMs || Date.now(); userSessions[sessionId].messages = messages; userSessions[sessionId].title = getChatTitleFromMessages(messages); } catch (err) { console.error('Load session error:', err); if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return; } appendErrorUI('❌ Failed to load this conversation. Please try again.'); } }
+    function renderActiveChat() { chatContainer.innerHTML = ''; const session = userSessions[currentSessionId]; if (!session) return; session.messages.forEach((msg) => { if (msg.role !== 'system') appendMessageUI(msg.role === 'user' ? 'user' : 'ai', msg.content, false); }); chatContainer.scrollTop = chatContainer.scrollHeight; }
+    function appendMessageUI(role, text, doScroll = true) { const row = document.createElement('div'); row.className = `message-row ${role}`; const content = document.createElement('div'); content.className = 'message-content'; const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.innerText = role === 'user' ? 'You' : 'YF'; const bubble = document.createElement('div'); bubble.className = 'bubble'; const textDiv = document.createElement('div'); textDiv.className = 'text'; if (text && text.trim() === '__TYPING__') { const typing = document.createElement('div'); typing.className = 'typing'; typing.innerHTML = '<span></span><span></span><span></span>'; textDiv.appendChild(typing); } else { textDiv.innerText = text; } bubble.appendChild(textDiv); content.appendChild(avatar); content.appendChild(bubble); row.appendChild(content); chatContainer.appendChild(row); if (doScroll) chatContainer.scrollTop = chatContainer.scrollHeight; return textDiv; }
+    function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }
 
-    function testProxy() {
-      console.log('Testing proxy connection...');
-      try {
-        const response = fetch(PROXY_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: [{ role: 'user', content: 'Hello' }],
-            model: "llama-3.3-70b-versatile",
-            temperature: 0.7,
-            max_tokens: 1024
-          })
-        });
-        
-        console.log('Proxy response status:', response.status);
-        
-        if (response.ok) {
-          const data = response.json();
-          console.log('Proxy test success:', data);
-          return true;
-        } else {
-          const errorText = response.text();
-          console.error('Proxy test failed:', response.status, errorText);
-          return false;
-        }
-      } catch (e) {
-        console.error('Proxy test error:', e);
-        return false;
-      }
-    }
+    async function sendMessage() { const text = userInput.value.trim(); if (!text || !currentSessionId) return; if (sendInFlight) return; sendInFlight = true; sendBtn.disabled = true; let aiTextNode = null; try { const session = await getValidSession(); if (!session?.user) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); sendBtn.disabled = false; sendInFlight = false; return; } currentUserId = session.user.id; const currentSession = userSessions[currentSessionId]; if (!currentSession) { createNewChat(true); return; } if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') { currentSession.title = text.length > 22 ? text.substring(0, 22) + '...' : text; } appendMessageUI('user', text); userInput.value = ''; userInput.style.height = 'auto'; try { await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'user', message: text, created_at: new Date().toISOString() }); } catch (dbErr) { console.warn('DB save warning:', dbErr); } currentSession.messages.push({ role: 'user', content: text, createdAtMs: Date.now() }); aiTextNode = appendMessageUI('ai', '__TYPING__'); let aiMessages = currentSession.messages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content })); aiMessages = aiMessages.map(msg => { if (msg.content && msg.content.length > 1000) { console.warn('Truncating long message:', msg.content.length); return { ...msg, content: msg.content.substring(0, 1000) + '... [truncated]' }; } return msg; }); if (aiMessages.length > 10) { aiMessages = aiMessages.slice(-10); } const response = await fetch(PROXY_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: aiMessages, model: "llama-3.3-70b-versatile", temperature: 0.7, max_tokens: 1024 }) }); if (!response.ok) { const errorText = await response.text(); let errorMsg; try { const errorJson = JSON.parse(errorText); errorMsg = errorJson?.error?.message || errorJson?.error || errorJson?.message || `HTTP ${response.status}`; if (errorMsg.toLowerCase().includes('rate') || errorMsg.toLowerCase().includes('limit') || response.status === 413) errorMsg = '⚠️ Message too long. Please start a new chat or shorten your message.'; } catch { errorMsg = errorText || `HTTP ${response.status}`; } throw new Error(errorMsg); } const data = await response.json(); const reply = data?.choices?.[0]?.message?.content; if (!reply) throw new Error('AI response missing content'); try { await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'assistant', message: reply, created_at: new Date().toISOString() }); } catch (dbErr) { console.warn('DB save warning:', dbErr); } currentSession.messages.push({ role: 'assistant', content: reply, createdAtMs: Date.now() }); currentSession.lastCreatedAtMs = Date.now(); if (aiTextNode) aiTextNode.innerText = reply; renderHistorySidebar(); chatContainer.scrollTop = chatContainer.scrollHeight; } catch (err) { let errorMsg = 'Unknown error occurred'; if (err instanceof Error) errorMsg = err.message; else if (typeof err === 'string') errorMsg = err; else if (err?.message) errorMsg = err.message; else { try { errorMsg = JSON.stringify(err); } catch { errorMsg = String(err); } } if (errorMsg.toLowerCase().includes('rate') || errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('too large') || errorMsg.toLowerCase().includes('413')) { errorMsg = '⚠️ Conversation is too long. Starting a new chat...'; setTimeout(() => { createNewChat(false); }, 2000); } if (errorMsg.toLowerCase().includes('jwt') || errorMsg.toLowerCase().includes('auth') || errorMsg.toLowerCase().includes('unauthorized')) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return; } if (aiTextNode) { aiTextNode.innerText = '❌ ' + errorMsg; aiTextNode.style.color = 'var(--danger)'; } else { appendErrorUI('❌ ' + errorMsg); } } finally { sendInFlight = false; sendBtn.disabled = false; } }
 
-    window.testProxy = testProxy;
+    function aiSafeReplaceTypingWithError(msg){ const typing = chatContainer.querySelector('.message-row.ai .text'); if (typing && typing.innerText && typing.innerText.includes('__TYPING__')) { typing.innerText = '❌ ' + (msg || 'Network/Server error'); typing.style.color = 'var(--danger)'; } }
+    window.testProxy = function(){ return true; };
 
-    userInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
-
+    userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     window.createNewChat = createNewChat;
     window.toggleSidebar = toggleSidebar;
     window.openSettings = openSettings;
@@ -1711,6 +1054,7 @@
     window.logout = logout;
     window.handleAuth = handleAuth;
     window.sendMessage = sendMessage;
+    window.deleteChat = deleteChat;
   </script>
 </body>
-</html>
+            </html>
