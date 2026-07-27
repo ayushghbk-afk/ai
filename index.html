@@ -713,10 +713,8 @@
     </div>
   </div>
 
-  <!-- Mobile Overlay -->
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
-  <!-- Responsive Sidebar -->
   <aside id="sidebar">
     <div class="sidebar-top">
       <div class="brand" aria-hidden="true">
@@ -740,7 +738,6 @@
     </div>
   </aside>
 
-  <!-- Main Workspace -->
   <main>
     <header>
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
@@ -766,7 +763,7 @@
 
   <script>
     const SUPABASE_URL = "https://mxhmcapcmeatnmwiwnri.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im14aG1jYXBjbWVhdG5td2l3bnJpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwNDk5MTIsImV4cCI6MjEwMDYyNTkxMn0.9BT5bFLnHC7UMqW2hfCEdzxjIV0O6l-Eblp1-sCshnE";
+    const SUPABASE_KEY = "sb_publishable_zAZ8LWIFxUX8cF0H6Gy9uw_H0Yc0BgD";
 
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: {
@@ -780,38 +777,47 @@
 
     let currentUser = null;
     let currentUserId = null;
-
     let currentSessionId = null;
     let userSessions = {};
 
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');
     const authModal = document.getElementById('auth-modal');
-
     const settingsModal = document.getElementById('settings-modal');
     const themeSystemBtn = document.getElementById('theme-system');
     const themeLightBtn = document.getElementById('theme-light');
     const themeDarkBtn = document.getElementById('theme-dark');
-
     const usernameInput = document.getElementById('username');
     const historyList = document.getElementById('historyList');
     const chatContainer = document.getElementById('chat-container');
     const userInput = document.getElementById('userInput');
     const sendBtn = document.getElementById('sendBtn');
-
     const emailInput = document.getElementById('email');
     const passwordInput = document.getElementById('password');
     const authTitle = document.getElementById('authTitle');
     const authActionBtn = document.getElementById('authActionBtn');
-
     const modeLoginBtn = document.getElementById('mode-login');
     const modeSignupBtn = document.getElementById('mode-signup');
 
     let authMode = 'login';
     const THEME_DEFAULT = 'system';
     const DEFAULT_SYSTEM_PROMPT = 'You are a helpful, warm, and smart companion named Your Friend.';
-
     let sendInFlight = false;
+
+    function getErrorMessage(err) {
+      if (!err) return 'Unknown error';
+      if (typeof err === 'string') return err;
+      if (err.message) return err.message;
+      if (err.error) return typeof err.error === 'string' ? err.error : JSON.stringify(err.error);
+      if (err.details) return err.details;
+      if (err.msg) return err.msg;
+      if (err.statusText) return err.statusText;
+      try {
+        return JSON.stringify(err);
+      } catch {
+        return String(err);
+      }
+    }
 
     function setAuthModalVisible(visible) {
       authModal.style.display = visible ? 'flex' : 'none';
@@ -825,13 +831,12 @@
     function resetStateForLogout() {
       currentUser = null;
       currentUserId = null;
-
       currentSessionId = null;
       userSessions = {};
     }
 
     function isAuthMissingError(err) {
-      const msg = (err && (err.message || err.error_description || err.error)) ? String(err.message || err.error_description || err.error) : '';
+      const msg = getErrorMessage(err);
       const name = (err && err.name) ? String(err.name) : '';
       return (
         msg.toLowerCase().includes('auth session missing') ||
@@ -842,9 +847,8 @@
 
     function isRlsOrAuthDenied(err) {
       const status = err && err.status;
-      const msg = (err && (err.message || err.error)) ? String(err.message || err.error) : '';
+      const msg = getErrorMessage(err);
       const code = err && err.code ? String(err.code) : '';
-
       return (
         status === 401 ||
         status === 403 ||
@@ -854,6 +858,16 @@
         msg.toLowerCase().includes('not authorized') ||
         code === '42501'
       );
+    }
+
+    async function getValidSession() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        return session;
+      } catch (e) {
+        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) return null;
+        throw e;
+      }
     }
 
     window.onload = async () => {
@@ -878,7 +892,9 @@
       });
 
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession();
 
         if (!session) {
           setAuthModalVisible(true);
@@ -950,7 +966,7 @@
     async function signUp(email, password, username) {
       try {
         const { data, error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) { alert(error.message); return; }
+        if (error) { alert(getErrorMessage(error)); return; }
 
         const userId = data?.user?.id;
         if (!userId) { alert("Sign up succeeded, but user id was not returned."); return; }
@@ -959,13 +975,13 @@
           .from("profiles")
           .upsert({ id: userId, username: username }, { onConflict: 'id' });
 
-        if (insertErr) {
-          console.warn('Profile upsert error:', insertErr.message);
-        }
+        if (insertErr) console.warn('Profile upsert error:', getErrorMessage(insertErr));
 
         alert("Account created successfully!");
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession();
 
         if (session?.user) {
           await hydrateUserAndLoadChats(session.user);
@@ -983,9 +999,11 @@
     async function login(email, password) {
       try {
         const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) { alert(error.message); return; }
+        if (error) { alert(getErrorMessage(error)); return; }
 
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession();
 
         if (!session?.user) {
           setAuthMode('login');
@@ -1080,9 +1098,7 @@
           .eq('id', userId)
           .maybeSingle();
 
-        if (error) {
-          console.warn('Profile select error:', error.message);
-        }
+        if (error) console.warn('Profile select error:', getErrorMessage(error));
 
         if (!profile) {
           const toInsert = { id: userId, username: unameFallback };
@@ -1090,9 +1106,7 @@
             .from('profiles')
             .upsert(toInsert, { onConflict: 'id' });
 
-          if (upsertErr) {
-            console.warn('Profile upsert error:', upsertErr.message);
-          }
+          if (upsertErr) console.warn('Profile upsert error:', getErrorMessage(upsertErr));
         }
 
         return profile || { username: unameFallback };
@@ -1109,7 +1123,9 @@
       currentUser = null;
 
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const {
+          data: { session }
+        } = await supabaseClient.auth.getSession();
         if (!session?.user) {
           resetStateForLogout();
           clearChatUI();
@@ -1246,7 +1262,9 @@
         return tb - ta;
       });
 
-      if (!sessionIds.length) return;
+      if (!sessionIds.length) {
+        return;
+      }
 
       sessionIds.forEach((id) => {
         const session = userSessions[id];
@@ -1400,43 +1418,37 @@
       textarea.style.height = textarea.scrollHeight + 'px';
     }
 
-    async function ensureValidSessionOrPrompt() {
+    async function sendMessage() {
+      const text = userInput.value.trim();
+      if (!text || !currentSessionId) return;
+      if (sendInFlight) return;
+
+      sendInFlight = true;
+      sendBtn.disabled = true;
+
+      let aiTextNode = null;
+
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        // Check session with mobile-friendly method
+        const session = await getValidSession();
+        
         if (!session?.user) {
           resetStateForLogout();
           clearChatUI();
           setAuthMode('login');
           setAuthModalVisible(true);
-          return null;
+          sendBtn.disabled = false;
+          sendInFlight = false;
+          return;
         }
-        return session;
-      } catch (e) {
-        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) {
-          resetStateForLogout();
-          clearChatUI();
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return null;
-        }
-        return null;
-      }
-    }
 
-    async function sendMessage() {
-      const text = userInput.value.trim();
-      if (!text || !currentSessionId) return;
-
-      if (sendInFlight) return;
-      sendInFlight = true;
-      sendBtn.disabled = true;
-
-      try {
-        const session = await ensureValidSessionOrPrompt();
-        if (!session?.user) return;
+        currentUserId = session.user.id;
 
         const currentSession = userSessions[currentSessionId];
-        if (!currentSession) throw new Error('Missing current session in UI state.');
+        if (!currentSession) {
+          createNewChat(true);
+          return;
+        }
 
         if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') {
           currentSession.title = text.length > 22 ? text.substring(0, 22) + '...' : text;
@@ -1446,20 +1458,43 @@
         userInput.value = '';
         userInput.style.height = 'auto';
 
-        const userMessage = {
-          session_id: currentSessionId,
-          user_id: currentUserId,
-          role: 'user',
-          message: text,
-          created_at: new Date().toISOString()
-        };
+        // Save user message to DB with detailed error logging
+        try {
+          const userMessageData = {
+            session_id: currentSessionId,
+            user_id: currentUserId,
+            role: 'user',
+            message: text,
+            created_at: new Date().toISOString()
+          };
+          
+          console.log('Saving user message:', userMessageData);
+          
+          const { error: userError } = await supabaseClient
+            .from('chats')
+            .insert(userMessageData);
 
-        const { error: userError } = await supabaseClient
-          .from('chats')
-          .insert(userMessage)
-          .select();
-
-        if (userError) throw userError;
+          if (userError) {
+            console.error('User message save error - Full error:', userError);
+            console.error('Error message:', userError.message);
+            console.error('Error details:', userError.details);
+            console.error('Error hint:', userError.hint);
+            console.error('Error code:', userError.code);
+            
+            const errorMsg = userError.message || userError.details || 'Failed to save message';
+            appendErrorUI('⚠️ ' + errorMsg);
+          } else {
+            console.log('User message saved successfully');
+          }
+        } catch (dbErr) {
+          console.error('DB save exception:', dbErr);
+          console.error('Exception type:', typeof dbErr);
+          console.error('Exception message:', dbErr.message);
+          console.error('Exception stack:', dbErr.stack);
+          
+          const errorMsg = dbErr?.message || dbErr?.details || 'Database error occurred';
+          appendErrorUI('⚠️ ' + errorMsg);
+        }
 
         currentSession.messages.push({
           role: 'user',
@@ -1467,60 +1502,130 @@
           createdAtMs: Date.now()
         });
 
-        const aiTextNode = appendMessageUI('ai', '__TYPING__');
+        aiTextNode = appendMessageUI('ai', '__TYPING__');
 
+        // Get AI response
+        console.log('Calling AI proxy...');
+        
         const aiMessages = currentSession.messages
           .filter(m => m.role !== 'system')
           .map(m => ({ role: m.role, content: m.content }));
 
-        const response = await fetch(PROXY_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            messages: aiMessages,
-            model: "llama-3.3-70b-versatile",
-            temperature: 0.7,
-            max_tokens: 1024
-          })
-        });
+        console.log('AI Messages:', aiMessages);
 
-        const data = await response.json();
+        try {
+          const response = await fetch(PROXY_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              messages: aiMessages,
+              model: "llama-3.3-70b-versatile",
+              temperature: 0.7,
+              max_tokens: 1024
+            })
+          });
 
-        if (!response.ok) throw new Error(data?.error || `Request failed with status ${response.status}`);
-        if (!data?.choices?.[0]?.message?.content) throw new Error("AI response is missing content");
+          console.log('AI Response status:', response.status);
 
-        const reply = data.choices[0].message.content;
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('AI Error response:', errorText);
+            let errorMsg;
+            try {
+              const errorJson = JSON.parse(errorText);
+              errorMsg = errorJson?.error || errorJson?.message || `HTTP ${response.status}`;
+            } catch {
+              errorMsg = errorText || `HTTP ${response.status}`;
+            }
+            throw new Error(errorMsg);
+          }
 
-        const assistantMessage = {
-          session_id: currentSessionId,
-          user_id: currentUserId,
-          role: 'assistant',
-          message: reply,
-          created_at: new Date().toISOString()
-        };
+          const data = await response.json();
+          console.log('AI Response data:', data);
 
-        const { error: assistantError } = await supabaseClient
-          .from('chats')
-          .insert(assistantMessage)
-          .select();
+          const reply = data?.choices?.[0]?.message?.content;
+          if (!reply) {
+            throw new Error('AI response missing content: ' + JSON.stringify(data));
+          }
 
-        if (assistantError) throw assistantError;
+          // Save AI response
+          try {
+            const assistantMessageData = {
+              session_id: currentSessionId,
+              user_id: currentUserId,
+              role: 'assistant',
+              message: reply,
+              created_at: new Date().toISOString()
+            };
+            
+            console.log('Saving assistant message:', assistantMessageData);
+            
+            const { error: assistantError } = await supabaseClient
+              .from('chats')
+              .insert(assistantMessageData);
 
-        currentSession.messages.push({
-          role: 'assistant',
-          content: reply,
-          createdAtMs: Date.now()
-        });
-        currentSession.lastCreatedAtMs = Date.now();
+            if (assistantError) {
+              console.error('Assistant save error:', assistantError);
+              const errorMsg = assistantError.message || assistantError.details || 'Failed to save AI response';
+              appendErrorUI('⚠️ ' + errorMsg);
+            } else {
+              console.log('Assistant message saved successfully');
+            }
+          } catch (dbErr) {
+            console.error('DB save exception:', dbErr);
+            const errorMsg = dbErr?.message || dbErr?.details || 'Database error';
+            appendErrorUI('⚠️ ' + errorMsg);
+          }
 
-        aiTextNode.innerText = reply;
-        renderHistorySidebar();
-        chatContainer.scrollTop = chatContainer.scrollHeight;
+          currentSession.messages.push({
+            role: 'assistant',
+            content: reply,
+            createdAtMs: Date.now()
+          });
+          currentSession.lastCreatedAtMs = Date.now();
+
+          if (aiTextNode) {
+            aiTextNode.innerText = reply;
+          }
+          renderHistorySidebar();
+          chatContainer.scrollTop = chatContainer.scrollHeight;
+
+        } catch (fetchError) {
+          console.error('Fetch/AI error:', fetchError);
+          throw fetchError;
+        }
 
       } catch (err) {
         console.error('Send message error:', err);
+        console.error('Error type:', typeof err);
+        console.error('Error constructor:', err.constructor.name);
+        
+        let errorMsg = 'Unknown error occurred';
+        
+        if (err instanceof Error) {
+          errorMsg = err.message;
+        } else if (typeof err === 'string') {
+          errorMsg = err;
+        } else if (err.message) {
+          errorMsg = err.message;
+        } else if (err.error) {
+          errorMsg = typeof err.error === 'string' ? err.error : JSON.stringify(err.error);
+        } else if (err.details) {
+          errorMsg = err.details;
+        } else {
+          try {
+            errorMsg = JSON.stringify(err);
+          } catch {
+            errorMsg = String(err);
+          }
+        }
 
-        if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) {
+        if (errorMsg.toLowerCase().includes('jwt') || 
+            errorMsg.toLowerCase().includes('auth') || 
+            errorMsg.toLowerCase().includes('session') ||
+            errorMsg.toLowerCase().includes('unauthorized') ||
+            errorMsg.toLowerCase().includes('401') ||
+            errorMsg.toLowerCase().includes('403')) {
           resetStateForLogout();
           clearChatUI();
           setAuthMode('login');
@@ -1528,9 +1633,12 @@
           return;
         }
 
-        const msg = err.message || 'Failed to send message. Please try again.';
-        aiSafeReplaceTypingWithError(msg);
-        appendErrorUI('❌ ' + msg);
+        if (aiTextNode) {
+          aiTextNode.innerText = '❌ Error: ' + errorMsg;
+          aiTextNode.style.color = '#ff6b6b';
+        } else {
+          appendErrorUI('❌ ' + errorMsg);
+        }
 
       } finally {
         sendInFlight = false;
@@ -1553,6 +1661,39 @@
         }
       }
     }
+
+    function testProxy() {
+      console.log('Testing proxy connection...');
+      try {
+        const response = fetch(PROXY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: 'Hello' }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.7,
+            max_tokens: 1024
+          })
+        });
+        
+        console.log('Proxy response status:', response.status);
+        
+        if (response.ok) {
+          const data = response.json();
+          console.log('Proxy test success:', data);
+          return true;
+        } else {
+          const errorText = response.text();
+          console.error('Proxy test failed:', response.status, errorText);
+          return false;
+        }
+      } catch (e) {
+        console.error('Proxy test error:', e);
+        return false;
+      }
+    }
+
+    window.testProxy = testProxy;
 
     userInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
