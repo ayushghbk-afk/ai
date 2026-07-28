@@ -97,7 +97,7 @@
       backdrop-filter: blur(8px);
     }
 
-    #auth-modal, #settings-modal{
+    #auth-modal, #settings-modal, #image-modal{
       position:fixed; inset:0;
       background: var(--overlay-modal);
       display:none;
@@ -108,13 +108,13 @@
       backdrop-filter: blur(10px);
     }
 
-    .auth-card, .settings-card{
+    .auth-card, .settings-card, .image-tool-card{
       background: linear-gradient(180deg, rgba(17,24,42,.96), rgba(10,15,27,.96));
       padding:22px 18px;
       border-radius: 24px;
       border:1px solid rgba(255,255,255,.12);
       width:100%;
-      max-width:420px;
+      max-width:480px;
       display:flex;
       flex-direction:column;
       gap:12px;
@@ -124,11 +124,12 @@
       overflow:hidden;
     }
     html[data-theme="light"] .auth-card,
-    html[data-theme="light"] .settings-card{
+    html[data-theme="light"] .settings-card,
+    html[data-theme="light"] .image-tool-card{
       background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,247,255,.96));
     }
 
-    .auth-card::after, .settings-card::after{
+    .auth-card::after, .settings-card::after, .image-tool-card::after{
       content:"";
       position:absolute;
       width:260px; height:260px;
@@ -137,13 +138,13 @@
       pointer-events:none;
     }
 
-    .auth-card h2{
+    .auth-card h2, .image-tool-card h2{
       font-size:1.35rem;
       letter-spacing:.2px;
       position:relative;
     }
 
-    .auth-card input, .settings-card input{
+    .auth-card input, .settings-card input, .image-tool-card input, .image-tool-card select, .image-tool-card textarea{
       padding:13px 14px;
       border-radius:14px;
       border:1px solid var(--border);
@@ -153,18 +154,17 @@
       font-size:1rem;
       transition: border-color .15s ease, box-shadow .15s ease, transform .08s ease;
       text-align:left;
+      font-family:inherit;
     }
     html[data-theme="light"] .auth-card input,
-    html[data-theme="light"] .settings-card input{
+    html[data-theme="light"] .settings-card input,
+    html[data-theme="light"] .image-tool-card input,
+    html[data-theme="light"] .image-tool-card select,
+    html[data-theme="light"] .image-tool-card textarea{
       background: rgba(16,24,40,.04);
     }
 
-    .auth-card input:focus{
-      border-color: rgba(124,92,255,.62);
-      box-shadow: 0 0 0 4px rgba(124,92,255,.14);
-    }
-
-    .auth-card button, .settings-card button{
+    .auth-card button, .settings-card button, .image-tool-card button{
       padding:12px 14px;
       border-radius:14px;
       border:none;
@@ -176,8 +176,6 @@
       transition: transform .1s ease, filter .2s ease, box-shadow .2s ease;
       box-shadow: 0 12px 25px rgba(124,92,255,.22);
     }
-    .auth-card button:hover, .settings-card button:hover{ filter: brightness(1.05); }
-    .auth-card button:active, .settings-card button:active{ transform: translateY(1px); }
 
     .settings-row{
       display:flex;
@@ -193,13 +191,6 @@
       background: rgba(16,24,40,.03);
     }
     .settings-row .label{ font-weight:900; letter-spacing:.1px; }
-    .settings-row .sub{
-      color: var(--text-sub);
-      font-size:.9rem;
-      margin-top:2px;
-      text-align:left;
-      font-weight:600;
-    }
 
     .segmented{
       display:flex;
@@ -293,20 +284,6 @@
       background: linear-gradient(135deg, rgba(124,92,255,.10), rgba(255,77,141,.08));
       border-color: rgba(124,92,255,.18);
     }
-    .new-chat-btn:hover{
-      background: linear-gradient(135deg, rgba(124,92,255,.24), rgba(255,77,141,.18));
-      border-color: rgba(124,92,255,.35);
-    }
-    .new-chat-btn:active{ transform: translateY(1px); }
-    .new-chat-btn span{
-      width:26px; height:26px;
-      border-radius:9px;
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      display:flex;
-      align-items:center; justify-content:center;
-      font-weight:900;
-      color: white;
-    }
 
     .history-list{
       flex:1;
@@ -319,7 +296,6 @@
     }
     .history-list::-webkit-scrollbar{ width: 10px; }
     .history-list::-webkit-scrollbar-thumb{ background: var(--history-scrollbar-thumb); border-radius: 20px; }
-    .history-list::-webkit-scrollbar-track{ background: transparent; }
 
     .history-item{
       padding:12px 12px;
@@ -339,38 +315,10 @@
       user-select:none;
       gap:10px;
     }
-    html[data-theme="light"] .history-item{
-      background: rgba(16,24,40,.03);
-      border-color: rgba(16,24,40,.06);
-    }
-    .history-item:hover{
-      background: rgba(124,92,255,.10);
-      border-color: rgba(124,92,255,.20);
-      color: var(--text-main);
-    }
-    html[data-theme="light"] .history-item:hover{
-      background: rgba(124,92,255,.08);
-      border-color: rgba(124,92,255,.16);
-    }
-    .history-item:active{ transform: translateY(1px); }
     .history-item.active{
       background: linear-gradient(135deg, rgba(124,92,255,.16), rgba(255,77,141,.14));
       border-color: rgba(124,92,255,.32);
       color: var(--text-main);
-    }
-    .history-pill{
-      font-size:.78rem;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.10);
-      color: rgba(244,247,255,.90);
-      background: rgba(255,255,255,.05);
-      flex-shrink:0;
-    }
-    html[data-theme="light"] .history-pill{
-      border-color: rgba(16,24,40,.10);
-      color: rgba(16,24,40,.74);
-      background: rgba(16,24,40,.03);
     }
 
     .user-profile{
@@ -383,7 +331,6 @@
       font-size:.95rem;
       gap:10px;
     }
-    html[data-theme="light"] .user-profile{ border-top:1px solid rgba(16,24,40,.08); }
 
     .user-left{ display:flex; align-items:center; gap:10px; min-width:0; }
     .user-avatar{
@@ -395,17 +342,6 @@
       border:1px solid rgba(124,92,255,.22);
       flex-shrink:0;
     }
-    html[data-theme="light"] .user-avatar{
-      background: linear-gradient(135deg, rgba(124,92,255,.12), rgba(255,77,141,.10));
-      border-color: rgba(124,92,255,.18);
-    }
-    #userDisplay{
-      font-weight:850;
-      min-width:0;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
 
     .logout-btn{
       background: rgba(255,107,107,.10);
@@ -414,11 +350,8 @@
       cursor:pointer;
       padding:8px 10px;
       border-radius: 12px;
-      transition: transform .1s ease, background .2s ease;
       font-weight:800;
     }
-    .logout-btn:hover{ background: rgba(255,107,107,.16); }
-    .logout-btn:active{ transform: translateY(1px); }
 
     main{
       flex:1;
@@ -444,10 +377,6 @@
       position:relative;
       z-index:1;
     }
-    html[data-theme="light"] header{
-      background: rgba(255,255,255,.72);
-      border-bottom:1px solid rgba(16,24,40,.08);
-    }
 
     header .title-wrap{ display:flex; align-items:center; gap:10px; }
     header .spark{
@@ -461,19 +390,16 @@
       background: rgba(255,255,255,.04);
       border:1px solid rgba(255,255,255,.08);
       color: var(--text-main);
-      font-size: 1.05rem;
+      font-size: 1rem;
       cursor:pointer;
-      padding: 8px 10px;
+      padding: 8px 12px;
       border-radius: 12px;
-      transition: background .2s ease, transform .1s ease;
-      font-weight:900;
+      transition: background .2s ease;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      gap:6px;
     }
-    html[data-theme="light"] .icon-btn{
-      background: rgba(16,24,40,.03);
-      border-color: rgba(16,24,40,.08);
-    }
-    .icon-btn:hover{ background: rgba(124,92,255,.10); }
-    .icon-btn:active{ transform: translateY(1px); }
 
     .menu-btn{
       background: rgba(255,255,255,.04);
@@ -483,13 +409,7 @@
       cursor:pointer;
       padding: 7px 10px;
       border-radius: 12px;
-      transition: background .2s ease;
     }
-    html[data-theme="light"] .menu-btn{
-      background: rgba(16,24,40,.03);
-      border-color: rgba(16,24,40,.08);
-    }
-    .menu-btn:hover{ background: rgba(124,92,255,.10); }
 
     #chat-container{
       flex:1;
@@ -503,7 +423,6 @@
     }
     #chat-container::-webkit-scrollbar{ width: 10px; }
     #chat-container::-webkit-scrollbar-thumb{ background: var(--chat-scrollbar-thumb); border-radius: 20px; }
-    #chat-container::-webkit-scrollbar-track{ background: transparent; }
 
     .message-row{ width:100%; display:flex; justify-content:center; padding: 0 12px; }
     .message-content{
@@ -523,22 +442,9 @@
       flex-shrink:0;
       border:1px solid rgba(255,255,255,.10);
       background: rgba(255,255,255,.05);
-      box-shadow: 0 8px 16px rgba(0,0,0,.16);
     }
-    html[data-theme="light"] .avatar{
-      border-color: rgba(16,24,40,.10);
-      background: rgba(16,24,40,.04);
-    }
-    .user .avatar{
-      background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: white;
-      border-color: transparent;
-    }
-    .ai .avatar{
-      background: linear-gradient(135deg, var(--accent-3), var(--accent));
-      color: white;
-      border-color: transparent;
-    }
+    .user .avatar{ background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; }
+    .ai .avatar{ background: linear-gradient(135deg, var(--accent-3), var(--accent)); color: white; }
 
     .text{
       flex:1;
@@ -554,33 +460,77 @@
       padding: 11px 14px;
       border:1px solid var(--bubble-border);
       background: var(--bubble-bg-ai);
-      box-shadow: 0 10px 28px rgba(0,0,0,.18);
       backdrop-filter: blur(10px);
     }
     .message-row.user .bubble{
       background: linear-gradient(180deg, rgba(124,92,255,.18), rgba(255,77,141,.10));
       border-color: rgba(124,92,255,.28);
     }
-    .message-row.ai .bubble{
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border-color: rgba(255,255,255,.10);
-    }
-    html[data-theme="light"] .message-row.ai .bubble{
-      background: linear-gradient(180deg, rgba(16,24,40,.05), rgba(16,24,40,.02));
-      border-color: rgba(16,24,40,.10);
+
+    /* Grid Gallery and Individual Image Containers */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+      width: 100%;
     }
 
-    .typing{
-      display:flex;
-      gap:6px;
-      align-items:center;
+    .image-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(0,0,0,0.2);
+      padding: 8px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.08);
     }
+
+    .chat-generated-img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      display: block;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .chat-generated-img:hover {
+      transform: scale(1.02);
+    }
+
+    .dl-img-btn {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(124,92,255,.25), rgba(38,214,166,.25));
+      border: 1px solid rgba(255,255,255,.15);
+      color: var(--text-main);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s ease, transform 0.1s ease;
+    }
+
+    .dl-img-btn:hover {
+      background: linear-gradient(135deg, rgba(124,92,255,.45), rgba(38,214,166,.45));
+    }
+
+    .dl-img-btn:active {
+      transform: scale(0.97);
+    }
+
+    .typing{ display:flex; gap:6px; align-items:center; }
     .typing span{
       width:7px; height:7px;
       border-radius:50%;
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       animation: bounce 1.1s infinite ease-in-out;
-      opacity:.85;
     }
     .typing span:nth-child(2){ animation-delay:.12s; }
     .typing span:nth-child(3){ animation-delay:.24s; }
@@ -597,10 +547,6 @@
       border-top:1px solid rgba(255,255,255,.08);
       backdrop-filter: blur(14px);
     }
-    html[data-theme="light"] footer{
-      background: rgba(255,255,255,.75);
-      border-top:1px solid rgba(16,24,40,.08);
-    }
 
     .input-container{
       width: 100%;
@@ -612,11 +558,6 @@
       align-items:flex-end;
       gap:10px;
       border: 1px solid rgba(255,255,255,.10);
-      box-shadow: 0 18px 50px rgba(0,0,0,.30);
-    }
-    html[data-theme="light"] .input-container{
-      border-color: rgba(16,24,40,.10);
-      box-shadow: 0 18px 50px rgba(16,24,40,.10);
     }
 
     textarea{
@@ -632,8 +573,6 @@
       height: 26px;
       padding: 3px 0;
     }
-    textarea::placeholder{ color: rgba(169,180,208,.86); }
-    html[data-theme="light"] textarea::placeholder{ color: rgba(91,101,125,.86); }
 
     .send-btn{
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
@@ -646,14 +585,8 @@
       align-items:center;
       justify-content:center;
       cursor:pointer;
-      flex-shrink:0;
       font-weight:900;
-      transition: transform .1s ease, filter .2s ease;
-      box-shadow: 0 12px 25px rgba(124,92,255,.26);
     }
-    .send-btn:hover{ filter: brightness(1.05); }
-    .send-btn:active{ transform: translateY(1px); }
-    .send-btn:disabled{ opacity:.35; cursor:not-allowed; filter:none; }
 
     .error-message{
       color: #ffd1d1;
@@ -668,66 +601,15 @@
     }
 
     @media (max-width: 768px){
-      aside{
-        width: 88vw;
-        max-width: 320px;
-      }
-
-      header{
-        padding: 12px;
-      }
-
-      .message-row{
-        padding: 0 10px;
-      }
-
-      .message-content{
-        gap:8px;
-      }
-
-      .avatar{
-        width:32px;
-        height:32px;
-        border-radius: 12px;
-      }
-
-      .bubble{
-        padding: 10px 12px;
-        border-radius: 16px;
-      }
-
-      .text{
-        font-size: .96rem;
-        line-height: 1.55;
-      }
-
-      .input-container{
-        border-radius: 18px;
-        padding: 9px 9px 9px 12px;
-      }
-
-      textarea{
-        font-size: .98rem;
-      }
-
-      .send-btn{
-        width: 42px;
-        height: 42px;
-        border-radius: 14px;
-      }
-
-      .history-item{
-        padding: 11px 12px;
-      }
-
-      .auth-card, .settings-card{
-        border-radius: 22px;
-        padding: 18px 14px;
-      }
+      aside{ width: 88vw; max-width: 320px; }
+      .message-row{ padding: 0 10px; }
+      .image-grid{ grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
+
+  <!-- Auth Modal -->
   <div id="auth-modal" aria-modal="true" role="dialog">
     <div class="auth-card">
       <h2 id="authTitle">Sign in</h2>
@@ -746,6 +628,7 @@
     </div>
   </div>
 
+  <!-- Settings Modal -->
   <div id="settings-modal" aria-modal="true" role="dialog">
     <div class="settings-card">
       <h2 style="font-size:1.2rem; letter-spacing:.2px; position:relative;">Settings</h2>
@@ -763,8 +646,51 @@
     </div>
   </div>
 
+  <!-- Advanced Image Generator Tool Modal -->
+  <div id="image-modal" aria-modal="true" role="dialog">
+    <div class="image-tool-card">
+      <h2>🎨 Advanced Image Generator</h2>
+      <textarea id="imgPromptInput" placeholder="Describe what you want to generate..." rows="3"></textarea>
+      
+      <div class="settings-row">
+        <span class="label">Count (Batch):</span>
+        <select id="imgCountSelect" style="background:transparent; border:none; color:var(--text-main); font-weight:bold;">
+          <option value="1">1 Image</option>
+          <option value="2">2 Images</option>
+          <option value="4" selected>4 Images (Grid)</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <span class="label">Aspect Ratio:</span>
+        <select id="imgRatioSelect" style="background:transparent; border:none; color:var(--text-main); font-weight:bold;">
+          <option value="1024x1024">Square (1:1)</option>
+          <option value="1280x720">Landscape (16:9)</option>
+          <option value="720x1280">Portrait (9:16)</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <span class="label">Style Preset:</span>
+        <select id="imgStyleSelect" style="background:transparent; border:none; color:var(--text-main); font-weight:bold;">
+          <option value="photorealistic" selected>📸 Ultra Realistic Photography</option>
+          <option value="cinematic">🎬 Cinematic Movie Shot</option>
+          <option value="digital-art">🎨 Digital Art</option>
+          <option value="anime">⛩️ Anime / Manga</option>
+          <option value="3d-render">💎 3D Render</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="button" onclick="closeImageModal()" style="background:rgba(255,255,255,0.1); flex:1;">Cancel</button>
+        <button type="button" onclick="generateImageFromModal()" style="flex:2;">Generate Batch ✨</button>
+      </div>
+    </div>
+  </div>
+
   <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
+  <!-- Sidebar -->
   <aside id="sidebar">
     <div class="sidebar-top">
       <div class="brand" aria-hidden="true">
@@ -785,6 +711,7 @@
     </div>
   </aside>
 
+  <!-- Main View -->
   <main>
     <header>
       <button class="menu-btn" onclick="toggleSidebar()">☰</button>
@@ -793,6 +720,7 @@
         <span>Your Friend</span>
       </div>
       <div class="header-actions">
+        <button class="icon-btn" title="Image Generator" onclick="openImageModal()">🎨 Image Tool</button>
         <button class="icon-btn" title="Settings" onclick="openSettings()">⚙️</button>
       </div>
     </header>
@@ -801,7 +729,7 @@
 
     <footer>
       <div class="input-container">
-        <textarea id="userInput" placeholder="Message Your Friend..." rows="1" oninput="autoResize(this)"></textarea>
+        <textarea id="userInput" placeholder="Message Your Friend or type /image prompt..." rows="1" oninput="autoResize(this)"></textarea>
         <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send (Enter)">↑</button>
       </div>
     </footer>
@@ -821,6 +749,7 @@
     const overlay = document.getElementById('sidebar-overlay');
     const authModal = document.getElementById('auth-modal');
     const settingsModal = document.getElementById('settings-modal');
+    const imageModal = document.getElementById('image-modal');
     const themeLightBtn = document.getElementById('theme-light');
     const themeDarkBtn = document.getElementById('theme-dark');
     const usernameInput = document.getElementById('username');
@@ -882,8 +811,15 @@
 
     function openSettings(){ settingsModal.style.display = 'flex'; }
     function closeSettings(){ settingsModal.style.display = 'none'; }
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape'){ settingsModal.style.display = 'none'; authModal.style.display = 'none'; } });
+    function openImageModal(){ imageModal.style.display = 'flex'; }
+    function closeImageModal(){ imageModal.style.display = 'none'; }
+
+    window.addEventListener('keydown', (e) => { 
+      if (e.key === 'Escape'){ settingsModal.style.display = 'none'; authModal.style.display = 'none'; imageModal.style.display = 'none'; } 
+    });
     settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) closeSettings(); });
+    imageModal.addEventListener('click', (e) => { if (e.target === imageModal) closeImageModal(); });
+
     function toggleSidebar() { const isOpen = sidebar.classList.contains('open'); if (isOpen) { sidebar.classList.remove('open'); overlay.style.display = 'none'; } else { sidebar.classList.add('open'); overlay.style.display = 'block'; } }
     function setAuthMode(mode){ authMode = mode; const isLogin = mode === 'login'; modeLoginBtn.classList.toggle('active', isLogin); modeSignupBtn.classList.toggle('active', !isLogin); authTitle.innerText = isLogin ? 'Sign in' : 'Create account'; authActionBtn.innerText = isLogin ? 'Sign in' : 'Create account'; usernameInput.style.display = isLogin ? 'none' : 'block'; }
 
@@ -905,7 +841,6 @@
 
     function renderHistorySidebar() {
       historyList.innerHTML = '';
-
       const sessionIds = Object.keys(userSessions).sort((a, b) => {
         const ta = Number(userSessions[a]?.createdAtMs || 0);
         const tb = Number(userSessions[b]?.createdAtMs || 0);
@@ -950,33 +885,13 @@
         const deleteBtn = document.createElement('button');
         deleteBtn.innerHTML = '×';
         deleteBtn.style.cssText = `
-          background: transparent;
-          border: none;
-          color: var(--text-sub);
-          font-size: 1.2rem;
-          cursor: pointer;
-          padding: 4px 6px;
-          border-radius: 6px;
-          transition: all 0.2s ease;
-          line-height: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 24px;
-          height: 24px;
+          background: transparent; border: none; color: var(--text-sub);
+          font-size: 1.2rem; cursor: pointer; padding: 4px 6px;
+          border-radius: 6px; transition: all 0.2s ease; line-height: 1;
+          display: flex; align-items: center; justify-content: center;
+          width: 24px; height: 24px;
         `;
-        deleteBtn.onmouseover = () => {
-          deleteBtn.style.background = 'rgba(255,107,107,0.15)';
-          deleteBtn.style.color = 'var(--danger)';
-        };
-        deleteBtn.onmouseout = () => {
-          deleteBtn.style.background = 'transparent';
-          deleteBtn.style.color = 'var(--text-sub)';
-        };
-        deleteBtn.onclick = (e) => {
-          e.stopPropagation();
-          deleteChat(id);
-        };
+        deleteBtn.onclick = (e) => { e.stopPropagation(); deleteChat(id); };
 
         right.appendChild(pill);
         right.appendChild(deleteBtn);
@@ -995,66 +910,327 @@
       if (!confirm(`Delete "${title}"? This action cannot be undone.`)) return;
 
       try {
-        const { error } = await supabaseClient
-          .from('chats')
-          .delete()
-          .eq('user_id', currentUserId)
-          .eq('session_id', sessionId);
-
-        if (error) {
-          console.error('Delete error:', error);
-          alert('Failed to delete chat. Please try again.');
-          return;
-        }
-
+        const { error } = await supabaseClient.from('chats').delete().eq('user_id', currentUserId).eq('session_id', sessionId);
+        if (error) { alert('Failed to delete chat.'); return; }
         delete userSessions[sessionId];
-
         if (currentSessionId === sessionId) {
           const sessionIds = Object.keys(userSessions);
           if (sessionIds.length > 0) {
-            const sortedIds = sessionIds.sort((a, b) => {
-              const ta = Number(userSessions[a]?.lastCreatedAtMs || 0);
-              const tb = Number(userSessions[b]?.lastCreatedAtMs || 0);
-              return tb - ta;
-            });
-            currentSessionId = sortedIds[0];
+            currentSessionId = sessionIds[0];
             await loadSessionMessagesFromSupabase(currentSessionId);
           } else {
             createNewChat(true);
           }
         }
-
         renderHistorySidebar();
         renderActiveChat();
-        appendErrorUI(`✅ Chat "${title}" deleted successfully`);
-      } catch (err) {
-        console.error('Delete chat error:', err);
-        alert('Error deleting chat. Please try again.');
-      }
+      } catch (err) { console.error('Delete chat error:', err); }
     }
 
     async function switchSession(id) { currentSessionId = id; await loadSessionMessagesFromSupabase(id); renderHistorySidebar(); renderActiveChat(); if (window.innerWidth < 768) toggleSidebar(); }
-    async function loadSessionMessagesFromSupabase(sessionId) { if (!currentUserId) return; try { const { data: rows, error } = await supabaseClient.from('chats').select('*').eq('user_id', currentUserId).eq('session_id', sessionId).order('created_at', { ascending: true }); if (error) throw error; if (!rows || rows.length === 0) { if (!userSessions[sessionId]) { userSessions[sessionId] = { title: 'New Chat', messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }], createdAtMs: Date.now(), lastCreatedAtMs: Date.now() }; } else if (!userSessions[sessionId].messages || !userSessions[sessionId].messages.length) { userSessions[sessionId].messages = [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }]; } userSessions[sessionId].title = getChatTitleFromMessages(userSessions[sessionId].messages); return; } const createdAtMs = formatMaybeDateMs(rows[0].created_at); const lastCreatedAtMs = formatMaybeDateMs(rows[rows.length - 1].created_at); const messages = []; const seen = new Set(); for (const row of rows) { const created = formatMaybeDateMs(row.created_at); const key = `${row.role}|${row.message}|${created}`; if (seen.has(key)) continue; seen.add(key); messages.push({ role: row.role, content: row.message, createdAtMs: created }); } if (!userSessions[sessionId]) userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: createdAtMs, lastCreatedAtMs: lastCreatedAtMs }; userSessions[sessionId].createdAtMs = createdAtMs || userSessions[sessionId].createdAtMs || Date.now(); userSessions[sessionId].lastCreatedAtMs = lastCreatedAtMs || userSessions[sessionId].lastCreatedAtMs || Date.now(); userSessions[sessionId].messages = messages; userSessions[sessionId].title = getChatTitleFromMessages(messages); } catch (err) { console.error('Load session error:', err); if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return; } appendErrorUI('❌ Failed to load this conversation. Please try again.'); } }
-    function renderActiveChat() { chatContainer.innerHTML = ''; const session = userSessions[currentSessionId]; if (!session) return; session.messages.forEach((msg) => { if (msg.role !== 'system') appendMessageUI(msg.role === 'user' ? 'user' : 'ai', msg.content, false); }); chatContainer.scrollTop = chatContainer.scrollHeight; }
-    function appendMessageUI(role, text, doScroll = true) { const row = document.createElement('div'); row.className = `message-row ${role}`; const content = document.createElement('div'); content.className = 'message-content'; const avatar = document.createElement('div'); avatar.className = 'avatar'; avatar.innerText = role === 'user' ? 'You' : 'YF'; const bubble = document.createElement('div'); bubble.className = 'bubble'; const textDiv = document.createElement('div'); textDiv.className = 'text'; if (text && text.trim() === '__TYPING__') { const typing = document.createElement('div'); typing.className = 'typing'; typing.innerHTML = '<span></span><span></span><span></span>'; textDiv.appendChild(typing); } else { textDiv.innerText = text; } bubble.appendChild(textDiv); content.appendChild(avatar); content.appendChild(bubble); row.appendChild(content); chatContainer.appendChild(row); if (doScroll) chatContainer.scrollTop = chatContainer.scrollHeight; return textDiv; }
+    async function loadSessionMessagesFromSupabase(sessionId) { if (!currentUserId) return; try { const { data: rows, error } = await supabaseClient.from('chats').select('*').eq('user_id', currentUserId).eq('session_id', sessionId).order('created_at', { ascending: true }); if (error) throw error; if (!rows || rows.length === 0) return; const messages = rows.map(r => ({ role: r.role, content: r.message, createdAtMs: formatMaybeDateMs(r.created_at) })); if (!userSessions[sessionId]) userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: Date.now() }; userSessions[sessionId].messages = messages; userSessions[sessionId].title = getChatTitleFromMessages(messages); } catch (err) { console.error('Load session error:', err); } }
+    
+    function renderActiveChat() { 
+      chatContainer.innerHTML = ''; 
+      const session = userSessions[currentSessionId]; 
+      if (!session) return; 
+      session.messages.forEach((msg) => { 
+        if (msg.role !== 'system') appendMessageUI(msg.role === 'user' ? 'user' : 'ai', msg.content, false); 
+      }); 
+      chatContainer.scrollTop = chatContainer.scrollHeight; 
+    }
+
+    // Direct Image Downloader Helper
+    async function downloadIndividualImage(url, index) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `generated-image-${index + 1}-${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch (e) {
+        // Fallback for CORS restriction
+        window.open(url, '_blank');
+      }
+    }
+
+    function appendMessageUI(role, text, doScroll = true) { 
+      const row = document.createElement('div'); 
+      row.className = `message-row ${role}`; 
+      const content = document.createElement('div'); 
+      content.className = 'message-content'; 
+      const avatar = document.createElement('div'); 
+      avatar.className = 'avatar'; 
+      avatar.innerText = role === 'user' ? 'You' : 'YF'; 
+      const bubble = document.createElement('div'); 
+      bubble.className = 'bubble'; 
+      const textDiv = document.createElement('div'); 
+      textDiv.className = 'text'; 
+
+      if (text && text.trim() === '__TYPING__') { 
+        const typing = document.createElement('div'); 
+        typing.className = 'typing'; 
+        typing.innerHTML = '<span></span><span></span><span></span>'; 
+        textDiv.appendChild(typing); 
+      } else if (text && text.startsWith('IMAGE_GRID:')) {
+        const rawJson = text.replace('IMAGE_GRID:', '').trim();
+        try {
+          const payload = JSON.parse(rawJson);
+          textDiv.innerHTML = `<div>Generated ${payload.urls.length} Image(s) for "${payload.prompt}":</div>`;
+          const grid = document.createElement('div');
+          grid.className = 'image-grid';
+          payload.urls.forEach((url, idx) => {
+            const card = document.createElement('div');
+            card.className = 'image-card';
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'chat-generated-img';
+            img.alt = payload.prompt;
+            img.onclick = () => window.open(url, '_blank');
+
+            const dlBtn = document.createElement('button');
+            dlBtn.className = 'dl-img-btn';
+            dlBtn.innerHTML = '⬇️ Download Image';
+            dlBtn.onclick = (e) => {
+              e.stopPropagation();
+              downloadIndividualImage(url, idx);
+            };
+
+            card.appendChild(img);
+            card.appendChild(dlBtn);
+            grid.appendChild(card);
+          });
+          textDiv.appendChild(grid);
+        } catch(e) {
+          textDiv.innerText = text;
+        }
+      } else { 
+        textDiv.innerText = text; 
+      } 
+
+      bubble.appendChild(textDiv); 
+      content.appendChild(avatar); 
+      content.appendChild(bubble); 
+      row.appendChild(content); 
+      chatContainer.appendChild(row); 
+      if (doScroll) chatContainer.scrollTop = chatContainer.scrollHeight; 
+      return textDiv; 
+    }
+
     function autoResize(textarea) { textarea.style.height = 'auto'; textarea.style.height = textarea.scrollHeight + 'px'; }
 
-    async function sendMessage() { const text = userInput.value.trim(); if (!text || !currentSessionId) return; if (sendInFlight) return; sendInFlight = true; sendBtn.disabled = true; let aiTextNode = null; try { const session = await getValidSession(); if (!session?.user) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); sendBtn.disabled = false; sendInFlight = false; return; } currentUserId = session.user.id; const currentSession = userSessions[currentSessionId]; if (!currentSession) { createNewChat(true); return; } if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') { currentSession.title = text.length > 22 ? text.substring(0, 22) + '...' : text; } appendMessageUI('user', text); userInput.value = ''; userInput.style.height = 'auto'; try { await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'user', message: text, created_at: new Date().toISOString() }); } catch (dbErr) { console.warn('DB save warning:', dbErr); } currentSession.messages.push({ role: 'user', content: text, createdAtMs: Date.now() }); aiTextNode = appendMessageUI('ai', '__TYPING__'); let aiMessages = currentSession.messages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content })); aiMessages = aiMessages.map(msg => { if (msg.content && msg.content.length > 1000) { console.warn('Truncating long message:', msg.content.length); return { ...msg, content: msg.content.substring(0, 1000) + '... [truncated]' }; } return msg; }); if (aiMessages.length > 10) { aiMessages = aiMessages.slice(-10); } const response = await fetch(PROXY_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: aiMessages, model: "llama-3.3-70b-versatile", temperature: 0.7, max_tokens: 1024 }) }); if (!response.ok) { const errorText = await response.text(); let errorMsg; try { const errorJson = JSON.parse(errorText); errorMsg = errorJson?.error?.message || errorJson?.error || errorJson?.message || `HTTP ${response.status}`; if (errorMsg.toLowerCase().includes('rate') || errorMsg.toLowerCase().includes('limit') || response.status === 413) errorMsg = '⚠️ Message too long. Please start a new chat or shorten your message.'; } catch { errorMsg = errorText || `HTTP ${response.status}`; } throw new Error(errorMsg); } const data = await response.json(); const reply = data?.choices?.[0]?.message?.content; if (!reply) throw new Error('AI response missing content'); try { await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'assistant', message: reply, created_at: new Date().toISOString() }); } catch (dbErr) { console.warn('DB save warning:', dbErr); } currentSession.messages.push({ role: 'assistant', content: reply, createdAtMs: Date.now() }); currentSession.lastCreatedAtMs = Date.now(); if (aiTextNode) aiTextNode.innerText = reply; renderHistorySidebar(); chatContainer.scrollTop = chatContainer.scrollHeight; } catch (err) { let errorMsg = 'Unknown error occurred'; if (err instanceof Error) errorMsg = err.message; else if (typeof err === 'string') errorMsg = err; else if (err?.message) errorMsg = err.message; else { try { errorMsg = JSON.stringify(err); } catch { errorMsg = String(err); } } if (errorMsg.toLowerCase().includes('rate') || errorMsg.toLowerCase().includes('limit') || errorMsg.toLowerCase().includes('too large') || errorMsg.toLowerCase().includes('413')) { errorMsg = '⚠️ Conversation is too long. Starting a new chat...'; setTimeout(() => { createNewChat(false); }, 2000); } if (errorMsg.toLowerCase().includes('jwt') || errorMsg.toLowerCase().includes('auth') || errorMsg.toLowerCase().includes('unauthorized')) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return; } if (aiTextNode) { aiTextNode.innerText = '❌ ' + errorMsg; aiTextNode.style.color = 'var(--danger)'; } else { appendErrorUI('❌ ' + errorMsg); } } finally { sendInFlight = false; sendBtn.disabled = false; } }
+    /* ================= ADVANCED MULTI-IMAGE GENERATION ENGINE ================= */
+    async function processImageGeneration(rawPrompt, count = 1, dimensions = "1024x1024", styleModifier = "photorealistic") {
+      let prompt = rawPrompt.trim();
+      const currentSession = userSessions[currentSessionId];
 
-    function aiSafeReplaceTypingWithError(msg){ const typing = chatContainer.querySelector('.message-row.ai .text'); if (typing && typing.innerText && typing.innerText.includes('__TYPING__')) { typing.innerText = '❌ ' + (msg || 'Network/Server error'); typing.style.color = 'var(--danger)'; } }
-    window.testProxy = function(){ return true; };
+      if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') {
+        currentSession.title = "🎨 Image: " + (prompt.length > 15 ? prompt.substring(0, 15) + '...' : prompt);
+      }
+
+      appendMessageUI('user', `/image ${prompt}`);
+      userInput.value = '';
+      userInput.style.height = 'auto';
+
+      // Save user command to DB
+      try {
+        await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'user', message: `/image ${prompt}`, created_at: new Date().toISOString() });
+      } catch (dbErr) { console.warn('DB save warning:', dbErr); }
+      currentSession.messages.push({ role: 'user', content: `/image ${prompt}`, createdAtMs: Date.now() });
+
+      const aiTextNode = appendMessageUI('ai', `🎨 Generating ${count} high-resolution image(s)...`);
+
+      // Photorealism keyword injection to fix painting aesthetic
+      let enhancedPrompt = prompt;
+      if (styleModifier === 'photorealistic') {
+        enhancedPrompt += ", highly detailed photograph, 8k resolution, raw photo, ultra-realistic DSLR shot, natural sharp lighting, fine texture, unedited portrait";
+      } else if (styleModifier === 'cinematic') {
+        enhancedPrompt += ", cinematic film shot, IMAX 35mm lens, atmospheric depth, photo, realistic shot";
+      } else if (styleModifier) {
+        enhancedPrompt += `, in ${styleModifier} style`;
+      }
+
+      const [width, height] = dimensions.split('x');
+      const imageUrls = [];
+
+      for (let i = 0; i < count; i++) {
+        const seed = Math.floor(Math.random() * 9000000) + 1000000;
+        const encodedPrompt = encodeURIComponent(enhancedPrompt);
+        const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`;
+        imageUrls.push(url);
+      }
+
+      const payloadObj = { prompt: prompt, urls: imageUrls };
+      const imagePayload = `IMAGE_GRID:${JSON.stringify(payloadObj)}`;
+
+      // Render image gallery inside UI with individual download buttons
+      aiTextNode.innerHTML = `<div>Generated ${count} Realistic Image(s) for "${prompt}":</div>`;
+      const grid = document.createElement('div');
+      grid.className = 'image-grid';
+      imageUrls.forEach((url, idx) => {
+        const card = document.createElement('div');
+        card.className = 'image-card';
+
+        const img = document.createElement('img');
+        img.src = url;
+        img.className = 'chat-generated-img';
+        img.alt = prompt;
+        img.onclick = () => window.open(url, '_blank');
+
+        const dlBtn = document.createElement('button');
+        dlBtn.className = 'dl-img-btn';
+        dlBtn.innerHTML = '⬇️ Download Image';
+        dlBtn.onclick = (e) => {
+          e.stopPropagation();
+          downloadIndividualImage(url, idx);
+        };
+
+        card.appendChild(img);
+        card.appendChild(dlBtn);
+        grid.appendChild(card);
+      });
+      aiTextNode.appendChild(grid);
+
+      // Save Assistant payload to DB
+      try {
+        await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'assistant', message: imagePayload, created_at: new Date().toISOString() });
+      } catch (dbErr) { console.warn('DB save warning:', dbErr); }
+      currentSession.messages.push({ role: 'assistant', content: imagePayload, createdAtMs: Date.now() });
+      
+      renderHistorySidebar();
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    async function generateImageFromModal() {
+      const prompt = document.getElementById('imgPromptInput').value.trim();
+      const count = parseInt(document.getElementById('imgCountSelect').value, 10) || 1;
+      const ratio = document.getElementById('imgRatioSelect').value;
+      const style = document.getElementById('imgStyleSelect').value;
+
+      if (!prompt) return alert('Please enter an image prompt.');
+
+      closeImageModal();
+      document.getElementById('imgPromptInput').value = '';
+      
+      await processImageGeneration(prompt, count, ratio, style);
+    }
+
+    /* ================= MAIN SEND MESSAGE LOGIC ================= */
+    async function sendMessage() { 
+      const text = userInput.value.trim(); 
+      if (!text || !currentSessionId) return; 
+      if (sendInFlight) return; 
+
+      // Check for inline image generation trigger command
+      if (text.startsWith('/image')) {
+        const prompt = text.replace('/image', '').trim();
+        if (!prompt) return alert('Please provide a prompt after /image (e.g. /image realistic lion in savanna)');
+        await processImageGeneration(prompt, 2, "1024x1024", "photorealistic");
+        return;
+      }
+
+      sendInFlight = true; 
+      sendBtn.disabled = true; 
+      let aiTextNode = null; 
+
+      try { 
+        const session = await getValidSession(); 
+        if (!session?.user) { resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); sendBtn.disabled = false; sendInFlight = false; return; } 
+        currentUserId = session.user.id; 
+        const currentSession = userSessions[currentSessionId]; 
+        if (!currentSession) { createNewChat(true); return; } 
+
+        if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') { 
+          currentSession.title = text.length > 22 ? text.substring(0, 22) + '...' : text; 
+        } 
+        
+        appendMessageUI('user', text); 
+        userInput.value = ''; 
+        userInput.style.height = 'auto'; 
+
+        try { 
+          await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'user', message: text, created_at: new Date().toISOString() }); 
+        } catch (dbErr) { console.warn('DB save warning:', dbErr); } 
+
+        currentSession.messages.push({ role: 'user', content: text, createdAtMs: Date.now() }); 
+        aiTextNode = appendMessageUI('ai', '__TYPING__'); 
+
+        let aiMessages = currentSession.messages.filter(m => m.role !== 'system').map(m => ({ role: m.role, content: m.content })); 
+        aiMessages = aiMessages.map(msg => { 
+          if (msg.content && msg.content.length > 1000) { 
+            return { ...msg, content: msg.content.substring(0, 1000) + '... [truncated]' }; 
+          } 
+          return msg; 
+        }); 
+
+        if (aiMessages.length > 10) { aiMessages = aiMessages.slice(-10); } 
+
+        const response = await fetch(PROXY_URL, { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" }, 
+          body: JSON.stringify({ messages: aiMessages, model: "llama-3.3-70b-versatile", temperature: 0.7, max_tokens: 1024 }) 
+        }); 
+
+        if (!response.ok) { 
+          const errorText = await response.text(); 
+          let errorMsg; 
+          try { 
+            const errorJson = JSON.parse(errorText); 
+            errorMsg = errorJson?.error?.message || errorJson?.error || errorJson?.message || `HTTP ${response.status}`; 
+          } catch { errorMsg = errorText || `HTTP ${response.status}`; } 
+          throw new Error(errorMsg); 
+        } 
+
+        const data = await response.json(); 
+        const reply = data?.choices?.[0]?.message?.content; 
+        if (!reply) throw new Error('AI response missing content'); 
+
+        try { 
+          await supabaseClient.from('chats').insert({ session_id: currentSessionId, user_id: currentUserId, role: 'assistant', message: reply, created_at: new Date().toISOString() }); 
+        } catch (dbErr) { console.warn('DB save warning:', dbErr); } 
+
+        currentSession.messages.push({ role: 'assistant', content: reply, createdAtMs: Date.now() }); 
+        currentSession.lastCreatedAtMs = Date.now(); 
+        if (aiTextNode) aiTextNode.innerText = reply; 
+
+        renderHistorySidebar(); 
+        chatContainer.scrollTop = chatContainer.scrollHeight; 
+      } catch (err) { 
+        let errorMsg = err?.message || String(err); 
+        if (aiTextNode) { 
+          aiTextNode.innerText = '❌ ' + errorMsg; 
+          aiTextNode.style.color = 'var(--danger)'; 
+        } else { 
+          appendErrorUI('❌ ' + errorMsg); 
+        } 
+      } finally { 
+        sendInFlight = false; 
+        sendBtn.disabled = false; 
+      } 
+    }
 
     userInput.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     window.createNewChat = createNewChat;
     window.toggleSidebar = toggleSidebar;
     window.openSettings = openSettings;
     window.closeSettings = closeSettings;
+    window.openImageModal = openImageModal;
+    window.closeImageModal = closeImageModal;
+    window.generateImageFromModal = generateImageFromModal;
     window.setAuthMode = setAuthMode;
     window.setTheme = setTheme;
     window.logout = logout;
     window.handleAuth = handleAuth;
     window.sendMessage = sendMessage;
     window.deleteChat = deleteChat;
+    window.downloadIndividualImage = downloadIndividualImage;
   </script>
 </body>
-            </html>
+</html>
