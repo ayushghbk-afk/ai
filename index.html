@@ -2342,7 +2342,6 @@ For PDF requests:
 
         const requestBody = {
           messages: aiMessages,
-          model: "llama-3.3-70b-versatile",
           temperature: wantsPdf ? 0 : 0.7,
           max_tokens: 4096,
           tools: [PDF_TOOL],
