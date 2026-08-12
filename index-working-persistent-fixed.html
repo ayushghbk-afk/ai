@@ -1,0 +1,3561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Your Friend - AI Assistant</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@4.0.0/dist/jspdf.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg-main:#0b1020;
+      --bg-sidebar:#0a0f1b;
+      --bg-card:#11182a;
+      --bg-input:#11182a;
+      --text-main:#f4f7ff;
+      --text-sub:#a9b4d0;
+      --border:rgba(255,255,255,.10);
+
+      --accent:#7c5cff;
+      --accent-2:#ff4d8d;
+      --accent-3:#26d6a6;
+
+      --warning:#ffcc66;
+      --danger:#ff6b6b;
+
+      --shadow: 0 18px 50px rgba(0,0,0,.40);
+
+      --bubble-border: rgba(255,255,255,.10);
+      --bubble-bg-ai: rgba(255,255,255,.04);
+      --bubble-bg-user: rgba(124,92,255,.16);
+
+      --chat-scrollbar-thumb: rgba(255,255,255,.16);
+      --history-scrollbar-thumb: rgba(255,255,255,.16);
+
+      --grid-opacity: .12;
+      --overlay-dim: rgba(4,8,18,.68);
+      --overlay-modal: rgba(4,8,18,.80);
+
+      --glass: rgba(15,20,35,.72);
+
+      --glow-purple: 0 0 0 1px rgba(124,92,255,.20), 0 18px 60px rgba(124,92,255,.16);
+      --glow-pink: 0 0 0 1px rgba(255,77,141,.18), 0 18px 60px rgba(255,77,141,.12);
+      --glow-green: 0 0 0 1px rgba(38,214,166,.18), 0 18px 60px rgba(38,214,166,.12);
+
+      --chip-bg: rgba(255,255,255,.06);
+      --chip-border: rgba(255,255,255,.10);
+
+      --chat-font-size: 0.98rem;
+      --chat-gap: 10px;
+      --chat-padding: 18px;
+    }
+
+    html[data-theme="light"]{
+      --bg-main:#f3f6ff;
+      --bg-sidebar:#ffffff;
+      --bg-card:#ffffff;
+      --bg-input:#ffffff;
+
+      --text-main:#101828;
+      --text-sub:#5b657d;
+
+      --border:rgba(16,24,40,.10);
+      --shadow: 0 18px 50px rgba(16,24,40,.12);
+
+      --bubble-border: rgba(16,24,40,.10);
+      --bubble-bg-ai: rgba(16,24,40,.04);
+      --bubble-bg-user: rgba(124,92,255,.12);
+
+      --chat-scrollbar-thumb: rgba(16,24,40,.14);
+      --history-scrollbar-thumb: rgba(16,24,40,.14);
+
+      --grid-opacity: .08;
+      --overlay-dim: rgba(16,24,40,.42);
+      --overlay-modal: rgba(16,24,40,.58);
+      --glass: rgba(255,255,255,.82);
+
+      --chip-bg: rgba(16,24,40,.04);
+      --chip-border: rgba(16,24,40,.08);
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    html, body { height: 100%; }
+
+    body{
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+      background:
+        radial-gradient(1200px 600px at 15% 10%, rgba(124,92,255,.30), transparent 58%),
+        radial-gradient(1000px 600px at 85% 18%, rgba(255,77,141,.22), transparent 52%),
+        radial-gradient(800px 550px at 50% 95%, rgba(38,214,166,.16), transparent 55%),
+        radial-gradient(500px 260px at 55% 40%, rgba(124,92,255,.12), transparent 60%),
+        var(--bg-main);
+      color:var(--text-main);
+      display:flex;
+      height:100vh;
+      height:100dvh;
+      overflow:hidden;
+      transition: background-color .2s ease, color .2s ease;
+    }
+
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background:
+        linear-gradient(to right, rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 64px 64px;
+      opacity:var(--grid-opacity);
+      pointer-events:none;
+      mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+    }
+
+    #sidebar-overlay{
+      display:none;
+      position:fixed; inset:0;
+      background: var(--overlay-dim);
+      z-index:90;
+      backdrop-filter: blur(8px);
+    }
+
+    #auth-modal, #settings-modal, #image-modal{
+      position:fixed; inset:0;
+      background: var(--overlay-modal);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:1000;
+      padding:16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .auth-card, .settings-card, .image-tool-card{
+      background: linear-gradient(180deg, rgba(17,24,42,.90), rgba(10,15,27,.90));
+      padding:22px 18px;
+      border-radius: 24px;
+      border:1px solid rgba(255,255,255,.14);
+      width:100%;
+      max-width:520px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      text-align:center;
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .auth-card::before, .settings-card::before, .image-tool-card::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(500px 240px at 15% 0%, rgba(124,92,255,.26), transparent 60%),
+                  radial-gradient(420px 220px at 90% 15%, rgba(255,77,141,.18), transparent 55%);
+      pointer-events:none;
+      opacity:.9;
+    }
+
+    html[data-theme="light"] .auth-card,
+    html[data-theme="light"] .settings-card,
+    html[data-theme="light"] .image-tool-card{
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(244,247,255,.92));
+    }
+
+    .settings-card, .auth-card, .image-tool-card { z-index: 1; }
+
+    .auth-card::after, .settings-card::after, .image-tool-card::after{
+      content:"";
+      position:absolute;
+      width:260px; height:260px;
+      right:-120px; top:-140px;
+      background: radial-gradient(circle, rgba(124,92,255,.34), transparent 62%);
+      pointer-events:none;
+    }
+
+    .auth-card h2, .image-tool-card h2{
+      font-size:1.35rem;
+      letter-spacing:.2px;
+      position:relative;
+    }
+
+    .settings-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:2px;
+    }
+    .settings-header .subhead{
+      font-size:.92rem;
+      color: var(--text-sub);
+      font-weight:800;
+      text-align:left;
+      margin-top:4px;
+    }
+
+    .auth-card input, .settings-card input, .image-tool-card input, .image-tool-card select, .image-tool-card textarea{
+      padding:13px 14px;
+      border-radius:14px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      color:var(--text-main);
+      outline:none;
+      font-size:1rem;
+      transition: border-color .15s ease, box-shadow .15s ease, transform .08s ease, background .15s ease;
+      text-align:left;
+      font-family:inherit;
+      position:relative;
+      z-index:1;
+    }
+
+    .auth-card input:focus, .settings-card input:focus, .image-tool-card input:focus,
+    .image-tool-card select:focus, .image-tool-card textarea:focus{
+      border-color: rgba(124,92,255,.45);
+      box-shadow: 0 0 0 4px rgba(124,92,255,.14);
+    }
+
+    html[data-theme="light"] .auth-card input,
+    html[data-theme="light"] .settings-card input,
+    html[data-theme="light"] .image-tool-card input,
+    html[data-theme="light"] .image-tool-card select,
+    html[data-theme="light"] .image-tool-card textarea{
+      background: rgba(16,24,40,.04);
+    }
+
+    .auth-card button, .settings-card button, .image-tool-card button{
+      padding:12px 14px;
+      border-radius:14px;
+      border:none;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color:white;
+      font-weight:850;
+      font-size:1rem;
+      cursor:pointer;
+      transition: transform .1s ease, filter .2s ease, box-shadow .2s ease, opacity .2s ease;
+      box-shadow: 0 12px 25px rgba(124,92,255,.22);
+      position:relative;
+      z-index:1;
+    }
+
+    .auth-card button:hover, .settings-card button:hover, .image-tool-card button:hover{
+      filter: saturate(1.1) brightness(1.05);
+      box-shadow: var(--glow-purple);
+    }
+
+    .settings-row{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      padding:10px 12px;
+      border:1px solid var(--border);
+      border-radius: 16px;
+      background: rgba(255,255,255,.04);
+      text-align:left;
+      flex-wrap:wrap;
+    }
+
+    html[data-theme="light"] .settings-row{
+      background: rgba(16,24,40,.03);
+    }
+
+    .settings-row .left{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width: 180px;
+      flex: 1;
+    }
+    .settings-row .label{ font-weight:900; letter-spacing:.1px; }
+    .settings-row .sub{ color:var(--text-sub); font-size:.85rem; font-weight:800; }
+
+    .segmented{
+      display:flex;
+      background: rgba(255,255,255,.05);
+      border:1px solid var(--border);
+      border-radius: 14px;
+      overflow:hidden;
+      position:relative;
+      z-index:1;
+    }
+
+    html[data-theme="light"] .segmented{ background: rgba(16,24,40,.03); }
+    .segmented button{
+      border-radius:0;
+      border:none;
+      background: transparent;
+      color: var(--text-main);
+      padding:10px 12px;
+      font-weight:900;
+      font-size:.92rem;
+      transition: background .2s ease, color .2s ease, transform .1s ease;
+      box-shadow:none;
+      cursor:pointer;
+    }
+
+    .segmented button.active{
+      background: linear-gradient(135deg, rgba(124,92,255,.26), rgba(255,77,141,.18));
+      color: var(--text-main);
+    }
+
+    .toggle{
+      width:48px; height:28px;
+      border-radius:999px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      position:relative;
+      cursor:pointer;
+      flex-shrink:0;
+    }
+    .toggle::after{
+      content:"";
+      position:absolute;
+      top:3px; left:3px;
+      width:20px; height:20px;
+      border-radius:50%;
+      background: white;
+      transition: transform .18s ease, background .18s ease;
+      box-shadow: 0 8px 18px rgba(0,0,0,.18);
+    }
+    .toggle.on{
+      background: linear-gradient(135deg, rgba(124,92,255,.32), rgba(255,77,141,.20));
+    }
+    .toggle.on::after{ transform: translateX(20px); }
+
+    aside{
+      width:280px;
+      background: linear-gradient(180deg, rgba(10,15,27,.96), rgba(8,12,22,.90));
+      display:flex;
+      flex-direction:column;
+      padding:14px;
+      border-right:1px solid rgba(255,255,255,.08);
+      flex-shrink:0;
+      position:fixed;
+      top:0; bottom:0; left:0;
+      z-index:100;
+      transform:translateX(-100%);
+      transition: transform .28s cubic-bezier(.2,.9,.2,1), border-color .2s ease;
+      backdrop-filter: blur(14px);
+    }
+
+    html[data-theme="light"] aside{
+      background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,247,255,.95));
+      border-right:1px solid rgba(16,24,40,.08);
+    }
+
+    @media (min-width: 768px){
+      aside{ position:relative; transform:translateX(0) !important; }
+      #sidebar-overlay{ display:none !important; }
+      .menu-btn{ display:none !important; }
+    }
+
+    aside.open{ transform:translateX(0); }
+
+    main{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      height:100%;
+      width:100%;
+      position:relative;
+      overflow:hidden;
+    }
+
+    header{
+      padding:12px 14px;
+      font-size:1rem;
+      font-weight:900;
+      color: var(--text-main);
+      border-bottom:1px solid rgba(255,255,255,.08);
+      display:flex;
+      align-items:center;
+      gap:10px;
+      background: linear-gradient(180deg, rgba(10,15,27,.75), rgba(10,15,27,.50));
+      backdrop-filter: blur(14px);
+      position:relative;
+      z-index:1;
+    }
+
+    html[data-theme="light"] header{
+      background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(244,247,255,.72));
+      border-bottom:1px solid rgba(16,24,40,.08);
+    }
+
+    header .title-wrap{ display:flex; align-items:center; gap:10px; }
+    header .spark{
+      width:10px; height:10px; border-radius:50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.22);
+    }
+
+    .header-actions{
+      margin-left:auto;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+
+    .icon-btn{
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      color: var(--text-main);
+      font-size: 1rem;
+      cursor:pointer;
+      padding: 8px 12px;
+      border-radius: 12px;
+      transition: background .2s ease, transform .1s ease, box-shadow .2s ease, border-color .2s ease;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      position:relative;
+      z-index:1;
+      white-space:nowrap;
+    }
+
+    .icon-btn:hover{
+      background: rgba(255,255,255,.07);
+      border-color: rgba(124,92,255,.25);
+      box-shadow: 0 14px 40px rgba(124,92,255,.14);
+      transform: translateY(-1px);
+    }
+    .icon-btn:active{ transform: translateY(0px) scale(.99); }
+
+    .menu-btn{
+      background: rgba(255,255,255,.04);
+      border:1px solid rgba(255,255,255,.08);
+      color: var(--text-main);
+      font-size: 1.25rem;
+      cursor:pointer;
+      padding: 7px 10px;
+      border-radius: 12px;
+      transition: background .2s ease, transform .1s ease, border-color .2s ease;
+      flex-shrink: 0;
+    }
+    .menu-btn:hover{ background: rgba(255,255,255,.07); border-color: rgba(124,92,255,.25); transform: translateY(-1px); }
+    .menu-btn:active{ transform: translateY(0px) scale(.99); }
+
+    #chat-container{
+      flex:1;
+      overflow-y:auto;
+      padding: var(--chat-padding) 0;
+      display:flex;
+      flex-direction:column;
+      gap:var(--chat-gap);
+      scroll-behavior:smooth;
+      position:relative;
+    }
+
+    #chat-container::-webkit-scrollbar{ width: 10px; }
+    #chat-container::-webkit-scrollbar-thumb{ background: var(--chat-scrollbar-thumb); border-radius: 20px; }
+
+    .message-row{ width:100%; display:flex; justify-content:center; padding: 0 12px; }
+    .message-content{
+      width: 100%;
+      max-width: 860px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    .avatar{
+      width:36px; height:36px;
+      border-radius: 14px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900;
+      font-size:.82rem;
+      flex-shrink:0;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.05);
+      position:relative;
+      overflow:hidden;
+    }
+    .avatar::after{
+      content:"";
+      position:absolute; inset:-20px;
+      background: radial-gradient(circle at 20% 10%, rgba(255,255,255,.22), transparent 42%);
+      pointer-events:none;
+    }
+
+    .user .avatar{
+      background: linear-gradient(135deg, rgba(124,92,255,.95), rgba(255,77,141,.70));
+      color: white;
+      box-shadow: 0 18px 40px rgba(124,92,255,.18);
+      border-color: rgba(124,92,255,.35);
+    }
+    .ai .avatar{
+      background: linear-gradient(135deg, rgba(38,214,166,.85), rgba(124,92,255,.75));
+      color: white;
+      box-shadow: 0 18px 40px rgba(38,214,166,.14);
+      border-color: rgba(38,214,166,.30);
+    }
+
+    .text{
+      flex:1;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+      font-size: var(--chat-font-size);
+      padding-top: 1px;
+      position:relative;
+      z-index:1;
+    }
+
+    .bubble{
+      border-radius: 18px;
+      padding: 11px 14px;
+      border:1px solid var(--bubble-border);
+      background: var(--bubble-bg-ai);
+      backdrop-filter: blur(10px);
+      position:relative;
+      overflow:hidden;
+    }
+    .bubble::before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(520px 140px at 10% 0%, rgba(124,92,255,.18), transparent 55%),
+                  radial-gradient(480px 140px at 90% 10%, rgba(255,77,141,.14), transparent 60%);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .message-row.user .bubble{
+      background: linear-gradient(180deg, rgba(124,92,255,.18), rgba(255,77,141,.10));
+      border-color: rgba(124,92,255,.30);
+      box-shadow: 0 18px 50px rgba(124,92,255,.10);
+    }
+    .message-row.ai .bubble{
+      background: linear-gradient(180deg, rgba(38,214,166,.11), rgba(124,92,255,.08));
+      border-color: rgba(38,214,166,.22);
+      box-shadow: 0 18px 50px rgba(38,214,166,.08);
+    }
+
+    .code-block{
+      margin: 10px 0;
+      border-radius: 16px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      overflow:hidden;
+      box-shadow: 0 16px 45px rgba(0,0,0,.20);
+    }
+    html[data-theme="light"] .code-block{
+      background: rgba(16,24,40,.04);
+      box-shadow: 0 16px 45px rgba(16,24,40,.10);
+      border-color: rgba(16,24,40,.10);
+    }
+    .code-block-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 10px 12px;
+      border-bottom:1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+    }
+    html[data-theme="light"] .code-block-header{
+      border-bottom:1px solid rgba(16,24,40,.08);
+      background: rgba(255,255,255,.55);
+    }
+    .code-lang{
+      font-weight: 950;
+      font-size: .85rem;
+      color: var(--text-main);
+      opacity:.95;
+      letter-spacing:.2px;
+    }
+    .code-copy-btn{
+      background: rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.10);
+      color: var(--text-main);
+      border-radius: 12px;
+      padding: 7px 10px;
+      font-weight: 900;
+      cursor:pointer;
+      transition: transform .1s ease, background .2s ease, border-color .2s ease;
+      font-size: .85rem;
+      white-space: nowrap;
+    }
+    html[data-theme="light"] .code-copy-btn{
+      background: rgba(16,24,40,.03);
+      border-color: rgba(16,24,40,.10);
+    }
+    .code-copy-btn:hover{
+      background: rgba(255,255,255,.10);
+      border-color: rgba(124,92,255,.30);
+      transform: translateY(-1px);
+    }
+    .code-copy-btn:active{ transform: translateY(0px) scale(.99); }
+
+    .code-pre{
+      margin:0;
+      padding: 12px 12px 14px 12px;
+      overflow:auto;
+      max-height: 420px;
+    }
+    .code-pre code{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: .92rem;
+      line-height: 1.55;
+      color: var(--text-main);
+      white-space: pre;
+    }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 14px;
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    .image-card {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: rgba(255,255,255,0.03);
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.09);
+      box-shadow: 0 16px 45px rgba(0,0,0,.20);
+    }
+    html[data-theme="light"] .image-card{
+      box-shadow: 0 16px 45px rgba(16,24,40,.10);
+      background: rgba(16,24,40,0.02);
+    }
+
+    .chat-generated-img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+      display: block;
+      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      background: rgba(0,0,0,.12);
+    }
+
+    .chat-generated-img:hover {
+      transform: scale(1.02);
+      filter: saturate(1.1) contrast(1.02);
+      box-shadow: 0 18px 45px rgba(124,92,255,.18);
+    }
+
+    .dl-img-btn {
+      width: 100%;
+      background: linear-gradient(135deg, rgba(124,92,255,.25), rgba(38,214,166,.22));
+      border: 1px solid rgba(255,255,255,.15);
+      color: var(--text-main);
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-weight: 850;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    }
+
+    .dl-img-btn:hover {
+      background: linear-gradient(135deg, rgba(124,92,255,.48), rgba(38,214,166,.42));
+      box-shadow: 0 18px 50px rgba(38,214,166,.14);
+    }
+
+    .dl-img-btn:active { transform: scale(0.97); }
+
+    .typing{ display:flex; gap:6px; align-items:center; position:relative; z-index:1; }
+    .typing span{
+      width:7px; height:7px;
+      border-radius:50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      animation: bounce 1.1s infinite ease-in-out;
+    }
+    .typing span:nth-child(2){ animation-delay:.12s; }
+    .typing span:nth-child(3){ animation-delay:.24s; }
+    @keyframes bounce{
+      0%,80%,100%{ transform: translateY(0); opacity:.55; }
+      40%{ transform: translateY(-5px); opacity:1; }
+    }
+
+    footer{
+      padding: 10px 10px 14px 10px;
+      display:flex;
+      justify-content:center;
+      background: rgba(10,15,27,.68);
+      border-top:1px solid rgba(255,255,255,.08);
+      backdrop-filter: blur(14px);
+    }
+    html[data-theme="light"] footer{
+      background: rgba(255,255,255,.72);
+      border-top:1px solid rgba(16,24,40,.08);
+    }
+
+    .input-container{
+      width: 100%;
+      max-width: 860px;
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-radius: 22px;
+      padding: 10px 10px 10px 14px;
+      display:flex;
+      align-items:flex-end;
+      gap:10px;
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 18px 50px rgba(0,0,0,.18);
+    }
+    html[data-theme="light"] .input-container{
+      background: linear-gradient(180deg, rgba(16,24,40,.03), rgba(16,24,40,.02));
+      border: 1px solid rgba(16,24,40,.10);
+      box-shadow: 0 18px 50px rgba(16,24,40,.10);
+    }
+
+    textarea{
+      flex:1;
+      background: transparent;
+      border:none;
+      outline:none;
+      color: var(--text-main);
+      font-size: 1rem;
+      font-family: inherit;
+      resize:none;
+      max-height: 130px;
+      height: 26px;
+      padding: 3px 0;
+    }
+
+    .send-btn{
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.35), transparent 42%),
+                  linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border:none;
+      width: 44px;
+      height: 44px;
+      border-radius: 16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-weight:900;
+      transition: transform .1s ease, filter .2s ease, box-shadow .2s ease, opacity .2s ease;
+      box-shadow: 0 18px 50px rgba(124,92,255,.25);
+      border:1px solid rgba(255,255,255,.18);
+      flex-shrink:0;
+    }
+    .send-btn:hover{
+      filter: saturate(1.1) brightness(1.05);
+      box-shadow: var(--glow-purple);
+      transform: translateY(-1px);
+    }
+    .send-btn:active{ transform: translateY(0px) scale(.99); }
+    .send-btn:disabled{ opacity:.55; cursor:not-allowed; transform:none; }
+
+    .error-message{
+      color: #ffd1d1;
+      padding: 10px 12px;
+      background: rgba(255,107,107,.12);
+      border-radius: 12px;
+      border:1px solid rgba(255,107,107,.22);
+      margin: 8px 12px 0 12px;
+      align-self:center;
+      width: 100%;
+      max-width: 860px;
+      box-shadow: 0 18px 60px rgba(255,107,107,.10);
+    }
+
+    @media (max-width: 480px){
+      header{ padding: 10px 10px; }
+      .icon-btn{ padding: 7px 10px; font-size: .95rem; }
+      .header-actions{ gap: 6px; }
+      .input-container{ border-radius: 18px; padding-left: 12px; gap: 8px; }
+      .send-btn{ width: 42px; height: 42px; border-radius: 14px; }
+      .settings-card{ padding: 18px 14px; }
+      .settings-row{ padding: 10px 10px; }
+      .settings-row .left{ min-width: 140px; }
+    }
+
+    @media (max-width: 768px){
+      aside{ width: 88vw; max-width: 320px; }
+      .message-row{ padding: 0 10px; }
+      .image-grid{ grid-template-columns: 1fr; }
+    }
+
+    .toolbar{
+      display:flex;
+      gap:12px;
+      width: 100%;
+      margin-top: 4px;
+    }
+    .memory-modal-card{max-width:760px;width:94vw;max-height:90vh;overflow:auto;}
+    .memory-editor{width:100%;min-height:150px;resize:vertical;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);color:var(--text-main);padding:12px;font:700 .9rem/1.5 inherit;box-sizing:border-box;}
+    html[data-theme="light"] .memory-editor{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.12);}
+    .memory-meta{display:flex;justify-content:space-between;gap:10px;color:var(--text-sub);font-size:.75rem;font-weight:800;margin:6px 2px 12px;}
+    .pdf-preview{width:100%;height:360px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:#fff;margin-top:10px;}
+    .pdf-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;}
+    .pdf-actions button{flex:1;min-width:100px;}
+    .toolbar button{
+      flex:1;
+    }
+
+    /* ===== UI STABILITY PATCH ===== */
+    #memory-modal{
+      position:fixed; inset:0;
+      background:var(--overlay-modal);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:1100;
+      padding:16px;
+      backdrop-filter:blur(10px);
+      overflow:auto;
+    }
+    #memory-modal[aria-hidden="false"], #memory-modal.open{display:flex;}
+
+    main{
+      min-width:0;
+      width:auto;
+    }
+    #chat-container, footer, header{min-width:0;}
+    header{min-width:0;}
+    .title-wrap{min-width:0;}
+    .title-wrap > span:last-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .header-actions{min-width:0;flex-shrink:0;}
+    .input-container{min-width:0;}
+    .input-container textarea{min-width:0;}
+
+    .settings-card, .auth-card, .image-tool-card{
+      max-height:calc(100dvh - 32px);
+      overflow-y:auto;
+      overscroll-behavior:contain;
+    }
+
+    .history-list{
+      flex:1;
+      min-height:0;
+      overflow-y:auto;
+      overflow-x:hidden;
+    }
+
+    @media (min-width:769px){
+      aside{
+        position:relative;
+        left:auto; top:auto; bottom:auto;
+        height:100%;
+        transform:translateX(0) !important;
+      }
+      main{flex:1 1 auto;}
+      .message-content, .input-container, .error-message{max-width:900px;}
+    }
+
+    @media (max-width:768px){
+      body{width:100%;max-width:100vw;}
+      main{width:100%;max-width:100vw;}
+      header{padding:9px 10px;gap:7px;}
+      .header-actions{gap:5px;}
+      .header-actions .icon-btn{
+        width:40px;height:40px;padding:0;
+        justify-content:center;font-size:0;
+      }
+      .header-actions .icon-btn:first-child{font-size:0;}
+      .header-actions .icon-btn:first-child::before{content:'🎨';font-size:18px;}
+      .header-actions .icon-btn:last-child{font-size:18px;}
+      .menu-btn{width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;}
+      #chat-container{padding:12px 0;gap:8px;}
+      .message-row{padding:0 8px;}
+      .message-content{max-width:100%;gap:8px;}
+      .avatar{width:32px;height:32px;border-radius:11px;font-size:.75rem;}
+      .bubble{padding:9px 11px;border-radius:15px;}
+      .text{font-size:var(--chat-font-size);line-height:1.52;}
+      footer{padding:7px 7px max(8px, env(safe-area-inset-bottom));}
+      .input-container{padding:8px 8px 8px 11px;border-radius:18px;gap:7px;}
+      .send-btn{width:42px;height:42px;border-radius:13px;}
+      .settings-card, .auth-card, .image-tool-card{
+        width:100%;max-width:520px;
+        max-height:calc(100dvh - 20px);
+        padding:16px 12px;
+        border-radius:20px;
+      }
+      #settings-modal, #auth-modal, #image-modal, #memory-modal{padding:10px;align-items:flex-start;}
+      .settings-row{gap:8px;padding:9px;}
+      .settings-row .left{min-width:0;flex:1 1 150px;}
+      .segmented{max-width:100%;}
+      .segmented button{padding:9px 10px;font-size:.85rem;}
+      .toolbar{gap:7px;flex-wrap:wrap;}
+      .toolbar button{min-width:0;flex:1 1 140px;}
+      .memory-modal-card{width:100%;max-width:none;max-height:calc(100dvh - 20px);}
+      .memory-editor{min-height:130px;max-height:32vh;}
+      .pdf-preview{height:300px;}
+      .image-grid{gap:9px;}
+    }
+
+    @media (max-width:380px){
+      .title-wrap > span:last-child{font-size:.92rem;}
+      .message-row{padding:0 6px;}
+      .avatar{width:30px;height:30px;}
+      .settings-row .sub{font-size:.78rem;}
+      .settings-row .label{font-size:.9rem;}
+    }
+  
+    .working-bubble { position:relative; overflow:hidden; border:1px solid rgba(124,92,255,.25); background:linear-gradient(135deg,rgba(124,92,255,.09),rgba(38,214,166,.06)); }
+    .working-bubble::before { content:""; position:absolute; inset:0; background:linear-gradient(110deg,transparent 20%,rgba(255,255,255,.07) 45%,transparent 70%); transform:translateX(-120%); animation:workingShimmer 2.2s linear infinite; pointer-events:none; }
+    .working-title,.working-meta { position:relative; display:flex; align-items:center; gap:8px; }
+    .working-title { font-weight:900; letter-spacing:.01em; margin-bottom:7px; }
+    .working-detail { position:relative; color:var(--text-sub); line-height:1.5; font-size:.92rem; }
+    .working-meta { margin-top:10px; color:var(--text-muted); font-size:.76rem; font-weight:800; gap:12px; }
+    .working-orb { width:9px; height:9px; border-radius:50%; background:currentColor; box-shadow:0 0 0 5px rgba(124,92,255,.12); animation:workingPulse 1.15s ease-in-out infinite; }
+    .working-dots { letter-spacing:3px; animation:workingDots 1.2s steps(4,end) infinite; overflow:hidden; width:22px; }
+    @keyframes workingPulse { 0%,100%{transform:scale(.75);opacity:.45} 50%{transform:scale(1.1);opacity:1} }
+    @keyframes workingDots { 0%{opacity:.25} 50%{opacity:1} 100%{opacity:.25} }
+    @keyframes workingShimmer { to{transform:translateX(120%)} }
+    @media (prefers-reduced-motion:reduce) { .working-bubble::before,.working-orb,.working-dots{animation:none!important} }
+</style>
+</head>
+<body>
+
+  <div id="auth-modal" aria-modal="true" role="dialog">
+    <div class="auth-card">
+      <h2 id="authTitle">Sign in</h2>
+      <div class="settings-row" style="border-radius:12px; padding:8px 10px;">
+        <span style="color:var(--text-sub); font-weight:800;">Mode</span>
+        <div class="segmented" role="tablist" aria-label="Auth selector" style="margin-left:auto;">
+          <button type="button" id="mode-login" class="active" onclick="setAuthMode('login')">Login</button>
+          <button type="button" id="mode-signup" onclick="setAuthMode('signup')">Sign up</button>
+        </div>
+      </div>
+      <input type="email" id="email" placeholder="Email" autocomplete="email" />
+      <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
+      <input type="text" id="username" placeholder="Username (for new accounts)" style="display:none;" />
+      <button id="authActionBtn" type="button" onclick="handleAuth()">Continue</button>
+      <div id="authHint" class="sub" style="color:var(--text-sub); font-size:.9rem; text-align:center; font-weight:800;">
+        Hello is is my frist frentend and backend website.
+      </div>
+    </div>
+  </div>
+
+  <div id="settings-modal" aria-modal="true" role="dialog">
+    <div class="settings-card">
+      <div class="settings-header">
+        <div style="flex:1;text-align:left;">
+          <h2 style="font-size:1.2rem; letter-spacing:.2px;">Settings</h2>
+          <div class="subhead">Make it yours. On phone, everything stays clean.</div>
+        </div>
+        <div style="width: 44px;"></div>
+      </div>
+
+      <div class="settings-row">
+        <div class="left">
+          <div class="label">Theme</div>
+          <div class="sub">Choose Light or Dark</div>
+        </div>
+        <div class="segmented">
+          <button type="button" id="theme-light" class="active" onclick="setTheme('light')">Light</button>
+          <button type="button" id="theme-dark" onclick="setTheme('dark')">Dark</button>
+        </div>
+      </div>
+
+      <div class="settings-row">
+        <div class="left">
+          <div class="label">Font Size</div>
+          <div class="sub">Adjust chat text size</div>
+        </div>
+        <input id="fontSizeRange" type="range" min="0.9" max="1.2" step="0.02" value="0.98" oninput="setChatFontSize(this.value)" />
+      </div>
+
+      <div class="settings-row">
+        <div class="left">
+          <div class="label">Compact Mode</div>
+          <div class="sub">Reduce spacing in chat</div>
+        </div>
+        <button class="toggle" id="compactToggle" type="button" onclick="toggleCompactMode()"></button>
+      </div>
+
+      <div class="settings-row">
+        <div class="left">
+          <div class="label">Enter to Send</div>
+          <div class="sub">When ON, Enter sends. Shift+Enter makes a new line.</div>
+        </div>
+        <button class="toggle on" id="enterSendToggle" type="button" onclick="toggleEnterToSend()"></button>
+      </div>
+
+      <div class="settings-row">
+        <div class="left">
+          <div class="label">Sound</div>
+          <div class="sub">Play small sounds on actions</div>
+        </div>
+        <button class="toggle" id="soundToggle" type="button" onclick="toggleSound()"></button>
+      </div>
+
+      <div class="settings-row">
+        <div class="left">
+          <div class="label">Auto Scroll</div>
+          <div class="sub">Keep chat pinned to bottom</div>
+        </div>
+        <button class="toggle on" id="autoScrollToggle" type="button" onclick="toggleAutoScroll()"></button>
+      </div>
+
+      <div class="settings-row">
+        <div class="left"><div class="label">🧠 Memory</div><div class="sub">Use compact long-term memory</div></div>
+        <button class="toggle on" id="memoryToggle" type="button" onclick="toggleMemory()"></button>
+      </div>
+      <div class="settings-row">
+        <div class="left"><div class="label">📄 PDF Preview</div><div class="sub">Show PDFs directly inside chat</div></div>
+        <button class="toggle on" id="pdfPreviewToggle" type="button" onclick="togglePdfPreview()"></button>
+      </div>
+      <div class="settings-row">
+        <div class="left"><div class="label">💬 Response Length</div><div class="sub">Controls the maximum AI response size</div></div>
+        <select id="responseLengthSelect" style="background:transparent;border:0;color:var(--text-main);font-weight:900;">
+          <option value="1536">Short</option><option value="2048" selected>Balanced</option><option value="3072">Long</option>
+        </select>
+      </div>
+      <div class="toolbar">
+        <button type="button" onclick="openMemoryEditor()">🧠 Edit Memory & Prompt</button>
+      </div>
+      <div class="toolbar">
+        <button type="button" onclick="exportCurrentChat()">Export Chat</button>
+        <button type="button" onclick="clearCurrentChat()" style="background:rgba(255,107,107,.16); border:1px solid rgba(255,107,107,.20); box-shadow:none;">Clear Chat</button>
+      </div>
+
+      <button type="button" onclick="closeSettings()">Done</button>
+    </div>
+  </div>
+
+  <div id="memory-modal" aria-modal="true" role="dialog">
+    <div class="settings-card memory-modal-card">
+      <div class="settings-header">
+        <div style="flex:1;text-align:left;">
+          <h2 style="font-size:1.2rem;">🧠 Memory & AI Instructions</h2>
+          <div class="subhead">Edit what your AI remembers and how it behaves.</div>
+        </div>
+      </div>
+      <div class="settings-row" style="display:block;">
+        <div class="label">Long-term memory summary</div>
+        <div class="sub" style="margin:4px 0 8px;">A compact summary is sent instead of your entire old chat history.</div>
+        <textarea id="memoryEditor" class="memory-editor" placeholder="Your AI memory summary..."></textarea>
+        <div class="memory-meta"><span id="memoryCharCount">0 characters</span><span>Keep it concise for lower token usage.</span></div>
+      </div>
+      <div class="settings-row" style="display:block;">
+        <div class="label">System prompt</div>
+        <div class="sub" style="margin:4px 0 8px;">Customize the AI's personality and behavior.</div>
+        <textarea id="systemPromptEditor" class="memory-editor" placeholder="System prompt..."></textarea>
+      </div>
+      <div class="toolbar">
+        <button type="button" onclick="saveMemorySettings()">💾 Save</button>
+        <button type="button" onclick="rebuildMemorySummary()">🔄 Rebuild Summary</button>
+        <button type="button" onclick="resetMemorySettings()" style="background:rgba(255,107,107,.12);box-shadow:none;">↩ Reset</button>
+      </div>
+      <button type="button" onclick="closeMemoryEditor()">Done</button>
+    </div>
+  </div>
+
+  <div id="image-modal" aria-modal="true" role="dialog">
+    <div class="image-tool-card">
+      <h2>🎨 Advanced Image Generator</h2>
+      <textarea id="imgPromptInput" placeholder="Describe what you want to generate..." rows="3"></textarea>
+
+      <div class="settings-row">
+        <span class="label">Count (Batch):</span>
+        <select id="imgCountSelect" style="background:transparent; border:none; color:var(--text-main); font-weight:bold;">
+          <option value="1">1 Image</option>
+          <option value="2">2 Images</option>
+          <option value="4" selected>4 Images (Grid)</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <span class="label">Aspect Ratio:</span>
+        <select id="imgRatioSelect" style="background:transparent; border:none; color:var(--text-main); font-weight:bold;">
+          <option value="1024x1024">Square (1:1)</option>
+          <option value="1280x720">Landscape (16:9)</option>
+          <option value="720x1280">Portrait (9:16)</option>
+        </select>
+      </div>
+
+      <div class="settings-row">
+        <span class="label">Style Preset:</span>
+        <select id="imgStyleSelect" style="background:transparent; border:none; color:var(--text-main); font-weight:bold;">
+          <option value="photorealistic" selected>📸 Ultra Realistic Photography</option>
+          <option value="cinematic">🎬 Cinematic Movie Shot</option>
+          <option value="digital-art">🎨 Digital Art</option>
+          <option value="anime">⛩️ Anime / Manga</option>
+          <option value="3d-render">💎 3D Render</option>
+        </select>
+      </div>
+
+      <div style="display:flex; gap:10px; margin-top:8px;">
+        <button type="button" onclick="closeImageModal()" style="background:rgba(255,255,255,0.1); flex:1; border:1px solid rgba(255,255,255,.12); box-shadow:none;">Cancel</button>
+        <button type="button" onclick="generateImageFromModal()" style="flex:2;">Generate Batch ✨</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <aside id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand" aria-hidden="true" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04);">
+        <span class="dot" style="width:12px; height:12px; border-radius:50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.20);"></span>
+        <span class="name" style="font-weight:900; letter-spacing:.2px;">only free for you</span>
+      </div>
+    </div>
+    <button class="new-chat-btn" onclick="createNewChat()" style="background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14)); border:1px solid rgba(124,92,255,.26); color:var(--text-main); padding:11px 12px; border-radius:14px; display:flex; align-items:center; gap:10px; font-size:.95rem; cursor:pointer; transition: transform .1s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; width:100%; justify-content:flex-start; font-weight:800; box-shadow: 0 10px 26px rgba(124,92,255,.12); position:relative; z-index:1;">
+      <span>+</span> New Chat
+    </button>
+    <div class="history-list" id="historyList"></div>
+
+    <div id="pdfBackupSection" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;">
+        <span style="font-weight:900; font-size:.9rem;">📚 PDF Backups</span>
+        <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
+      </div>
+      <div id="pdfBackupList"></div>
+    </div>
+
+    <div class="user-profile" style="border-top:1px solid rgba(255,255,255,.08); padding-top:12px; margin-top:12px; display:flex; align-items:center; justify-content:space-between; font-size:.95rem; gap:10px;">
+      <div class="user-left" style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <div class="user-avatar" aria-hidden="true" style="width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(255,77,141,.18)); border:1px solid rgba(124,92,255,.22); flex-shrink:0; box-shadow: 0 14px 30px rgba(124,92,255,.15);">U</div>
+        <span id="userDisplay" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()" style="background: rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.22); color: var(--danger); cursor:pointer; padding:8px 10px; border-radius: 12px; font-weight:800; transition: transform .1s ease, box-shadow .2s ease, background .2s ease;">Logout</button>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <div class="title-wrap">
+        <span class="spark"></span>
+        <span>Your Friend</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" title="Image Generator" onclick="openImageModal()">🎨 Image Tool</button>
+        <button class="icon-btn" title="Settings" onclick="openSettings()">⚙️</button>
+      </div>
+    </header>
+
+    <div id="chat-container"></div>
+
+    <footer>
+      <div class="input-container">
+        <textarea id="userInput" placeholder="Message Your Friend or type /image prompt..." rows="1" oninput="autoResize(this)"></textarea>
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send">↑</button>
+      </div>
+    </footer>
+  </main>
+
+  <script>
+    const SUPABASE_URL = "https://mxhmcapcmeatnmwiwnri.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_zAZ8LWIFxUX8cF0H6Gy9uw_H0Yc0BgD";
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+    const PROXY_URL = 'https://groq-proxy.mr-hackerdon808.workers.dev/api/responses';
+    const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
+
+    const el = {};
+    let currentUser = null;
+    let currentUserId = null;
+    let currentSessionId = null;
+    let userSessions = {};
+    let authMode = 'login';
+    const THEME_DEFAULT = 'dark';
+    const DEFAULT_SYSTEM_PROMPT = `You are a helpful, warm, and smart companion named Your Friend.
+
+LONG-TERM MEMORY:
+- Use the MEMORY CONTEXT supplied with each request as background knowledge about the user.
+- Prefer relevant remembered preferences, projects, learning goals, and prior decisions when answering.
+- Never claim to remember something unless it is present in the supplied memory context or the current conversation.
+- Do not expose hidden memory machinery or mention memory context unless the user asks.
+- Treat the current message as highest priority if it conflicts with older context.`;
+    const TOOL_SYSTEM_INSTRUCTIONS = `
+TOOL USE RULES:
+
+You have access to two tools:
+1. create_pdf
+2. generate_image
+
+GENERAL:
+- Decide automatically whether a tool is needed.
+- Never write fake tool calls as text.
+- Always use the actual structured function tools.
+- You may call tools multiple times when necessary.
+
+IMAGE:
+- When the user asks for an image, use generate_image.
+- If the user asks for multiple images, set count accordingly.
+- Maximum 4 images per generate_image call.
+- Use detailed prompts.
+- Do not merely describe the image when the user asks to generate one.
+
+PDF:
+- When the user asks for a PDF, use create_pdf.
+- YOU are the document designer. Do not return HTML, CSS, Markdown, or raw web-page markup as PDF content.
+- Build a complete visual document plan in the create_pdf design object.
+- Decide the visual hierarchy, colors, cover, section layout, cards, callouts, image placement, spacing, and page flow yourself.
+- Do not leave large empty areas. Use a balanced editorial layout with useful content and intentional whitespace.
+- Do not add fake filler just to increase page count.
+- Prefer 2-6 pages when the subject deserves it, but let the content determine length.
+- Use 4-8 meaningful sections for normal informational documents.
+- Write substantial, useful text: explanations, examples, practical details, and takeaways where appropriate.
+- Use the design.theme colors to make the document visually coherent.
+- Use cover information to make the first page feel like a real designed cover, not a plain title.
+- Use blocks for paragraphs, bullets, numbered steps, callouts, quotes, dividers, tables, and image placements.
+- Images belong in the images array and are referenced by imageIndex from blocks. Never put image URLs, <img>, HTML, or Markdown image syntax inside text.
+- Never put <h1>, <p>, <div>, <img>, CSS, JavaScript, or other HTML markup in any PDF text field.
+- If the user asks for a PDF with images, ALWAYS generate the required images first, then call create_pdf and pass all generated images.
+- STORY LENGTH DEFAULT: If the user asks for any story, tale, bedtime story, adventure, fiction, or narrative, write a LONG, fully developed story by default. Include a meaningful beginning, rising action, multiple scenes, character development, a satisfying ending, and enough detail to feel like a complete story. Do NOT make it short unless the user explicitly asks for a short/brief story.
+- If the user explicitly says "short story", "make it short", "brief", or gives a specific shorter length, follow that request instead.
+- IMAGE COUNT: If the user says "use 10 images", "with 10 images", or gives another explicit image count, use exactly that count for the PDF when technically possible. Plan distinct scenes for the images and place them intentionally throughout the story.
+
+DESIGN QUALITY:
+- Choose a palette appropriate to the topic instead of always using purple.
+- Use strong cover typography, section hierarchy, cards, subtle rules, and varied spacing.
+- For stories, use a storybook/editorial style with larger typography and image-led pages.
+- For study guides, use structured learning cards, definitions, examples, and recap boxes.
+- For technical documents, use clean documentation styling and code/command blocks.
+- For business documents, use professional report styling, summary cards, tables, and clear sections.
+- For children's content, use friendly but readable colors and playful section cards without sacrificing legibility.
+
+EXAMPLES:
+- "Make an image of a cat" → generate_image
+- "Make a PDF about cats" → create_pdf
+- "Make a PDF about cats with a cat image" → generate_image → create_pdf
+`;
+    const PDF_TOOL = {
+      type: "function",
+      function: {
+        name: "create_pdf",
+        description: "Create a fully designed, polished PDF. The AI controls the visual design, layout, typography, color palette, cover, sections, cards, tables, callouts, spacing, and image placement. Never send HTML or CSS as content.",
+        parameters: {
+          type: "object",
+          properties: {
+            title: { type: "string", description: "Document title." },
+            filename: { type: "string", description: "Safe filename ending in .pdf." },
+            design: {
+              type: "object",
+              description: "Complete visual design plan for the PDF.",
+              properties: {
+                orientation: { type: "string", enum: ["portrait", "landscape"] },
+                theme: {
+                  type: "object",
+                  properties: {
+                    primary: { type: "string" },
+                    secondary: { type: "string" },
+                    background: { type: "string" },
+                    text: { type: "string" },
+                    muted: { type: "string" }
+                  }
+                },
+                cover: {
+                  type: "object",
+                  properties: {
+                    eyebrow: { type: "string" },
+                    subtitle: { type: "string" },
+                    intro: { type: "string" },
+                    imageIndex: { type: "integer" }
+                  }
+                },
+                showToc: { type: "boolean" },
+                sections: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      heading: { type: "string" },
+                      subheading: { type: "string" },
+                      blocks: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            type: { type: "string", enum: ["paragraph", "bullets", "numbered", "callout", "quote", "image", "divider", "table", "spacer"] },
+                            text: { type: "string" },
+                            items: { type: "array", items: { type: "string" } },
+                            imageIndex: { type: "integer" },
+                            caption: { type: "string" },
+                            columns: { type: "array", items: { type: "string" } },
+                            rows: { type: "array", items: { type: "array", items: { type: "string" } } },
+                            size: { type: "string", enum: ["small", "medium", "large"] }
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                footer: { type: "string" }
+              }
+            },
+            content: { type: "string", description: "Legacy fallback only. Do not use when design is supplied." },
+            images: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: { url: { type: "string" }, alt: { type: "string" } },
+                required: ["url"], additionalProperties: false
+              }
+            }
+          },
+          required: ["title", "filename", "design", "images"],
+          additionalProperties: false
+        }
+      }
+    };
+    const IMAGE_TOOL = {
+      type: "function",
+      function: {
+        name: "generate_image",
+        description: "Generate an image when the user asks for an image, picture, artwork, illustration, thumbnail, wallpaper, character, scene, portrait, or other visual. Use this tool instead of merely describing the image. Do not use it for ordinary conversation.",
+        parameters: {
+          type: "object",
+          properties: {
+            prompt: {
+              type: "string",
+              description: "A detailed visual prompt describing exactly what should be generated."
+            },
+            count: {
+              type: "integer",
+              description: "Number of images to generate. Use 1 unless the user requests multiple.",
+              minimum: 1,
+              maximum: 12
+            },
+            dimensions: {
+              type: "string",
+              enum: ["1024x1024", "1024x1536", "1536x1024"],
+              description: "Image dimensions. Use 1024x1024 unless the user requests portrait or landscape."
+            },
+            style: {
+              type: "string",
+              enum: ["photorealistic", "cinematic", "anime", "digital art", "illustration", "none"],
+              description: "Visual style. Use photorealistic by default unless another style is requested."
+            }
+          },
+          required: ["prompt"],
+          additionalProperties: false
+        }
+      }
+    };
+    const PDF_TOOL_RESPONSES = {
+      type: "function",
+      name: "create_pdf",
+      description: "Create a fully designed PDF. The AI controls the visual design, cover, colors, layout, typography, sections, cards, tables, callouts, spacing, and image placement. Never send HTML/CSS as content.",
+      strict: false,
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          filename: { type: "string" },
+          design: {
+            type: "object",
+            properties: {
+              orientation: { type: "string", enum: ["portrait", "landscape"] },
+              theme: { type: "object", properties: { primary: {type:"string"}, secondary:{type:"string"}, background:{type:"string"}, text:{type:"string"}, muted:{type:"string"}} },
+              cover: { type: "object", properties: { eyebrow:{type:"string"}, subtitle:{type:"string"}, intro:{type:"string"}, imageIndex:{type:"integer"} } },
+              showToc: { type: "boolean" },
+              sections: { type: "array", items: { type: "object", properties: { heading:{type:"string"}, subheading:{type:"string"}, blocks:{type:"array", items:{type:"object", properties:{type:{type:"string"}, text:{type:"string"}, items:{type:"array",items:{type:"string"}}, imageIndex:{type:"integer"}, caption:{type:"string"}, columns:{type:"array",items:{type:"string"}}, rows:{type:"array",items:{type:"array",items:{type:"string"}}}, size:{type:"string"}}}} } } },
+              footer: { type: "string" }
+            }
+          },
+          content: { type: "string" },
+          images: { type: "array", items: { type: "object", properties:{url:{type:"string"},alt:{type:"string"}}, required:["url"], additionalProperties:false } }
+        },
+        required: ["title", "filename", "design", "images"],
+        additionalProperties: false
+      }
+    };
+    const IMAGE_TOOL_RESPONSES = {
+      type: "function",
+      name: "generate_image",
+      description: "Generate images for the website or as source material for a PDF.",
+      strict: true,
+      parameters: {
+        type: "object",
+        properties: {
+          prompt: { type: "string" },
+          count: { type: "integer", minimum: 1, maximum: 12 },
+          dimensions: { type: "string", enum: ["1024x1024", "1024x1536", "1536x1024"] },
+          style: { type: "string", enum: ["photorealistic", "cinematic", "anime", "digital art", "illustration", "none"] }
+        },
+        required: ["prompt", "count", "dimensions", "style"],
+        additionalProperties: false
+      }
+    };
+
+    async function generateImagesForTool(prompt, count, dimensions, style, onProgress = null) {
+      count = Math.min(Math.max(Number(count) || 1, 1), 12);
+      const urls = Array.from({ length: count }, () => {
+        const seed = Math.floor(Math.random() * 9000000) + 1000000;
+        const [width, height] = dimensions.split('x');
+        return 'https://image.pollinations.ai/prompt/' + encodeURIComponent(style !== 'none' ? `${style}, ${prompt}` : prompt) +
+          `?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`;
+      });
+      const results = [];
+      for (let i = 0; i < urls.length; i++) {
+        const item = { url: urls[i], alt: prompt };
+        results.push(item);
+        if (typeof onProgress === 'function') onProgress(item, i + 1, urls.length);
+      }
+      return results;
+    }
+
+    let sendInFlight = false;
+    let sessionNavigation = [];
+    let settings = { compact: false, enterToSend: true, sound: false, autoScroll: true, chatFontSize: 0.98, memoryEnabled: true, pdfPreview: true, responseLength: 2048 };
+    let customSystemPrompt = '';
+    let memorySummary = '';
+    let memoryDirty = false;
+
+    const renderHtml = (value) => String(value)
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('\\"','&quot;')
+      .replaceAll("'",'&#039;');
+
+    function beep(freq = 660, duration = 0.04) {
+      if (!settings.sound) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        const ctx = beep.ctx || (beep.ctx = new AudioCtx());
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.frequency.value = freq;
+        o.type = 'sine';
+        g.gain.value = 0.02;
+        o.start();
+        o.stop(ctx.currentTime + duration);
+      } catch {}
+    }
+
+    function sanitizePdfFilename(filename) {
+      let safe = String(filename || 'document.pdf')
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .trim();
+      if (!safe) safe = 'document.pdf';
+      if (!safe.toLowerCase().endsWith('.pdf')) safe += '.pdf';
+      return safe.slice(0, 120);
+    }
+
+    function sanitizePdfText(value) {
+      return String(value || '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .replace(/\u0000/g, '');
+    }
+
+    async function downloadImageAsDataURL(url) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Image download failed: HTTP ${response.status}`);
+      }
+      const blob = await response.blob();
+      return await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error("Could not convert image to data URL"));
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    function getPdfImageFormat(dataUrl) {
+      if (dataUrl.startsWith("data:image/png")) return "PNG";
+      if (dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")) return "JPEG";
+      return "JPEG";
+    }
+
+    function pdfColor(value, fallback) {
+      const v = String(value || '').trim();
+      const m = v.match(/^#?([0-9a-f]{6})$/i);
+      if (!m) return fallback;
+      return [parseInt(m[1].slice(0,2),16), parseInt(m[1].slice(2,4),16), parseInt(m[1].slice(4,6),16)];
+    }
+
+    function stripPdfMarkup(text) {
+      // jsPDF's built-in Helvetica fonts do not contain emoji/symbol glyphs.
+      // Normalize markup and decorative Unicode before drawing so PDFs never
+      // contain replacement boxes or corrupted glyphs such as "Ø<ß".
+      return String(text || '')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<[^>]*>/g, '')
+        .replace(/\*\*(.*?)\*\*/g, '$1')
+        .replace(/__(.*?)__/g, '$1')
+        .replace(/`([^`]*)`/g, '$1')
+        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+        .replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, '')
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '')
+        .replace(/[\u2018\u2019]/g, "'")
+        .replace(/[\u201C\u201D]/g, '"')
+        .replace(/\u2013/g, '-')
+        .replace(/\u2014/g, '-')
+        .replace(/\u2026/g, '...')
+        .replace(/\u00A0/g, ' ')
+        .replace(/\u2022/g, '-')
+        .replace(/\s+$/g, '')
+        .trim();
+    }
+
+    function showToolProgress(aiTextNode, kind, total) {
+      if (!aiTextNode) return null;
+      aiTextNode.replaceChildren();
+      const wrap = document.createElement('div');
+      wrap.className = 'tool-progress';
+      const title = document.createElement('div');
+      title.className = 'tool-progress-title';
+      title.textContent = kind === 'image' ? `Generating ${total} image${total === 1 ? '' : 's'}...` : 'Preparing PDF...';
+      const status = document.createElement('div');
+      status.className = 'tool-progress-status';
+      status.textContent = kind === 'image' ? `0 / ${total}` : 'Working...';
+      const bar = document.createElement('div');
+      bar.className = 'tool-progress-bar';
+      const fill = document.createElement('div');
+      fill.className = 'tool-progress-fill';
+      bar.appendChild(fill);
+      wrap.append(title, status, bar);
+      aiTextNode.appendChild(wrap);
+      const state = loadWorkingState(currentSessionId);
+      if (state) {
+        state.detail = kind === 'image' ? `Generating ${total} image${total === 1 ? '' : 's'}...` : 'Designing and building your PDF...';
+        saveWorkingState(state);
+      }
+      return { wrap, status, fill };
+    }
+
+    function updateToolProgress(progress, done, total) {
+      if (!progress) return;
+      progress.status.textContent = `${done} / ${total}`;
+      progress.fill.style.width = `${Math.min(100, Math.round(done / total * 100))}%`;
+      const state = loadWorkingState(currentSessionId);
+      if (state) { state.detail = `Generating image ${done} of ${total}...`; saveWorkingState(state); }
+    }
+
+    async function createPdfDocument({ title, filename, design = null, content = '', images = [] }) {
+      if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library failed to load.');
+      const safeTitle = stripPdfMarkup(title || 'Document').slice(0, 200) || 'Document';
+      const safeFilename = sanitizePdfFilename(filename);
+      const pdfImages = Array.isArray(images) ? images.filter(x => x && typeof x.url === 'string' && x.url.trim()).slice(0, 8) : [];
+      const d = design && typeof design === 'object' ? design : null;
+
+      // Legacy fallback: if an older tool call only supplies content, turn it into a simple design.
+      const legacyText = stripPdfMarkup(content);
+      const sections = Array.isArray(d?.sections) && d.sections.length ? d.sections : [{
+        heading: '', subheading: '', blocks: legacyText.split(/\n\s*\n/).filter(Boolean).map(t => ({ type: 'paragraph', text: t }))
+      }];
+      if (!legacyText && !sections.some(s => Array.isArray(s.blocks) && s.blocks.length)) throw new Error('PDF content cannot be empty.');
+
+      const orientation = d?.orientation === 'landscape' ? 'landscape' : 'portrait';
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4', compress: true });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = orientation === 'landscape' ? 17 : 18;
+      const contentWidth = pageWidth - margin * 2;
+      const footerY = pageHeight - 11;
+      const bottom = pageHeight - 20;
+      let y = 0;
+
+      const primary = pdfColor(d?.theme?.primary, [67, 89, 170]);
+      const secondary = pdfColor(d?.theme?.secondary, [29, 176, 148]);
+      const background = pdfColor(d?.theme?.background, [248, 249, 252]);
+      const ink = pdfColor(d?.theme?.text, [30, 35, 48]);
+      const muted = pdfColor(d?.theme?.muted, [100, 108, 124]);
+      const white = [255,255,255];
+
+      function newPage() { pdf.addPage(); y = 22; }
+      function ensure(h) { if (y + h > bottom) newPage(); }
+      function wrapped(text, x, width, lineHeight, opts = {}) {
+        const clean = stripPdfMarkup(text);
+        if (!clean) return 0;
+        const lines = pdf.splitTextToSize(clean, Math.max(10, width));
+        for (const line of lines) {
+          ensure(lineHeight);
+          pdf.text(line, x, y, opts);
+          y += lineHeight;
+        }
+        return lines.length;
+      }
+      function rule() { ensure(7); pdf.setDrawColor(...secondary); pdf.setLineWidth(0.7); pdf.line(margin, y, margin + Math.min(32, contentWidth * .2), y); y += 6; }
+      function card(text, fill, border, label = '') {
+        const lines = pdf.splitTextToSize(stripPdfMarkup(text), Math.max(10, contentWidth - 16));
+        const lineH = 5.2;
+        const labelH = label ? 15 : 10;
+        const maxLines = Math.max(1, Math.floor((bottom - 10 - (y - 3) - labelH) / lineH));
+        if (y + labelH + 5 > bottom) newPage();
+        let offset = 0;
+        while (offset < lines.length) {
+          const available = Math.max(1, Math.floor((bottom - y - labelH - 8) / lineH));
+          const chunk = lines.slice(offset, offset + available);
+          const h = Math.max(16, chunk.length * lineH + labelH);
+          ensure(h + 4);
+          pdf.setFillColor(...fill); pdf.setDrawColor(...border); pdf.setLineWidth(.35);
+          pdf.roundedRect(margin, y - 3, contentWidth, h, 4, 4, 'FD');
+          pdf.setFillColor(...border); pdf.roundedRect(margin, y - 3, 2.5, h, 1.2, 1.2, 'F');
+          if (label && offset === 0) { pdf.setTextColor(...border); pdf.setFont('helvetica','bold'); pdf.setFontSize(8.5); pdf.text(label.toUpperCase(), margin+8, y+5); y += 8; }
+          pdf.setTextColor(...ink); pdf.setFont('helvetica','normal'); pdf.setFontSize(10.2);
+          for (const line of chunk) { ensure(lineH); pdf.text(line, margin+8, y+2); y += lineH; }
+          y += 6;
+          offset += chunk.length;
+          if (offset < lines.length) newPage();
+        }
+      }
+      async function addImage(index, caption, size='medium') {
+        const image = pdfImages[index];
+        if (!image) return;
+        try {
+          const data = await downloadImageAsDataURL(image.url);
+          const fmt = getPdfImageFormat(data);
+          const img = await new Promise((resolve,reject)=>{ const im=new Image(); im.onload=()=>resolve(im); im.onerror=reject; im.src=data; });
+          const maxW = size === 'small' ? contentWidth*.46 : contentWidth;
+          const maxH = size === 'large' ? 125 : size === 'small' ? 58 : 88;
+          const scale = Math.min(maxW/img.width, maxH/img.height);
+          const w = img.width*scale, h=img.height*scale;
+          ensure(h + 15);
+          pdf.addImage(data, fmt, margin+(contentWidth-w)/2, y, w, h, undefined, 'FAST');
+          y += h + 5;
+          const cap = stripPdfMarkup(caption || image.alt || '');
+          if (cap) { pdf.setTextColor(...muted); pdf.setFont('helvetica','italic'); pdf.setFontSize(8); wrapped(cap, margin+10, contentWidth-20, 4.3, {align:'center'}); y += 3; }
+        } catch(e) { console.warn('PDF image skipped:', e); }
+      }
+      function drawTable(columns, rows) {
+        if (!Array.isArray(columns) || !columns.length || !Array.isArray(rows)) return;
+        const cols = columns.slice(0,5); const widths = cols.map(()=>contentWidth/cols.length);
+        const drawRow = (cells, header=false) => {
+          const cellLines = cells.map((c,i)=>pdf.splitTextToSize(stripPdfMarkup(c), widths[i]-5));
+          const h = Math.max(8, ...cellLines.map(a=>a.length*4.2+5));
+          ensure(h+2);
+          let x=margin;
+          for(let i=0;i<cols.length;i++){
+            pdf.setFillColor(...(header ? primary : (i%2 ? white : background)));
+            pdf.setDrawColor(220,223,231); pdf.rect(x,y-3,widths[i],h,'FD');
+            pdf.setTextColor(...(header ? white : ink)); pdf.setFont('helvetica',header?'bold':'normal'); pdf.setFontSize(header?8.2:8.1);
+            let yy=y+2; for(const line of cellLines[i]){ pdf.text(line,x+2.5,yy); yy+=4.2; }
+            x+=widths[i];
+          }
+          y+=h;
+        };
+        drawRow(cols,true); for(const r of rows.slice(0,20)) drawRow(Array.from({length:cols.length},(_,i)=>r?.[i] ?? ''),false); y+=5;
+      }
+      function drawBlock(block) {
+        const type = String(block?.type || 'paragraph');
+        const text = stripPdfMarkup(block?.text || '');
+        if (type === 'spacer') { y += Math.min(18, Math.max(3, Number(block?.size === 'large' ? 14 : block?.size === 'small' ? 4 : 8))); return; }
+        if (type === 'divider') { rule(); return; }
+        if (type === 'image') { return addImage(Number(block?.imageIndex ?? 0), block?.caption, block?.size || 'medium'); }
+        if (type === 'callout') { return card(text, [245,248,255], primary, 'Key point'); }
+        if (type === 'quote') { return card(text, [246,251,249], secondary, 'Note'); }
+        if (type === 'table') { drawTable(block?.columns || [], block?.rows || []); return; }
+        if (type === 'bullets' || type === 'numbered') {
+          const items = Array.isArray(block?.items) ? block.items : (text ? text.split('\n') : []);
+          pdf.setFont('helvetica','normal'); pdf.setFontSize(10.2); pdf.setTextColor(...ink);
+          items.slice(0,30).forEach((item,idx)=>{ const prefix=type==='numbered'?`${idx+1}.`:'-'; pdf.setFont('helvetica','bold'); pdf.setTextColor(...primary); pdf.text(prefix,margin,y); pdf.setFont('helvetica','normal'); pdf.setTextColor(...ink); wrapped(item,margin+8,contentWidth-8,5.3); y+=1.5; }); y+=3; return;
+        }
+        if (text) { pdf.setTextColor(...ink); pdf.setFont('helvetica','normal'); pdf.setFontSize(10.4); wrapped(text,margin,contentWidth,5.5); y+=3; }
+      }
+
+      // Designed cover: full-width color field, typography, optional hero image, and a compact intro.
+      pdf.setFillColor(...background); pdf.rect(0,0,pageWidth,pageHeight,'F');
+      pdf.setFillColor(...primary); pdf.rect(0,0,pageWidth,70,'F');
+      pdf.setFillColor(...secondary); pdf.circle(pageWidth-18,18,26,'F');
+      const cover = d?.cover || {};
+      pdf.setTextColor(...white); pdf.setFont('helvetica','bold'); pdf.setFontSize(9);
+      pdf.text(stripPdfMarkup(cover.eyebrow || 'YOUR FRIEND'), margin, 20);
+      pdf.setFontSize(28);
+      const titleLines=pdf.splitTextToSize(safeTitle,contentWidth*.86);
+      const titleLineHeight=10.5;
+      const titleHeight=titleLines.length*titleLineHeight;
+      // Keep long titles inside the cover header instead of running into the artwork.
+      const titleSize=titleLines.length > 3 ? 22 : titleLines.length > 2 ? 25 : 28;
+      pdf.setFontSize(titleSize);
+      const finalTitleLines=pdf.splitTextToSize(safeTitle,contentWidth*.86);
+      pdf.text(finalTitleLines,margin,34,{maxWidth:contentWidth*.86});
+      y=Math.max(76,34 + finalTitleLines.length*(titleSize*.38) + 18);
+      if (cover.subtitle) { pdf.setTextColor(...muted); pdf.setFont('helvetica','bold'); pdf.setFontSize(12); wrapped(cover.subtitle,margin,contentWidth,6.2); y+=2; }
+      if (cover.intro) { pdf.setTextColor(...ink); pdf.setFont('helvetica','normal'); pdf.setFontSize(10.5); wrapped(cover.intro,margin,contentWidth,5.6); y+=4; }
+      if (Number.isInteger(cover.imageIndex) && pdfImages[cover.imageIndex]) { await addImage(cover.imageIndex, '', orientation==='landscape'?'large':'medium'); y+=2; }
+      pdf.setFillColor(...primary); pdf.roundedRect(margin,y,contentWidth,1.5,.7,.7,'F'); y+=10;
+
+      // Optional contents page, generated from AI-designed sections.
+      if (d?.showToc && sections.length > 1) {
+        ensure(25); pdf.setTextColor(...primary); pdf.setFont('helvetica','bold'); pdf.setFontSize(20); pdf.text('Contents',margin,y); y+=10;
+        sections.forEach((sec,i)=>{ if(!sec?.heading) return; ensure(8); pdf.setTextColor(...ink); pdf.setFont('helvetica','normal'); pdf.setFontSize(10); pdf.text(`${String(i+1).padStart(2,'0')}  ${stripPdfMarkup(sec.heading)}`,margin,y); pdf.setDrawColor(225,228,235); pdf.setLineWidth(.25); pdf.line(margin+45,y,pageWidth-margin,y); y+=6; });
+        y+=5;
+      }
+
+      // AI-controlled sections and blocks.
+      for (let i=0;i<sections.length;i++) {
+        const sec=sections[i]||{}; const heading=stripPdfMarkup(sec.heading||'');
+        if (heading) {
+          ensure(24); rule(); pdf.setTextColor(...primary); pdf.setFont('helvetica','bold'); pdf.setFontSize(18); wrapped(heading,margin,contentWidth,7.5); y+=1;
+          if(sec.subheading){ pdf.setTextColor(...muted); pdf.setFont('helvetica','normal'); pdf.setFontSize(9.5); wrapped(sec.subheading,margin,contentWidth,5); y+=2; }
+        }
+        for (const block of (Array.isArray(sec.blocks)?sec.blocks:[])) await drawBlock(block);
+      }
+
+      const footerText=stripPdfMarkup(d?.footer || '');
+      const totalPages=pdf.getNumberOfPages();
+      for(let page=1;page<=totalPages;page++){
+        pdf.setPage(page); pdf.setDrawColor(220,223,231); pdf.setLineWidth(.3); pdf.line(margin,pageHeight-16,pageWidth-margin,pageHeight-16);
+        pdf.setTextColor(...muted); pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5);
+        pdf.text(footerText || safeTitle.slice(0,70),margin,pageHeight-9);
+        pdf.text(`${page} / ${totalPages}`,pageWidth-margin,pageHeight-9,{align:'right'});
+      }
+      return { blob: pdf.output('blob'), filename: safeFilename, title: safeTitle };
+    }
+
+    function downloadPdfBlob(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function buildPdfDownloadCard(pdfResult) {
+      const card =
+        document.createElement('div');
+
+      card.style.cssText = `
+        margin-top:10px;
+        padding:12px;
+        border-radius:14px;
+        border:1px solid rgba(124,92,255,.25);
+        background:linear-gradient(
+          135deg,
+          rgba(124,92,255,.12),
+          rgba(38,214,166,.08)
+        );
+      `;
+
+      const title =
+        document.createElement('div');
+
+      title.textContent =
+        `📄 ${pdfResult.title}`;
+
+      title.style.cssText =
+        'font-weight:900;margin-bottom:8px;';
+
+      const status =
+        document.createElement('div');
+
+      status.textContent =
+        '☁️ Secure backup saved';
+
+      status.style.cssText = `
+        font-size:.82rem;
+        color:var(--text-sub);
+        margin-bottom:9px;
+        font-weight:700;
+      `;
+
+      const button =
+        document.createElement('button');
+
+      button.type = 'button';
+      button.textContent =
+        '⬇️ Download PDF';
+
+      button.style.cssText = `
+        border:0;
+        border-radius:10px;
+        padding:9px 13px;
+        background:
+          linear-gradient(
+            135deg,
+            var(--accent),
+            var(--accent-2)
+          );
+        color:white;
+        font-weight:900;
+        cursor:pointer;
+      `;
+
+      button.onclick = async () => {
+        button.disabled = true;
+        button.textContent =
+          '⏳ Preparing...';
+
+        try {
+          const { data, error } =
+            await supabaseClient.storage
+              .from('pdfs')
+              .createSignedUrl(
+                pdfResult.storagePath,
+                60 * 60
+              );
+
+          if (error) throw error;
+
+          if (!data?.signedUrl) {
+            throw new Error(
+              'Download URL was not created.'
+            );
+          }
+
+          window.open(
+            data.signedUrl,
+            '_blank',
+            'noopener,noreferrer'
+          );
+
+          button.textContent =
+            '✅ Opened';
+
+          setTimeout(() => {
+            button.textContent =
+              '⬇️ Download PDF';
+            button.disabled = false;
+          }, 1500);
+
+        } catch (err) {
+          console.error(
+            'PDF download error:',
+            err
+          );
+
+          button.textContent =
+            '❌ Failed';
+
+          setTimeout(() => {
+            button.textContent =
+              '⬇️ Download PDF';
+            button.disabled = false;
+          }, 1800);
+        }
+      };
+
+      card.appendChild(title);
+      card.appendChild(status);
+      if (pdfResult.blob && settings.pdfPreview) {
+        const preview = document.createElement('iframe');
+        preview.className = 'pdf-preview';
+        preview.title = pdfResult.title || 'PDF preview';
+        const previewUrl = URL.createObjectURL(pdfResult.blob);
+        preview.src = previewUrl;
+        preview.onload = () => setTimeout(() => URL.revokeObjectURL(previewUrl), 60000);
+        card.appendChild(preview);
+      }
+      const actions = document.createElement('div');
+      actions.className = 'pdf-actions';
+      actions.appendChild(button);
+      if (pdfResult.storagePath) {
+        const del = document.createElement('button');
+        del.type = 'button'; del.textContent = '🗑️ Delete';
+        del.style.cssText = 'background:rgba(255,107,107,.12);border:1px solid rgba(255,107,107,.2);box-shadow:none;';
+        del.onclick = () => deletePdfBackup({ id: pdfResult.backupId, storage_path: pdfResult.storagePath, title: pdfResult.title });
+        actions.appendChild(del);
+      }
+      card.appendChild(actions);
+
+      return card;
+    }
+
+    async function executePdfTool(toolArgs, aiTextNode) {
+      if (!currentUserId) {
+        throw new Error('You must be logged in to save PDFs.');
+      }
+
+      const pdfResult =
+        await createPdfDocument(toolArgs);
+
+      const cleanPdfFilename =
+        String(pdfResult.filename || 'document.pdf')
+          .replace(/[^a-zA-Z0-9._-]/g, '-')
+          .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '') || 'document.pdf';
+
+      const uniquePdfFilename =
+        `${Date.now()}-${crypto.randomUUID()}-${cleanPdfFilename}`;
+
+      const storagePath =
+        `${currentUserId}/${uniquePdfFilename}`;
+
+      console.log(
+        'Uploading PDF backup:',
+        storagePath
+      );
+
+      const { error: uploadError } =
+        await supabaseClient.storage
+          .from('pdfs')
+          .upload(
+            storagePath,
+            pdfResult.blob,
+            {
+              contentType: 'application/pdf',
+              upsert: false,
+              cacheControl: '3600'
+            }
+          );
+
+      if (uploadError) {
+        console.error(
+          'PDF Storage upload error:',
+          uploadError
+        );
+
+        throw new Error(
+          'PDF was created, but backup upload failed: ' +
+          getErrorMessage(uploadError)
+        );
+      }
+
+      const { data: savedPdf, error: dbError } =
+        await supabaseClient
+          .from('pdf_files')
+          .insert({
+            user_id: currentUserId,
+            title: pdfResult.title,
+            filename: pdfResult.filename,
+            storage_path: storagePath,
+            file_size: pdfResult.blob.size,
+            mime_type: 'application/pdf'
+          })
+          .select()
+          .single();
+
+      if (dbError) {
+        console.error(
+          'PDF metadata error:',
+          dbError
+        );
+
+        await supabaseClient.storage
+          .from('pdfs')
+          .remove([storagePath]);
+
+        throw new Error(
+          'PDF backup metadata could not be saved: ' +
+          getErrorMessage(dbError)
+        );
+      }
+
+      await loadPdfHistory();
+
+      if (aiTextNode) {
+        aiTextNode.replaceChildren();
+
+        const message =
+          document.createElement('div');
+
+        message.textContent =
+          '📄 PDF created and backed up securely.';
+
+        aiTextNode.appendChild(message);
+
+        aiTextNode.appendChild(
+          buildPdfDownloadCard({
+            ...pdfResult,
+            blob: pdfResult.blob,
+            storagePath,
+            backupId: savedPdf.id
+          })
+        );
+      }
+
+      beep(900, 0.06);
+
+      return {
+        success: true,
+        tool: 'create_pdf',
+        filename: pdfResult.filename,
+        title: pdfResult.title,
+        storagePath,
+        backupId: savedPdf.id,
+        message:
+          'PDF created and securely backed up.'
+      };
+    }
+
+    async function loadPdfHistory() {
+      if (!currentUserId) return;
+
+      try {
+        const { data, error } =
+          await supabaseClient
+            .from('pdf_files')
+            .select(
+              'id, title, filename, storage_path, file_size, created_at'
+            )
+            .eq('user_id', currentUserId)
+            .order('created_at', {
+              ascending: false
+            });
+
+        if (error) throw error;
+
+        window.userPdfHistory =
+          data || [];
+
+        renderPdfHistory();
+
+      } catch (err) {
+        console.error(
+          'PDF history error:',
+          err
+        );
+
+        window.userPdfHistory = [];
+
+        renderPdfHistory();
+      }
+    }
+
+    async function downloadBackedUpPdf(pdf) {
+      if (!pdf?.storage_path) return;
+
+      try {
+        const { data, error } =
+          await supabaseClient.storage
+            .from('pdfs')
+            .createSignedUrl(
+              pdf.storage_path,
+              60 * 60
+            );
+
+        if (error) throw error;
+
+        if (!data?.signedUrl) {
+          throw new Error(
+            'Could not create download URL.'
+          );
+        }
+
+        window.open(
+          data.signedUrl,
+          '_blank',
+          'noopener,noreferrer'
+        );
+
+      } catch (err) {
+        console.error(
+          'Backed-up PDF download error:',
+          err
+        );
+
+        alert(
+          'Unable to download this PDF.'
+        );
+      }
+    }
+
+    async function deletePdfBackup(pdf) {
+      if (!pdf?.id || !currentUserId) return;
+      if (!confirm(`Delete "${pdf.title || pdf.filename || 'this PDF'}"?`)) return;
+      try {
+        if (pdf.storage_path) {
+          const { error: storageError } = await supabaseClient.storage.from('pdfs').remove([pdf.storage_path]);
+          if (storageError) console.warn('PDF storage delete warning:', storageError);
+        }
+        const { error } = await supabaseClient.from('pdf_files').delete().eq('id', pdf.id).eq('user_id', currentUserId);
+        if (error) throw error;
+        window.userPdfHistory = (window.userPdfHistory || []).filter(x => x.id !== pdf.id);
+        renderPdfHistory();
+        beep(360,0.05);
+      } catch (err) {
+        console.error('PDF delete error:', err);
+        alert('Unable to delete this PDF. Check your storage/database permissions.');
+      }
+    }
+
+    function renderPdfHistory() {
+      const container =
+        document.getElementById(
+          'pdfBackupList'
+        );
+
+      if (!container) return;
+
+      container.replaceChildren();
+
+      const pdfs =
+        window.userPdfHistory || [];
+
+      if (!pdfs.length) {
+        const empty =
+          document.createElement('div');
+
+        empty.textContent =
+          'No PDF backups yet.';
+
+        empty.style.cssText = `
+          color:var(--text-sub);
+          font-size:.82rem;
+          padding:8px 2px;
+          font-weight:700;
+        `;
+
+        container.appendChild(empty);
+        return;
+      }
+
+      for (const pdf of pdfs.slice(0, 5)) {
+        const item =
+          document.createElement('div');
+
+        item.style.cssText = `
+          display:flex;
+          align-items:center;
+          gap:8px;
+          padding:8px;
+          margin-bottom:6px;
+          border-radius:10px;
+          background:rgba(255,255,255,.035);
+        `;
+
+        const info =
+          document.createElement('div');
+
+        info.style.cssText = `
+          min-width:0;
+          flex:1;
+        `;
+
+        const name =
+          document.createElement('div');
+
+        name.textContent =
+          pdf.title || pdf.filename;
+
+        name.style.cssText = `
+          font-weight:800;
+          font-size:.82rem;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          white-space:nowrap;
+        `;
+
+        const date =
+          document.createElement('div');
+
+        date.textContent =
+          new Date(
+            pdf.created_at
+          ).toLocaleDateString();
+
+        date.style.cssText = `
+          color:var(--text-sub);
+          font-size:.7rem;
+          margin-top:2px;
+        `;
+
+        const button = document.createElement('button');
+        button.type='button'; button.textContent='⬇️'; button.title='Download PDF';
+        button.style.cssText='border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;';
+        button.onclick=()=>downloadBackedUpPdf(pdf);
+        const del=document.createElement('button');
+        del.type='button'; del.textContent='🗑️'; del.title='Delete PDF';
+        del.style.cssText='border:0;border-radius:8px;padding:7px 9px;background:rgba(255,107,107,.12);color:var(--text-main);cursor:pointer;font-weight:900;';
+        del.onclick=()=>deletePdfBackup(pdf);
+        info.appendChild(name); info.appendChild(date);
+        item.appendChild(info); item.appendChild(button); item.appendChild(del);
+
+        container.appendChild(item);
+      }
+    }
+
+    function cacheEls(){
+      el.sidebar = document.getElementById('sidebar');
+      el.overlay = document.getElementById('sidebar-overlay');
+      el.authModal = document.getElementById('auth-modal');
+      el.settingsModal = document.getElementById('settings-modal');
+      el.memoryModal = document.getElementById('memory-modal');
+      el.memoryEditor = document.getElementById('memoryEditor');
+      el.systemPromptEditor = document.getElementById('systemPromptEditor');
+      el.memoryCharCount = document.getElementById('memoryCharCount');
+      el.memoryToggle = document.getElementById('memoryToggle');
+      el.pdfPreviewToggle = document.getElementById('pdfPreviewToggle');
+      el.responseLengthSelect = document.getElementById('responseLengthSelect');
+      el.imageModal = document.getElementById('image-modal');
+
+      el.historyList = document.getElementById('historyList');
+      el.chatContainer = document.getElementById('chat-container');
+      el.userInput = document.getElementById('userInput');
+      el.sendBtn = document.getElementById('sendBtn');
+
+      el.themeLightBtn = document.getElementById('theme-light');
+      el.themeDarkBtn = document.getElementById('theme-dark');
+
+      el.usernameInput = document.getElementById('username');
+      el.userDisplay = document.getElementById('userDisplay');
+
+      el.emailInput = document.getElementById('email');
+      el.passwordInput = document.getElementById('password');
+      el.authTitle = document.getElementById('authTitle');
+      el.authActionBtn = document.getElementById('authActionBtn');
+      el.modeLoginBtn = document.getElementById('mode-login');
+      el.modeSignupBtn = document.getElementById('mode-signup');
+
+      el.imgPromptInput = document.getElementById('imgPromptInput');
+      el.fontSizeRange = document.getElementById('fontSizeRange');
+      el.compactToggle = document.getElementById('compactToggle');
+      el.enterSendToggle = document.getElementById('enterSendToggle');
+      el.soundToggle = document.getElementById('soundToggle');
+      el.autoScrollToggle = document.getElementById('autoScrollToggle');
+    }
+
+    function getErrorMessage(err) {
+      if (!err) return 'Unknown error';
+      if (typeof err === 'string') return err;
+      return err.message || err.error || err.details || err.msg || err.statusText || JSON.stringify(err);
+    }
+
+    function setAuthModalVisible(visible) { el.authModal.style.display = visible ? 'flex' : 'none'; }
+    function clearChatUI() { el.chatContainer.innerHTML = ''; el.historyList.innerHTML = ''; }
+    function resetStateForLogout() { currentUser = null; currentUserId = null; currentSessionId = null; userSessions = {}; sessionNavigation = []; }
+
+    function isAuthMissingError(err) {
+      const msg = getErrorMessage(err).toLowerCase();
+      const name = (err && err.name) ? String(err.name).toLowerCase() : '';
+      return msg.includes('auth session missing') || (msg.includes('session') && msg.includes('missing')) || name.includes('authsessionmissingerror');
+    }
+
+    function isRlsOrAuthDenied(err) {
+      const status = err && err.status;
+      const msg = getErrorMessage(err);
+      const code = err && err.code ? String(err.code) : '';
+      return status === 401 || status === 403 || msg.includes('JWT') || msg.toLowerCase().includes('rls') || msg.toLowerCase().includes('permission denied') || msg.toLowerCase().includes('not authorized') || code === '42501';
+    }
+
+    async function getValidSession() {
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        return session;
+      } catch (e) {
+        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) return null;
+        throw e;
+      }
+    }
+
+    function escapeHtml(str){ return renderHtml(str); }
+
+    function renderTextWithCodeBlocks(targetEl, text){
+      const raw = String(text || '');
+      const re = /```([a-zA-Z0-9_-]*)\n([\s\S]*?)```/g;
+      const parts = [];
+      let lastIndex = 0;
+      let match;
+
+      if (!raw.includes('```')) {
+        targetEl.textContent = raw;
+        return;
+      }
+
+      while ((match = re.exec(raw)) !== null) {
+        if (match.index > lastIndex) parts.push({ type: 'text', value: raw.slice(lastIndex, match.index) });
+        parts.push({ type: 'code', lang: (match[1] || 'code').trim() || 'code', code: match[2] || '' });
+        lastIndex = re.lastIndex;
+      }
+      if (lastIndex < raw.length) parts.push({ type: 'text', value: raw.slice(lastIndex) });
+
+      targetEl.replaceChildren();
+      for (const part of parts) {
+        if (part.type === 'text') {
+          const t = document.createElement('div');
+          t.style.whiteSpace = 'pre-wrap';
+          t.textContent = part.value;
+          targetEl.appendChild(t);
+          continue;
+        }
+
+        const block = document.createElement('div');
+        block.className = 'code-block';
+        const header = document.createElement('div');
+        header.className = 'code-block-header';
+
+        const langEl = document.createElement('div');
+        langEl.className = 'code-lang';
+        langEl.textContent = part.lang;
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'code-copy-btn';
+        copyBtn.type = 'button';
+        copyBtn.textContent = 'Copy';
+        copyBtn.onclick = async () => {
+          try {
+            await navigator.clipboard.writeText(part.code);
+            const old = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            setTimeout(() => copyBtn.textContent = old, 900);
+            beep(880, 0.03);
+          } catch {
+            const ta = document.createElement('textarea');
+            ta.value = part.code;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+          }
+        };
+
+        header.appendChild(langEl);
+        header.appendChild(copyBtn);
+
+        const pre = document.createElement('pre');
+        pre.className = 'code-pre';
+
+        const codeEl = document.createElement('code');
+        codeEl.innerHTML = escapeHtml(part.code);
+        pre.appendChild(codeEl);
+
+        block.appendChild(header);
+        block.appendChild(pre);
+        targetEl.appendChild(block);
+      }
+    }
+
+    function setTheme(theme){
+      const mode = theme === 'light' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', mode);
+      el.themeLightBtn?.classList.toggle('active', mode === 'light');
+      el.themeDarkBtn?.classList.toggle('active', mode === 'dark');
+      localStorage.setItem('theme', mode);
+    }
+
+    function setChatFontSize(v){
+      settings.chatFontSize = parseFloat(v);
+      document.documentElement.style.setProperty('--chat-font-size', settings.chatFontSize + 'rem');
+      localStorage.setItem('chatFontSize', String(settings.chatFontSize));
+    }
+
+    function toggleCompactMode(){
+      settings.compact = !settings.compact;
+      el.compactToggle.classList.toggle('on', settings.compact);
+      document.documentElement.style.setProperty('--chat-gap', settings.compact ? '6px' : '10px');
+      document.documentElement.style.setProperty('--chat-padding', settings.compact ? '10px' : '18px');
+      localStorage.setItem('compactMode', String(settings.compact));
+    }
+
+    function toggleEnterToSend(){
+      settings.enterToSend = !settings.enterToSend;
+      el.enterSendToggle.classList.toggle('on', settings.enterToSend);
+      localStorage.setItem('enterToSend', String(settings.enterToSend));
+    }
+
+    function toggleSound(){
+      settings.sound = !settings.sound;
+      el.soundToggle.classList.toggle('on', settings.sound);
+      localStorage.setItem('sound', String(settings.sound));
+      beep(760, 0.03);
+    }
+
+    function toggleAutoScroll(){
+      settings.autoScroll = !settings.autoScroll;
+      el.autoScrollToggle.classList.toggle('on', settings.autoScroll);
+      localStorage.setItem('autoScroll', String(settings.autoScroll));
+    }
+
+    function openSettings(){ el.settingsModal.style.display = 'flex'; }
+    function closeSettings(){ el.settingsModal.style.display = 'none'; }
+    function openImageModal(){ el.imageModal.style.display = 'flex'; }
+    function closeImageModal(){ el.imageModal.style.display = 'none'; }
+    function insertPdfPrompt() { el.userInput.value = 'Create a PDF about '; el.userInput.focus(); autoResize(el.userInput); }
+
+    function toggleSidebar() {
+      const isOpen = el.sidebar.classList.contains('open');
+      el.sidebar.classList.toggle('open', !isOpen);
+      el.overlay.style.display = isOpen ? 'none' : 'block';
+    }
+
+    function setAuthMode(mode){
+      authMode = mode;
+      const isLogin = mode === 'login';
+      el.modeLoginBtn?.classList.toggle('active', isLogin);
+      el.modeSignupBtn?.classList.toggle('active', !isLogin);
+      el.authTitle.innerText = isLogin ? 'Sign in' : 'Create account';
+      el.authActionBtn.innerText = isLogin ? 'Sign in' : 'Create account';
+      el.usernameInput.style.display = isLogin ? 'none' : 'block';
+    }
+
+    function randomSessionId() {
+      if (crypto?.randomUUID) return crypto.randomUUID();
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    function formatMaybeDateMs(dateVal){ const t = new Date(dateVal).getTime(); return Number.isFinite(t) ? t : 0; }
+    function getChatTitleFromMessages(messages){
+      const firstUser = (messages || []).find(m => m.role === 'user' && (m.content || '').trim());
+      if (!firstUser) return 'New Chat';
+      const t = firstUser.content.trim();
+      return t.length > 22 ? t.slice(0, 22) + '...' : t;
+    }
+
+    function appendErrorUI(text) {
+      const existing = el.chatContainer.querySelector('.error-message');
+      if (existing) existing.remove();
+      const div = document.createElement('div');
+      div.className = 'error-message';
+      div.innerText = text;
+      el.chatContainer.appendChild(div);
+      if (settings.autoScroll) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+    }
+
+    async function ensureProfileForUser(user) {
+      const userId = user?.id;
+      if (!userId) return;
+      const unameFallback = user.email?.split('@')[0] || 'User';
+      try {
+        const { data: profile, error } = await supabaseClient.from('profiles').select('username').eq('id', userId).maybeSingle();
+        if (error) console.warn('Profile select error:', getErrorMessage(error));
+        if (!profile) {
+          const { error: upsertErr } = await supabaseClient.from('profiles').upsert({ id: userId, username: unameFallback }, { onConflict: 'id' });
+          if (upsertErr) console.warn('Profile upsert error:', getErrorMessage(upsertErr));
+        }
+        return profile || { username: unameFallback };
+      } catch {
+        return { username: unameFallback };
+      }
+    }
+
+    async function hydrateUserAndLoadChats(user) {
+      if (!user?.id) return;
+      currentUserId = user.id;
+      currentUser = null;
+
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session?.user) {
+          resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return;
+        }
+      } catch (e) {
+        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) {
+          resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return;
+        }
+      }
+
+      const profile = await ensureProfileForUser(user);
+      currentUser = profile?.username || user.email?.split('@')[0] || 'User';
+      el.userDisplay.innerText = currentUser;
+      setAuthModalVisible(false);
+
+      await loadAllChatsFromSupabase();
+      await loadPdfHistory();
+      if (!Object.keys(userSessions).length) createNewChat(true);
+      else {
+        const sessionIds = Object.keys(userSessions).sort((a, b) => Number(userSessions[b]?.lastCreatedAtMs || 0) - Number(userSessions[a]?.lastCreatedAtMs || 0));
+        currentSessionId = sessionIds[0] || null;
+        sessionNavigation = sessionIds;
+        renderHistorySidebar();
+        renderActiveChat();
+      }
+    }
+
+    async function loadAllChatsFromSupabase() {
+      userSessions = {};
+      currentSessionId = null;
+      try {
+        const { data: rows, error } = await supabaseClient.from('chats')
+          .select('*')
+          .eq('user_id', currentUserId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        for (const row of rows || []) {
+          const sessionId = row.session_id;
+          if (!sessionId) continue;
+
+          const createdAtMs = formatMaybeDateMs(row.created_at);
+          const session = userSessions[sessionId] || (userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs, lastCreatedAtMs: createdAtMs });
+          session.lastCreatedAtMs = Math.max(session.lastCreatedAtMs || 0, createdAtMs);
+
+          if (session.messages.some(m => m.role === row.role && m.content === row.message && Number(m.createdAtMs) === createdAtMs)) continue;
+
+          session.messages.push({ role: row.role, content: row.message, createdAtMs });
+          if (row.role === 'user') session.title = getChatTitleFromMessages(session.messages);
+        }
+
+        for (const sid of Object.keys(userSessions)) userSessions[sid].title = getChatTitleFromMessages(userSessions[sid].messages);
+      } catch (err) {
+        if (isAuthMissingError(err) || isRlsOrAuthDenied(err)) {
+          resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true); return;
+        }
+        appendErrorUI('❌ Failed to load your chat history. Please try again.');
+        userSessions = {};
+      }
+    }
+
+    function createNewChat(silent = false) {
+      const now = Date.now();
+      currentSessionId = randomSessionId();
+      userSessions[currentSessionId] = {
+        title: 'New Chat',
+        messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: now }],
+        createdAtMs: now,
+        lastCreatedAtMs: now
+      };
+      sessionNavigation = [currentSessionId, ...sessionNavigation.filter(id => id !== currentSessionId)];
+      if (!silent) {
+        renderHistorySidebar();
+        renderActiveChat();
+        if (window.innerWidth < 768) toggleSidebar();
+      }
+    }
+
+    function renderHistorySidebar() {
+      el.historyList.replaceChildren();
+      const sessionIds = Object.keys(userSessions).sort((a, b) => Number(userSessions[b]?.createdAtMs || 0) - Number(userSessions[a]?.createdAtMs || 0));
+      sessionNavigation = sessionIds;
+
+      if (!sessionIds.length) {
+        const emptyDiv = document.createElement('div');
+        emptyDiv.style.cssText = 'text-align:center;color:var(--text-sub);padding:20px;font-size:.9rem;font-weight:800;';
+        emptyDiv.innerText = 'No chats yet. Start a new conversation!';
+        el.historyList.appendChild(emptyDiv);
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+      for (const id of sessionIds) {
+        const session = userSessions[id];
+        const item = document.createElement('div');
+        item.className = `history-item ${id === currentSessionId ? 'active' : ''}`;
+        item.style.cssText = `
+          padding:12px 12px;
+          font-size:.92rem;
+          color: var(--text-sub);
+          border-radius: 14px;
+          cursor:pointer;
+          white-space:nowrap;
+          overflow:hidden;
+          text-overflow:ellipsis;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          border:1px solid rgba(255,255,255,.04);
+          background: rgba(255,255,255,.02);
+          gap:10px;
+          user-select:none;
+          gap:10px;
+          margin-bottom: 8px;
+        `;
+
+        if (id === currentSessionId) {
+          item.style.cssText += `
+            background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.12));
+            border-color: rgba(124,92,255,.35);
+            color: var(--text-main);
+            box-shadow: var(--glow-purple);
+          `;
+        }
+
+        const left = document.createElement('span');
+        left.style.cssText = 'min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;';
+        left.innerText = session?.title ?? 'Chat';
+
+        const right = document.createElement('div');
+        right.style.cssText = 'display:flex;align-items:center;gap:8px;flex-shrink:0;';
+
+        const pill = document.createElement('span');
+        const userCount = (session?.messages || []).filter(m => m.role === 'user').length;
+        pill.innerText = userCount ? `${userCount} msg` : 'Empty';
+        pill.style.cssText = `padding:6px 10px;border-radius:999px;font-weight:900;font-size:.78rem;color:var(--text-main);background:linear-gradient(135deg, rgba(124,92,255,.16), rgba(38,214,166,.10));border:1px solid rgba(124,92,255,.22);`;
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.innerHTML = '×';
+        deleteBtn.style.cssText = `background:transparent;border:none;color:var(--text-sub);font-size:1.2rem;cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;display:flex;align-items:center;justify-content:center;width:24px;height:24px;`;
+        deleteBtn.onclick = (e) => { e.stopPropagation(); deleteChat(id); };
+
+        right.appendChild(pill);
+        right.appendChild(deleteBtn);
+        item.appendChild(left);
+        item.appendChild(right);
+
+        item.onclick = () => switchSession(id);
+
+        frag.appendChild(item);
+      }
+
+      el.historyList.appendChild(frag);
+    }
+
+    async function deleteChat(sessionId) {
+      if (!sessionId) return;
+      const title = userSessions[sessionId]?.title || 'Chat';
+      if (!confirm(`Delete "${title}"? This action cannot be undone.`)) return;
+
+      try {
+        const { error } = await supabaseClient.from('chats').delete().eq('user_id', currentUserId).eq('session_id', sessionId);
+        if (error) return alert('Failed to delete chat.');
+        delete userSessions[sessionId];
+
+        if (currentSessionId === sessionId) {
+          const sessionIds = Object.keys(userSessions);
+          if (sessionIds.length > 0) {
+            currentSessionId = sessionIds[0];
+            await loadSessionMessagesFromSupabase(currentSessionId);
+          } else {
+            createNewChat(true);
+          }
+        }
+
+        renderHistorySidebar();
+        renderActiveChat();
+        beep(420, 0.05);
+      } catch (err) {
+        console.error('Delete chat error:', err);
+      }
+    }
+
+    async function switchSession(id) {
+      currentSessionId = id;
+      await loadSessionMessagesFromSupabase(id);
+      renderHistorySidebar();
+      renderActiveChat();
+      if (window.innerWidth < 768) toggleSidebar();
+      beep(520, 0.03);
+    }
+
+    async function loadSessionMessagesFromSupabase(sessionId) {
+      if (!currentUserId) return;
+      try {
+        const { data: rows, error } = await supabaseClient.from('chats')
+          .select('*')
+          .eq('user_id', currentUserId)
+          .eq('session_id', sessionId)
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+
+        const messages = (rows || []).map(r => ({ role: r.role, content: r.message, createdAtMs: formatMaybeDateMs(r.created_at) }));
+        if (!userSessions[sessionId]) userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: Date.now(), lastCreatedAtMs: Date.now() };
+
+        userSessions[sessionId].messages = messages;
+        userSessions[sessionId].title = getChatTitleFromMessages(messages);
+      } catch (err) {
+        console.error('Load session error:', err);
+      }
+    }
+
+    function renderActiveChat() {
+      const session = userSessions[currentSessionId];
+      el.chatContainer.replaceChildren();
+      if (!session) return;
+
+      const frag = document.createDocumentFragment();
+      for (const msg of session.messages) {
+        if (msg.role === 'system') continue;
+        const row = buildMessageRow(msg.role === 'user' ? 'user' : 'ai', msg.content);
+        frag.appendChild(row);
+        if (msg.role === 'assistant' && String(msg.content || '').startsWith('[PDF]')) {
+          hydrateHistoricalPdfPreview(row, String(msg.content).replace('[PDF]', '').trim());
+        }
+      }
+      el.chatContainer.appendChild(frag);
+
+      const working = loadWorkingState(currentSessionId);
+      if (working?.active) {
+        const workingRow = buildWorkingMessageRow({
+          ...working,
+          detail: 'Your request was still being processed when the page refreshed. You can wait for the current request or send it again if it did not finish.'
+        });
+        el.chatContainer.appendChild(workingRow);
+      }
+
+      if (settings.autoScroll) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+    }
+
+    async function hydrateHistoricalPdfPreview(row, filename) {
+      if (!settings.pdfPreview || !currentUserId || !filename) return;
+      const record = (window.userPdfHistory || []).find(p => p.filename === filename);
+      if (!record?.storage_path) return;
+      try {
+        const { data, error } = await supabaseClient.storage.from('pdfs').createSignedUrl(record.storage_path, 60 * 60);
+        if (error || !data?.signedUrl) return;
+        const textDiv = row.querySelector('.text');
+        if (!textDiv) return;
+        const card = document.createElement('div');
+        card.style.cssText = 'margin-top:8px;padding:10px;border-radius:14px;border:1px solid rgba(124,92,255,.2);background:rgba(255,255,255,.03);';
+        const label = document.createElement('div');
+        label.textContent = `📄 ${record.title || filename}`;
+        label.style.cssText = 'font-weight:900;margin-bottom:7px;';
+        const frame = document.createElement('iframe');
+        frame.className = 'pdf-preview';
+        frame.title = record.title || filename;
+        frame.src = data.signedUrl;
+        frame.style.height = '320px';
+        card.appendChild(label); card.appendChild(frame);
+        textDiv.appendChild(card);
+      } catch (e) { console.warn('Historical PDF preview unavailable:', e); }
+    }
+
+    const WORKING_STORAGE_PREFIX = 'yf_working_state_v2_';
+
+    function workingStorageKey(sessionId) {
+      return `${WORKING_STORAGE_PREFIX}${currentUserId || 'guest'}_${sessionId || 'none'}`;
+    }
+
+    function saveWorkingState(state) {
+      try {
+        if (!state) localStorage.removeItem(workingStorageKey(currentSessionId));
+        else localStorage.setItem(workingStorageKey(currentSessionId), JSON.stringify(state));
+      } catch (e) { console.warn('Working-state save warning:', e); }
+    }
+
+    function loadWorkingState(sessionId) {
+      try {
+        const raw = localStorage.getItem(workingStorageKey(sessionId));
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    }
+
+    function clearWorkingState(sessionId = currentSessionId) {
+      try { localStorage.removeItem(workingStorageKey(sessionId)); } catch {}
+    }
+
+    function buildWorkingMessageRow(state = {}) {
+      const row = document.createElement('div');
+      row.className = 'message-row ai working-message';
+      const content = document.createElement('div');
+      content.className = 'message-content';
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.innerText = 'YF';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble working-bubble';
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+
+      const title = document.createElement('div');
+      title.className = 'working-title';
+      title.innerHTML = '<span class="working-orb"></span><span>YF is working</span>';
+      const detail = document.createElement('div');
+      detail.className = 'working-detail';
+      detail.textContent = state.detail || 'Thinking and preparing your answer...';
+      const meta = document.createElement('div');
+      meta.className = 'working-meta';
+      const started = Number(state.startedAt || Date.now());
+      const startedLabel = document.createElement('span');
+      const elapsed = document.createElement('span');
+      const dots = document.createElement('span');
+      dots.className = 'working-dots';
+      dots.textContent = '•••';
+      meta.append(startedLabel, elapsed, dots);
+
+      textDiv.append(title, detail, meta);
+      bubble.appendChild(textDiv);
+      content.append(avatar, bubble);
+      row.appendChild(content);
+
+      const update = () => {
+        const seconds = Math.max(0, Math.floor((Date.now() - started) / 1000));
+        startedLabel.textContent = seconds < 1 ? 'Just started' : `Working for ${seconds}s`;
+      };
+      update();
+      const timer = setInterval(() => {
+        if (!document.body.contains(row)) { clearInterval(timer); return; }
+        update();
+      }, 1000);
+      row._workingTimer = timer;
+      row._workingDetail = detail;
+      row._workingSetDetail = (value) => { detail.textContent = value; };
+      return row;
+    }
+
+    function setWorkingDetail(row, detail) {
+      if (row?._workingSetDetail) row._workingSetDetail(detail);
+      else if (row) {
+        const node = row.querySelector('.working-detail');
+        if (node) node.textContent = detail;
+      }
+      const state = loadWorkingState(currentSessionId);
+      if (state) { state.detail = detail; saveWorkingState(state); }
+    }
+
+    function buildMessageRow(role, text) {
+      const row = document.createElement('div');
+      row.className = `message-row ${role}`;
+      const content = document.createElement('div');
+      content.className = 'message-content';
+
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.innerText = role === 'user' ? 'You' : 'YF';
+
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+
+      if (text && text.trim() === '__TYPING__') {
+        const typing = document.createElement('div');
+        typing.className = 'typing';
+        typing.innerHTML = '<span></span><span></span><span></span>';
+        textDiv.appendChild(typing);
+      } else if (text && text.startsWith('IMAGE_GRID:')) {
+        const rawJson = text.replace('IMAGE_GRID:', '').trim();
+        try {
+          const payload = JSON.parse(rawJson);
+          textDiv.innerHTML = `<div>Generated ${payload.urls.length} Image(s) for "${payload.prompt}":</div>`;
+          const grid = document.createElement('div');
+          grid.className = 'image-grid';
+          payload.urls.forEach((url, idx) => grid.appendChild(buildImageCard(url, payload.prompt, idx)));
+          textDiv.appendChild(grid);
+        } catch {
+          textDiv.innerText = text;
+        }
+      } else {
+        renderTextWithCodeBlocks(textDiv, text || '');
+      }
+
+      bubble.appendChild(textDiv);
+      content.appendChild(avatar);
+      content.appendChild(bubble);
+      row.appendChild(content);
+      return row;
+    }
+
+    function buildImageCard(url, prompt, idx) {
+      const card = document.createElement('div');
+      card.className = 'image-card';
+
+      const img = document.createElement('img');
+      img.src = url;
+      img.className = 'chat-generated-img';
+      img.alt = prompt;
+      img.onclick = () => window.open(url, '_blank');
+
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'dl-img-btn';
+      dlBtn.innerHTML = '⬇️ Download Image';
+      dlBtn.onclick = (e) => { e.stopPropagation(); downloadIndividualImage(url, idx); };
+
+      card.appendChild(img);
+      card.appendChild(dlBtn);
+      return card;
+    }
+
+    function autoResize(textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = textarea.scrollHeight + 'px';
+    }
+
+    async function downloadIndividualImage(url, index) {
+      try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = `generated-image-${index + 1}-${Date.now()}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+      } catch {
+        window.open(url, '_blank');
+      }
+    }
+
+    async function processImageGeneration(rawPrompt, count = 1, dimensions = "1024x1024", styleModifier = "photorealistic") {
+      const prompt = rawPrompt.trim();
+      const currentSession = userSessions[currentSessionId];
+      if (!currentSession) return;
+
+      if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') {
+        currentSession.title = "🎨 Image: " + (prompt.length > 15 ? prompt.slice(0, 15) + '...' : prompt);
+      }
+
+      el.chatContainer.appendChild(buildMessageRow('user', `/image ${prompt}`));
+      el.userInput.value = '';
+      el.userInput.style.height = 'auto';
+
+      try {
+        await supabaseClient.from('chats').insert({
+          session_id: currentSessionId,
+          user_id: currentUserId,
+          role: 'user',
+          message: `/image ${prompt}`,
+          created_at: new Date().toISOString()
+        });
+      } catch (dbErr) { console.warn('DB save warning:', dbErr); }
+      currentSession.messages.push({ role: 'user', content: `/image ${prompt}`, createdAtMs: Date.now() });
+
+      const aiRow = buildMessageRow('ai', '🎨 Generating...');
+      const aiTextNode = aiRow.querySelector('.text');
+      el.chatContainer.appendChild(aiRow);
+
+      let enhancedPrompt = prompt;
+      if (styleModifier === 'photorealistic') enhancedPrompt += ", highly detailed photograph, 8k resolution, raw photo, ultra-realistic DSLR shot, natural sharp lighting, fine texture, unedited portrait";
+      else if (styleModifier === 'cinematic') enhancedPrompt += ", cinematic film shot, IMAX 35mm lens, atmospheric depth, photo, realistic shot";
+      else if (styleModifier) enhancedPrompt += `, in ${styleModifier} style`;
+
+      const [width, height] = dimensions.split('x');
+      const imageUrls = Array.from({ length: count }, () => {
+        const seed = Math.floor(Math.random() * 9000000) + 1000000;
+        return `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`;
+      });
+
+      const payloadObj = { prompt, urls: imageUrls };
+      const imagePayload = `IMAGE_GRID:${JSON.stringify(payloadObj)}`;
+
+      aiTextNode.replaceChildren();
+      aiTextNode.innerHTML = `<div>Generated ${count} Realistic Image(s) for "${prompt}":</div>`;
+
+      const grid = document.createElement('div');
+      grid.className = 'image-grid';
+      imageUrls.forEach((url, idx) => grid.appendChild(buildImageCard(url, prompt, idx)));
+      aiTextNode.appendChild(grid);
+
+      try {
+        await supabaseClient.from('chats').insert({
+          session_id: currentSessionId,
+          user_id: currentUserId,
+          role: 'assistant',
+          message: imagePayload,
+          created_at: new Date().toISOString()
+        });
+      } catch (dbErr) { console.warn('DB save warning:', dbErr); }
+
+      currentSession.messages.push({ role: 'assistant', content: imagePayload, createdAtMs: Date.now() });
+      currentSession.lastCreatedAtMs = Date.now();
+
+      renderHistorySidebar();
+      if (settings.autoScroll) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+      beep(820, 0.05);
+    }
+
+    async function generateImageFromModal() {
+      const prompt = el.imgPromptInput.value.trim();
+      const count = parseInt(document.getElementById('imgCountSelect').value, 10) || 1;
+      const ratio = document.getElementById('imgRatioSelect').value;
+      const style = document.getElementById('imgStyleSelect').value;
+      if (!prompt) return alert('Please enter an image prompt.');
+      closeImageModal();
+      el.imgPromptInput.value = '';
+      await processImageGeneration(prompt, count, ratio, style);
+    }
+
+    function memoryKey(suffix) { return `yf_${suffix}_${currentUserId || 'guest'}`; }
+
+    function loadPersonalAISettings() {
+      if (!currentUserId) return;
+      try {
+        customSystemPrompt = localStorage.getItem(memoryKey('system_prompt')) || '';
+        memorySummary = localStorage.getItem(memoryKey('memory_summary')) || '';
+        settings.memoryEnabled = localStorage.getItem(memoryKey('memory_enabled')) !== 'false';
+        settings.pdfPreview = localStorage.getItem(memoryKey('pdf_preview')) !== 'false';
+        settings.responseLength = clampResponseLength(Number(localStorage.getItem(memoryKey('response_length')) || 2048));
+      } catch {}
+      el.memoryToggle?.classList.toggle('on', settings.memoryEnabled);
+      el.pdfPreviewToggle?.classList.toggle('on', settings.pdfPreview);
+      if (el.responseLengthSelect) el.responseLengthSelect.value = String(settings.responseLength);
+    }
+
+    function getEffectiveSystemPrompt() {
+      return (customSystemPrompt || DEFAULT_SYSTEM_PROMPT).trim() || DEFAULT_SYSTEM_PROMPT;
+    }
+
+    function buildCompactMemorySummary() {
+      const rows = [];
+      const seen = new Set();
+      const sessions = Object.entries(userSessions || {})
+        .filter(([id]) => id !== currentSessionId)
+        .sort((a,b) => Number(b[1]?.lastCreatedAtMs || 0) - Number(a[1]?.lastCreatedAtMs || 0));
+      const keywords = /(i want|i need|i use|i prefer|my |i'm|i am|i like|i don't|i dont|remember|project|working on|using|goal|plan|prefer)/i;
+      for (const [, session] of sessions) {
+        for (const msg of (session?.messages || [])) {
+          if (msg?.role !== 'user' || typeof msg.content !== 'string') continue;
+          const text = msg.content.replace(/\s+/g,' ').trim();
+          if (!text || text.length < 12 || text.startsWith('/')) continue;
+          if (!keywords.test(text) && text.length > 180) continue;
+          const clean = text.slice(0, 240);
+          const key = clean.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          rows.push(`- ${clean}`);
+          if (rows.length >= 28) break;
+        }
+        if (rows.length >= 28) break;
+      }
+      return rows.length ? rows.join('\n').slice(0, GROQ_MAX_MEMORY_CHARS) : 'No long-term memory has been established yet.';
+    }
+
+    function refreshMemorySummaryIfNeeded() {
+      if (!memorySummary || memoryDirty) {
+        memorySummary = buildCompactMemorySummary();
+        memoryDirty = false;
+        if (currentUserId) localStorage.setItem(memoryKey('memory_summary'), memorySummary);
+      }
+      return memorySummary;
+    }
+
+    function openMemoryEditor() {
+      if (!currentUserId) return alert('Please log in first.');
+      loadPersonalAISettings();
+      el.memoryEditor.value = memorySummary || buildCompactMemorySummary();
+      el.systemPromptEditor.value = customSystemPrompt || DEFAULT_SYSTEM_PROMPT;
+      updateMemoryCount();
+      el.memoryModal.style.display = 'flex';
+    }
+    function closeMemoryEditor(){ el.memoryModal.style.display = 'none'; }
+    function updateMemoryCount(){ if (el.memoryCharCount) el.memoryCharCount.textContent = `${el.memoryEditor?.value.length || 0} characters`; }
+    function saveMemorySettings(){
+      memorySummary = (el.memoryEditor.value || '').trim().slice(0, 3600);
+      customSystemPrompt = (el.systemPromptEditor.value || '').trim().slice(0, 3600);
+      if (!customSystemPrompt) customSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+      localStorage.setItem(memoryKey('memory_summary'), memorySummary);
+      localStorage.setItem(memoryKey('system_prompt'), customSystemPrompt);
+      memoryDirty = false;
+      updateMemoryCount();
+      beep(760,0.05);
+      alert('Memory and system prompt saved.');
+    }
+    function rebuildMemorySummary(){
+      memorySummary = buildCompactMemorySummary();
+      el.memoryEditor.value = memorySummary;
+      updateMemoryCount();
+      memoryDirty = false;
+    }
+    function resetMemorySettings(){
+      if (!confirm('Reset your custom memory and system prompt?')) return;
+      memorySummary = buildCompactMemorySummary();
+      customSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+      localStorage.setItem(memoryKey('memory_summary'), memorySummary);
+      localStorage.setItem(memoryKey('system_prompt'), customSystemPrompt);
+      el.memoryEditor.value = memorySummary;
+      el.systemPromptEditor.value = customSystemPrompt;
+      updateMemoryCount();
+    }
+    function toggleMemory(){ settings.memoryEnabled=!settings.memoryEnabled; el.memoryToggle.classList.toggle('on',settings.memoryEnabled); localStorage.setItem(memoryKey('memory_enabled'),String(settings.memoryEnabled)); }
+    function togglePdfPreview(){ settings.pdfPreview=!settings.pdfPreview; el.pdfPreviewToggle.classList.toggle('on',settings.pdfPreview); localStorage.setItem(memoryKey('pdf_preview'),String(settings.pdfPreview)); }
+    function setResponseLength(v){ settings.responseLength=clampResponseLength(v); localStorage.setItem(memoryKey('response_length'),String(settings.responseLength)); }
+
+    function buildLongTermMemoryContext() {
+      return refreshMemorySummaryIfNeeded();
+    }
+
+    // ===== GROQ TPM PROTECTION =====
+    // Groq counts prompt + requested completion tokens against the TPM limit.
+    // Keep every individual request comfortably below the 8,000-token limit.
+    const GROQ_TPM_LIMIT = 8000;
+    const GROQ_SAFE_REQUEST_TOKENS = 6200;
+    const GROQ_CHARS_PER_TOKEN = 4;
+    const GROQ_MAX_HISTORY_CHARS = 8000;
+    const GROQ_MAX_MESSAGE_CHARS = 2200;
+    const GROQ_MAX_MEMORY_CHARS = 3200;
+    const GROQ_MAX_INSTRUCTIONS_CHARS = 6000;
+    const GROQ_MAX_TOOL_OUTPUT_CHARS = 2600;
+
+    function estimateTokens(value) {
+      return Math.ceil(String(value || '').length / GROQ_CHARS_PER_TOKEN);
+    }
+
+    function clampResponseLength(value) {
+      const requested = Number(value) || 2048;
+      // Leave room for the prompt, instructions, tools and safety margin.
+      return Math.min(Math.max(requested, 1024), 3072);
+    }
+
+    function compactTextForModel(value, maxChars = GROQ_MAX_MESSAGE_CHARS) {
+      const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+      if (text.length <= maxChars) return text;
+      const head = Math.floor(maxChars * 0.72);
+      const tail = maxChars - head - 40;
+      return `${text.slice(0, head)} … [context trimmed] … ${text.slice(-Math.max(80, tail))}`;
+    }
+
+    function buildBoundedChatInput(messages) {
+      const source = Array.isArray(messages) ? messages : [];
+      const normalized = source
+        .filter(m => m && typeof m.role === 'string')
+        .map(m => ({
+          role: m.role,
+          content: compactTextForModel(m.content, GROQ_MAX_MESSAGE_CHARS)
+        }));
+
+      const result = [];
+      let chars = 0;
+      // Always retain the newest user message, then work backwards.
+      for (let i = normalized.length - 1; i >= 0; i--) {
+        const item = normalized[i];
+        const itemChars = item.content.length + 30;
+        if (!result.length || chars + itemChars <= GROQ_MAX_HISTORY_CHARS) {
+          result.unshift(item);
+          chars += itemChars;
+        }
+        if (chars >= GROQ_MAX_HISTORY_CHARS) break;
+      }
+      return result;
+    }
+
+    function buildBoundedInstructions(instructions) {
+      return compactTextForModel(instructions, GROQ_MAX_INSTRUCTIONS_CHARS);
+    }
+
+    function trimToolContinuationHistory(history) {
+      const source = Array.isArray(history) ? history : [];
+      const result = [];
+      let chars = 0;
+      for (let i = source.length - 1; i >= 0; i--) {
+        const item = { ...source[i] };
+        if (typeof item.arguments === 'string') item.arguments = compactTextForModel(item.arguments, 1600);
+        if (typeof item.output === 'string') item.output = compactTextForModel(item.output, GROQ_MAX_TOOL_OUTPUT_CHARS);
+        if (Array.isArray(item.content)) {
+          item.content = item.content.map(part => {
+            if (!part || typeof part !== 'object') return part;
+            const copy = { ...part };
+            if (typeof copy.text === 'string') copy.text = compactTextForModel(copy.text, 1800);
+            return copy;
+          });
+        }
+        const itemChars = JSON.stringify(item).length;
+        if (!result.length || chars + itemChars <= 9000) {
+          result.unshift(item);
+          chars += itemChars;
+        }
+        if (chars >= 9000) break;
+      }
+      return result;
+    }
+
+    function safeRequestOptions(instructions, input, extraOutputReserve = 0) {
+      const boundedInstructions = buildBoundedInstructions(instructions);
+      const boundedInput = buildBoundedChatInput(input);
+      const instructionTokens = estimateTokens(boundedInstructions);
+      const inputTokens = estimateTokens(JSON.stringify(boundedInput));
+      const toolReserve = Math.max(0, Number(extraOutputReserve) || 0);
+      const available = GROQ_SAFE_REQUEST_TOKENS - instructionTokens - inputTokens - toolReserve;
+      const maxOutputTokens = Math.min(clampResponseLength(settings.responseLength), Math.max(1024, available));
+      return { boundedInstructions, boundedInput, maxOutputTokens };
+    }
+
+    function extractResponsesText(response) {
+      const parts = [];
+      for (const item of (response?.output || [])) {
+        if (item?.type !== 'message') continue;
+        for (const part of (item.content || [])) {
+          if (part?.type === 'output_text' && typeof part.text === 'string') parts.push(part.text);
+        }
+      }
+      return parts.join('\n').trim();
+    }
+
+    function extractResponsesFunctionCalls(response) {
+      return (response?.output || []).filter(item => item?.type === 'function_call');
+    }
+
+    async function callResponsesAPI(payload) {
+      const response = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!response.ok) {
+        let errorMsg = `HTTP ${response.status}`;
+        try {
+          const json = await response.json();
+          errorMsg = json?.error?.message || json?.error || json?.message || errorMsg;
+        } catch {}
+        throw new Error(errorMsg);
+      }
+      return response.json();
+    }
+
+    async function sendMessage() {
+      const text = el.userInput.value.trim();
+      if (!text || !currentSessionId || sendInFlight) return;
+
+      if (text.startsWith('/image')) {
+        const prompt = text.replace('/image', '').trim();
+        if (!prompt) return alert('Please provide a prompt after /image (e.g. /image realistic lion in savanna)');
+        await processImageGeneration(prompt, 2, "1024x1024", "photorealistic");
+        return;
+      }
+
+      sendInFlight = true;
+      el.sendBtn.disabled = true;
+      let aiTextNode = null;
+
+      try {
+        const session = await getValidSession();
+        if (!session?.user) {
+          resetStateForLogout(); clearChatUI(); setAuthMode('login'); setAuthModalVisible(true);
+          return;
+        }
+
+        currentUserId = session.user.id;
+        loadPersonalAISettings();
+        const currentSession = userSessions[currentSessionId];
+        if (!currentSession) { createNewChat(true); return; }
+
+        if (currentSession.title === 'New Chat' || currentSession.title === 'Chat') {
+          currentSession.title = text.length > 22 ? text.slice(0, 22) + '...' : text;
+        }
+
+        el.chatContainer.appendChild(buildMessageRow('user', text));
+        el.userInput.value = '';
+        el.userInput.style.height = 'auto';
+
+        try {
+          await supabaseClient.from('chats').insert({
+            session_id: currentSessionId, user_id: currentUserId, role: 'user',
+            message: text, created_at: new Date().toISOString()
+          });
+        } catch (dbErr) { console.warn('DB save warning:', dbErr); }
+
+        currentSession.messages.push({ role: 'user', content: text, createdAtMs: Date.now() });
+        memoryDirty = true;
+
+        const workingState = {
+          active: true,
+          startedAt: Date.now(),
+          detail: 'Thinking, checking memory, and preparing your response...'
+        };
+        saveWorkingState(workingState);
+        const typingRow = buildWorkingMessageRow(workingState);
+        aiTextNode = typingRow.querySelector('.text');
+        el.chatContainer.appendChild(typingRow);
+        setWorkingDetail(typingRow, 'Thinking, checking memory, and preparing your response...');
+
+        const longTermMemory = settings.memoryEnabled
+          ? buildLongTermMemoryContext()
+          : 'Long-term memory is disabled for this request.';
+
+        const instructions =
+          getEffectiveSystemPrompt() +
+          '\n\nRELEVANT LONG-TERM MEMORY CONTEXT:\n' + longTermMemory +
+          '\n\n' + TOOL_SYSTEM_INSTRUCTIONS;
+
+        const input = currentSession.messages
+          .filter(m => m.role !== 'system')
+          .map(m => ({ role: m.role, content: String(m.content || '') }));
+
+        // Groq's Responses API is not stateful yet, so keep the Responses items
+        // locally and replay them for tool continuations. This preserves the same
+        // conversation/tool state without using unsupported previous_response_id/store.
+        let responseHistory = buildBoundedChatInput(input);
+        let generatedPdfImages = [];
+        let requestPlan = safeRequestOptions(instructions, responseHistory, 0);
+        let response = await callResponsesAPI({
+          model: DEFAULT_GROQ_MODEL,
+          instructions: requestPlan.boundedInstructions,
+          input: requestPlan.boundedInput,
+          tools: [PDF_TOOL_RESPONSES, IMAGE_TOOL_RESPONSES],
+          parallel_tool_calls: false,
+          max_output_tokens: requestPlan.maxOutputTokens
+        });
+
+        let safety = 0;
+        while (safety++ < 8) {
+          const calls = extractResponsesFunctionCalls(response);
+          if (!calls.length) break;
+
+          if (Array.isArray(response.output)) responseHistory.push(...response.output);
+          const outputs = [];
+          for (const call of calls) {
+            const functionName = call.name;
+            let args = {};
+            try { args = JSON.parse(call.arguments || '{}'); }
+            catch { throw new Error(`The AI returned invalid ${functionName} arguments.`); }
+
+            if (functionName === 'create_pdf') {
+              if ((!args.design || typeof args.design !== 'object') && (!args.content || !String(args.content).trim())) throw new Error('PDF design/content is empty.');
+
+              showToolProgress(aiTextNode, 'pdf', 1);
+              const result = await executePdfTool({
+                title: String(args.title || 'Document'),
+                filename: String(args.filename || 'document.pdf'),
+                design: args.design && typeof args.design === 'object' ? args.design : null,
+                content: String(args.content || ''),
+                images: Array.isArray(args.images) && args.images.length ? args.images : generatedPdfImages
+              }, aiTextNode);
+
+              currentSession.messages.push({ role: 'assistant', content: `[PDF] ${result.filename}`, createdAtMs: Date.now() });
+              try {
+                await supabaseClient.from('chats').insert({
+                  session_id: currentSessionId, user_id: currentUserId, role: 'assistant',
+                  message: `[PDF] ${result.filename}`, created_at: new Date().toISOString()
+                });
+              } catch (dbErr) { console.warn('PDF DB save warning:', dbErr); }
+              renderHistorySidebar();
+              outputs.push({ type: 'function_call_output', call_id: call.call_id, output: JSON.stringify(result) });
+              continue;
+            }
+
+            if (functionName === 'generate_image') {
+              const prompt = String(args.prompt || '').trim();
+              if (!prompt) throw new Error('Image prompt is empty.');
+              const count = Math.min(Math.max(Number(args.count) || 1, 1), 12);
+              const dimensions = ['1024x1024','1024x1536','1536x1024'].includes(args.dimensions) ? args.dimensions : '1024x1024';
+              const style = ['photorealistic','cinematic','anime','digital art','illustration','none'].includes(args.style) ? args.style : 'photorealistic';
+
+              const progress = showToolProgress(aiTextNode, 'image', count);
+              const generated = await generateImagesForTool(prompt, count, dimensions, style, (item, done, total) => {
+                updateToolProgress(progress, done, total);
+                const card = buildImageCard(item.url, prompt, done - 1);
+                aiTextNode.appendChild(card);
+                if (settings.autoScroll) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+              });
+              generatedPdfImages.push(...generated);
+              if (progress) progress.status.textContent = `${generated.length} / ${count} complete`;
+              outputs.push({
+                type: 'function_call_output',
+                call_id: call.call_id,
+                output: JSON.stringify({ success: true, count: generated.length, images: generated })
+              });
+              continue;
+            }
+
+            outputs.push({ type: 'function_call_output', call_id: call.call_id, output: JSON.stringify({ error: `Unknown tool: ${functionName}` }) });
+          }
+
+          responseHistory.push(...outputs);
+          responseHistory = trimToolContinuationHistory(responseHistory);
+          const continuationPlan = safeRequestOptions('', responseHistory, 0);
+          response = await callResponsesAPI({
+            model: DEFAULT_GROQ_MODEL,
+            input: continuationPlan.boundedInput,
+            tools: [PDF_TOOL_RESPONSES, IMAGE_TOOL_RESPONSES],
+            parallel_tool_calls: false,
+            max_output_tokens: continuationPlan.maxOutputTokens
+          });
+        }
+
+        if (safety >= 8) throw new Error('Tool loop exceeded the safety limit.');
+
+        const reply = extractResponsesText(response);
+        if (reply) {
+          if (aiTextNode) {
+            const workingRow = aiTextNode.closest('.working-message');
+            if (workingRow?._workingTimer) clearInterval(workingRow._workingTimer);
+            aiTextNode.replaceChildren();
+            renderTextWithCodeBlocks(aiTextNode, reply);
+            workingRow?.classList.remove('working-message');
+            workingRow?.classList.remove('ai-working');
+          }
+          try {
+            await supabaseClient.from('chats').insert({
+              session_id: currentSessionId, user_id: currentUserId, role: 'assistant',
+              message: reply, created_at: new Date().toISOString()
+            });
+          } catch (dbErr) { console.warn('DB save warning:', dbErr); }
+          currentSession.messages.push({ role: 'assistant', content: reply, createdAtMs: Date.now() });
+          currentSession.lastCreatedAtMs = Date.now();
+          renderHistorySidebar();
+        } else if (aiTextNode) {
+          aiTextNode.textContent = 'Done.';
+        }
+
+        if (settings.autoScroll) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+        beep(820, 0.05);
+      } catch (err) {
+        console.error('Responses API error:', err);
+        const rawMessage = String(err?.message || 'Something went wrong.');
+        const friendlyMessage = /tokens per minute|TPM|Requested .*Limit/i.test(rawMessage)
+          ? '❌ Groq token limit reached. I automatically keep requests smaller, but this request was still too large. Try sending a shorter message or choose Short response length in Settings.'
+          : rawMessage;
+        if (aiTextNode) {
+          aiTextNode.textContent = friendlyMessage;
+          aiTextNode.classList.remove('typing');
+        } else {
+          el.chatContainer.appendChild(buildMessageRow('ai', friendlyMessage));
+        }
+      } finally {
+        clearWorkingState(currentSessionId);
+        sendInFlight = false;
+        el.sendBtn.disabled = false;
+        if (settings.autoScroll) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+      }
+    }
+
+    async function signUp(email, password, username) {
+      try {
+        const { data, error } = await supabaseClient.auth.signUp({ email, password });
+        if (error) return alert(getErrorMessage(error));
+        const userId = data?.user?.id;
+        if (!userId) return alert("Sign up succeeded, but user id was not returned.");
+        const { error: insertErr } = await supabaseClient.from("profiles").upsert({ id: userId, username }, { onConflict: 'id' });
+        if (insertErr) console.warn('Profile upsert error:', getErrorMessage(insertErr));
+        alert("Account created successfully!");
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (session?.user) {
+          await hydrateUserAndLoadChats(session.user);
+          setAuthModalVisible(false);
+        } else {
+          setAuthMode('login');
+          setAuthModalVisible(true);
+        }
+      } catch {
+        alert('Sign up failed. Please try again.');
+      }
+    }
+
+    async function login(email, password) {
+      try {
+        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+        if (error) return alert(getErrorMessage(error));
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session?.user) {
+          setAuthMode('login');
+          setAuthModalVisible(true);
+          return;
+        }
+        await hydrateUserAndLoadChats(session.user);
+        setAuthModalVisible(false);
+      } catch {
+        alert('Login failed. Please try again.');
+      }
+    }
+
+    async function handleAuth() {
+      const email = el.emailInput.value.trim();
+      const password = el.passwordInput.value.trim();
+      const username = el.usernameInput.value.trim();
+
+      if (!email) return alert("Please enter your email.");
+      if (!password) return alert("Please enter your password.");
+      if (authMode === 'signup' && !username) return alert("Please enter your username.");
+
+      if (authMode === 'signup') await signUp(email, password, username);
+      else await login(email, password);
+    }
+
+    async function logout() {
+      try { await supabaseClient.auth.signOut(); } catch (e) { console.warn('Sign out error:', e); }
+      resetStateForLogout();
+      clearChatUI();
+      setAuthMode('login');
+      setAuthModalVisible(true);
+    }
+
+    function exportCurrentChat() {
+      const session = userSessions[currentSessionId];
+      if (!session) return alert('No chat to export.');
+      const lines = session.messages.filter(m => m.role !== 'system').map(m => `${m.role.toUpperCase()}: ${m.content}`).join('\n\n');
+      const blob = new Blob([lines], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(session.title || 'chat').replace(/[^\w\-]+/g, '_')}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    async function clearCurrentChat() {
+      const session = userSessions[currentSessionId];
+      if (!session) return;
+      if (!confirm('Clear this chat? This will remove messages from the database.')) return;
+      const keepTitle = session.title || 'New Chat';
+      try {
+        const { error } = await supabaseClient.from('chats').delete().eq('user_id', currentUserId).eq('session_id', currentSessionId);
+        if (error) throw error;
+        userSessions[currentSessionId] = {
+          title: keepTitle,
+          messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }],
+          createdAtMs: Date.now(),
+          lastCreatedAtMs: Date.now()
+        };
+        renderHistorySidebar();
+        renderActiveChat();
+        beep(360, 0.05);
+      } catch (err) {
+        alert('Failed to clear chat.');
+        console.error(err);
+      }
+    }
+
+    function attachEnterToSendHandler(){
+      el.userInput.addEventListener('keydown', async (e) => {
+        if (e.key !== 'Enter') return;
+        if (!settings.enterToSend) return;
+        if (e.shiftKey) return;
+
+        e.preventDefault();
+        await sendMessage();
+      });
+    }
+
+    window.onload = async () => {
+      cacheEls();
+
+      const savedTheme = localStorage.getItem('theme') || THEME_DEFAULT;
+      setTheme(savedTheme);
+
+      settings.compact = localStorage.getItem('compactMode') === 'true';
+      settings.enterToSend = localStorage.getItem('enterToSend') !== 'false';
+      settings.sound = localStorage.getItem('sound') === 'true';
+      settings.autoScroll = localStorage.getItem('autoScroll') !== 'false';
+      settings.chatFontSize = parseFloat(localStorage.getItem('chatFontSize') || '0.98');
+      settings.responseLength = clampResponseLength(Number(localStorage.getItem('responseLength') || '2048'));
+
+      el.compactToggle?.classList.toggle('on', settings.compact);
+      el.enterSendToggle?.classList.toggle('on', settings.enterToSend);
+      el.soundToggle?.classList.toggle('on', settings.sound);
+      el.autoScrollToggle?.classList.toggle('on', settings.autoScroll);
+      el.responseLengthSelect && (el.responseLengthSelect.value = String(settings.responseLength));
+      el.responseLengthSelect?.addEventListener('change', e => { settings.responseLength = clampResponseLength(Number(e.target.value) || 2048); localStorage.setItem('responseLength', String(settings.responseLength)); });
+      el.memoryEditor?.addEventListener('input', updateMemoryCount);
+      el.fontSizeRange && (el.fontSizeRange.value = String(settings.chatFontSize));
+      setChatFontSize(settings.chatFontSize);
+
+      attachEnterToSendHandler();
+
+      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+        if (!session || !session.user) {
+          resetStateForLogout();
+          clearChatUI();
+          setAuthModalVisible(true);
+          return;
+        }
+        try { await hydrateUserAndLoadChats(session.user); }
+        catch (e) {
+          console.error('Auth listener hydrate error:', e);
+          resetStateForLogout();
+          clearChatUI();
+          setAuthModalVisible(true);
+        }
+      });
+
+      try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        if (!session) {
+          setAuthModalVisible(true);
+          setAuthMode('login');
+          resetStateForLogout();
+          clearChatUI();
+          return;
+        }
+        await hydrateUserAndLoadChats(session.user);
+      } catch (err) {
+        console.error('Init error:', err);
+        setAuthMode('login');
+        resetStateForLogout();
+        clearChatUI();
+        setAuthModalVisible(true);
+      }
+    };
+
+    window.createNewChat = createNewChat;
+    window.toggleSidebar = toggleSidebar;
+    window.openSettings = openSettings;
+    window.closeSettings = closeSettings;
+    window.openImageModal = openImageModal;
+    window.closeImageModal = closeImageModal;
+    window.generateImageFromModal = generateImageFromModal;
+    window.setAuthMode = setAuthMode;
+    window.setTheme = setTheme;
+    window.logout = logout;
+    window.handleAuth = handleAuth;
+    window.sendMessage = sendMessage;
+    window.deleteChat = deleteChat;
+    window.downloadIndividualImage = downloadIndividualImage;
+    window.autoResize = autoResize;
+    window.insertPdfPrompt = insertPdfPrompt;
+    window.openPdfHistory = async () => {
+      await loadPdfHistory();
+      renderPdfHistory();
+    };
+    window.downloadBackedUpPdf = downloadBackedUpPdf;
+  </script>
+</body>
+  </html>
