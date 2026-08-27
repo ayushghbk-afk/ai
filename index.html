@@ -1153,10 +1153,10 @@
         </div>
       </div>
       <div class="settings-row" style="display:block;">
-        <div class="label">Long-term memory summary</div>
-        <div class="sub" style="margin:4px 0 8px;">A compact summary is sent instead of your entire old chat history.</div>
-        <textarea id="memoryEditor" class="memory-editor" placeholder="Your AI memory summary..."></textarea>
-        <div class="memory-meta"><span id="memoryCharCount">0 characters</span><span>Keep it concise for lower token usage.</span></div>
+        <div class="label">Chat memory summary</div>
+        <div class="sub" style="margin:4px 0 8px;">A compact memory summary is kept for this conversation to keep token usage low. Memory resets with every new chat.</div>
+        <textarea id="memoryEditor" class="memory-editor" placeholder="Chat memory summary..."></textarea>
+        <div class="memory-meta"><span id="memoryCharCount">0 characters</span><span>Keep it concise for lower token usage. Resets with every new chat.</span></div>
         <div class="memory-stat"><span>Estimated context usage</span><strong id="memoryTokenCount">0 tokens</strong></div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;"><div class="label">Saved memories</div><button type="button" onclick="addMemoryItem()" style="padding:7px 10px;font-size:.78rem;box-shadow:none;">＋ Add memory</button></div>
         <div id="memoryList" class="memory-list"></div>
@@ -2599,7 +2599,18 @@ EXAMPLES:
     }
 
     function clearChatUI() { el.chatContainer.innerHTML = ''; el.historyList.innerHTML = ''; }
-    function resetStateForLogout() { currentUser = null; currentUserId = null; currentSessionId = null; userSessions = {}; sessionNavigation = []; }
+    function resetStateForLogout() {
+      currentUser = null;
+      currentUserId = null;
+      currentSessionId = null;
+      userSessions = {};
+      sessionNavigation = [];
+      memorySummary = '';
+      memoryDirty = false;
+      if (el.memoryEditor) el.memoryEditor.value = '';
+      updateMemoryCount();
+      renderMemoryList();
+    }
 
     function isAuthMissingError(err) {
       const msg = getErrorMessage(err).toLowerCase();
@@ -2874,6 +2885,11 @@ EXAMPLES:
         const sessionIds = Object.keys(userSessions).sort((a, b) => Number(userSessions[b]?.lastCreatedAtMs || 0) - Number(userSessions[a]?.lastCreatedAtMs || 0));
         currentSessionId = sessionIds[0] || null;
         sessionNavigation = sessionIds;
+        memorySummary = getMemorySummaryForSession(currentSessionId);
+        memoryDirty = false;
+        if (el.memoryEditor) el.memoryEditor.value = memorySummary;
+        updateMemoryCount();
+        renderMemoryList();
         renderHistorySidebar();
         renderActiveChat();
       }
@@ -2895,7 +2911,13 @@ EXAMPLES:
           if (!sessionId) continue;
 
           const createdAtMs = formatMaybeDateMs(row.created_at);
-          const session = userSessions[sessionId] || (userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs, lastCreatedAtMs: createdAtMs });
+          const session = userSessions[sessionId] || (userSessions[sessionId] = {
+            title: 'Chat',
+            messages: [],
+            createdAtMs,
+            lastCreatedAtMs: createdAtMs,
+            memorySummary: getMemorySummaryForSession(sessionId)
+          });
           session.lastCreatedAtMs = Math.max(session.lastCreatedAtMs || 0, createdAtMs);
 
           if (session.messages.some(m => m.role === row.role && m.content === row.message && Number(m.createdAtMs) === createdAtMs)) continue;
@@ -2937,11 +2959,18 @@ EXAMPLES:
         title: 'New Chat',
         messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: now }],
         createdAtMs: now,
-        lastCreatedAtMs: now
+        lastCreatedAtMs: now,
+        memorySummary: ''
       };
+      memorySummary = '';
+      memoryDirty = false;
+      setMemorySummaryForSession(currentSessionId, '');
       sessionNavigation = [currentSessionId, ...sessionNavigation.filter(id => id !== currentSessionId)];
       renderHistorySidebar();
       renderActiveChat();
+      if (el.memoryEditor) el.memoryEditor.value = '';
+      updateMemoryCount();
+      renderMemoryList();
       if (!silent && window.innerWidth < 768) toggleSidebar();
     }
 
@@ -3024,12 +3053,18 @@ EXAMPLES:
         const { error } = await supabaseClient.from('chats').delete().eq('user_id', currentUserId).eq('session_id', sessionId);
         if (error) return alert('Failed to delete chat.');
         delete userSessions[sessionId];
+        try { localStorage.removeItem(sessionMemoryKey(sessionId)); } catch {}
 
         if (currentSessionId === sessionId) {
           const sessionIds = Object.keys(userSessions);
           if (sessionIds.length > 0) {
             currentSessionId = sessionIds[0];
             await loadSessionMessagesFromSupabase(currentSessionId);
+            memorySummary = getMemorySummaryForSession(currentSessionId);
+            memoryDirty = false;
+            if (el.memoryEditor) el.memoryEditor.value = memorySummary;
+            updateMemoryCount();
+            renderMemoryList();
           } else {
             createNewChat(true);
           }
@@ -3046,6 +3081,11 @@ EXAMPLES:
     async function switchSession(id) {
       currentSessionId = id;
       await loadSessionMessagesFromSupabase(id);
+      memorySummary = getMemorySummaryForSession(id);
+      memoryDirty = false;
+      if (el.memoryEditor) el.memoryEditor.value = memorySummary;
+      updateMemoryCount();
+      renderMemoryList();
       renderHistorySidebar();
       renderActiveChat();
       if (window.innerWidth < 768) toggleSidebar();
@@ -3064,7 +3104,15 @@ EXAMPLES:
         if (error) throw error;
 
         const messages = (rows || []).map(r => ({ id: r.id, role: r.role, content: r.message, createdAtMs: formatMaybeDateMs(r.created_at) }));
-        if (!userSessions[sessionId]) userSessions[sessionId] = { title: 'Chat', messages: [], createdAtMs: Date.now(), lastCreatedAtMs: Date.now() };
+        if (!userSessions[sessionId]) {
+          userSessions[sessionId] = {
+            title: 'Chat',
+            messages: [],
+            createdAtMs: Date.now(),
+            lastCreatedAtMs: Date.now(),
+            memorySummary: getMemorySummaryForSession(sessionId)
+          };
+        }
 
         userSessions[sessionId].messages = messages;
         userSessions[sessionId].title = getChatTitleFromMessages(messages);
@@ -3626,12 +3674,47 @@ EXAMPLES:
     }
 
     function memoryKey(suffix) { return `yf_${suffix}_${currentUserId || 'guest'}`; }
+    function sessionMemoryKey(sessionId) { return `yf_memory_${currentUserId || 'guest'}_${sessionId || 'default'}`; }
+
+    function getMemorySummaryForSession(sessionId) {
+      if (!sessionId) return '';
+      if (userSessions[sessionId] && typeof userSessions[sessionId].memorySummary === 'string') {
+        return userSessions[sessionId].memorySummary;
+      }
+      try {
+        const saved = localStorage.getItem(sessionMemoryKey(sessionId));
+        if (saved !== null) {
+          if (userSessions[sessionId]) userSessions[sessionId].memorySummary = saved;
+          return saved;
+        }
+      } catch {}
+      return '';
+    }
+
+    function setMemorySummaryForSession(sessionId, summary) {
+      const cleanSummary = String(summary || '').trim().slice(0, 6000);
+      if (sessionId && userSessions[sessionId]) {
+        userSessions[sessionId].memorySummary = cleanSummary;
+      }
+      if (sessionId) {
+        try {
+          if (cleanSummary) {
+            localStorage.setItem(sessionMemoryKey(sessionId), cleanSummary);
+          } else {
+            localStorage.removeItem(sessionMemoryKey(sessionId));
+          }
+        } catch {}
+      }
+      if (sessionId === currentSessionId) {
+        memorySummary = cleanSummary;
+      }
+    }
 
     function loadPersonalAISettings() {
       if (!currentUserId) return;
       try {
         customSystemPrompt = localStorage.getItem(memoryKey('system_prompt')) || '';
-        memorySummary = localStorage.getItem(memoryKey('memory_summary')) || '';
+        memorySummary = getMemorySummaryForSession(currentSessionId);
         settings.memoryEnabled = localStorage.getItem(memoryKey('memory_enabled')) !== 'false';
         settings.pdfPreview = localStorage.getItem(memoryKey('pdf_preview')) !== 'false';
         settings.responseLength = Number(localStorage.getItem(memoryKey('response_length')) || 4096);
@@ -3655,37 +3738,32 @@ EXAMPLES:
     }
 
     function buildCompactMemorySummary() {
+      if (!currentSessionId || !userSessions[currentSessionId]) return '';
       const rows = [];
       const seen = new Set();
-      const sessions = Object.entries(userSessions || {})
-        .filter(([id]) => id !== currentSessionId)
-        .sort((a,b) => Number(b[1]?.lastCreatedAtMs || 0) - Number(a[1]?.lastCreatedAtMs || 0));
+      const session = userSessions[currentSessionId];
       const keywords = /(i want|i need|i use|i prefer|my |i'm|i am|i like|i don't|i dont|remember|project|working on|using|goal|plan|prefer)/i;
-      for (const [, session] of sessions) {
-        for (const msg of (session?.messages || [])) {
-          if (msg?.role !== 'user' || typeof msg.content !== 'string') continue;
-          const text = msg.content.replace(/\s+/g,' ').trim();
-          if (!text || text.length < 12 || text.startsWith('/')) continue;
-          if (!keywords.test(text) && text.length > 180) continue;
-          const clean = text.slice(0, 240);
-          const key = clean.toLowerCase();
-          if (seen.has(key)) continue;
-          seen.add(key);
-          rows.push(`- ${clean}`);
-          if (rows.length >= 28) break;
-        }
-        if (rows.length >= 28) break;
+      for (const msg of (session?.messages || [])) {
+        if (msg?.role !== 'user' || typeof msg.content !== 'string') continue;
+        const text = msg.content.replace(/\s+/g, ' ').trim();
+        if (!text || text.length < 10 || text.startsWith('/')) continue;
+        if (!keywords.test(text) && text.length > 120) continue;
+        const clean = text.slice(0, 160);
+        const key = clean.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        rows.push(`- ${clean}`);
+        if (rows.length >= 8) break;
       }
-      return rows.length ? rows.join('\n') : 'No long-term memory has been established yet.';
+      return rows.join('\n');
     }
 
     function refreshMemorySummaryIfNeeded() {
-      if (!memorySummary || memoryDirty) {
-        memorySummary = buildCompactMemorySummary();
-        memoryDirty = false;
-        if (currentUserId) localStorage.setItem(memoryKey('memory_summary'), memorySummary);
+      if (!currentSessionId) return '';
+      if (!memorySummary) {
+        memorySummary = getMemorySummaryForSession(currentSessionId);
       }
-      return memorySummary;
+      return memorySummary || '';
     }
 
     function getMemoryItems() {
@@ -3693,7 +3771,8 @@ EXAMPLES:
     }
     function setMemoryItems(items) {
       memorySummary = items.map(item => `- ${String(item).trim()}`).filter(Boolean).join('\n');
-      el.memoryEditor.value = memorySummary;
+      setMemorySummaryForSession(currentSessionId, memorySummary);
+      if (el.memoryEditor) el.memoryEditor.value = memorySummary;
       memoryDirty = false;
       updateMemoryCount();
     }
@@ -3701,103 +3780,214 @@ EXAMPLES:
       if (!el.memoryList) return;
       el.memoryList.replaceChildren();
       const items = getMemoryItems();
-      if (!items.length) { const empty=document.createElement('div'); empty.className='memory-list-empty'; empty.textContent='No saved memories yet. Add only details you want Your Friend to use.'; el.memoryList.appendChild(empty); return; }
-      items.forEach((item,index) => {
-        const row=document.createElement('div'); row.className='memory-item';
-        const text=document.createElement('div'); text.className='memory-item-text'; text.textContent=item;
-        const edit=document.createElement('button'); edit.type='button'; edit.textContent='Edit'; edit.onclick=()=>editMemoryItem(index);
-        const del=document.createElement('button'); del.type='button'; del.className='danger'; del.textContent='Delete'; del.onclick=()=>deleteMemoryItem(index);
-        row.append(text,edit,del); el.memoryList.appendChild(row);
+      if (!items.length) {
+        const empty = document.createElement('div');
+        empty.className = 'memory-list-empty';
+        empty.textContent = 'No saved memories for this chat yet. Add details you want Your Friend to remember.';
+        el.memoryList.appendChild(empty);
+        return;
+      }
+      items.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'memory-item';
+        const text = document.createElement('div');
+        text.className = 'memory-item-text';
+        text.textContent = item;
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.textContent = 'Edit';
+        edit.onclick = () => editMemoryItem(index);
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'danger';
+        del.textContent = 'Delete';
+        del.onclick = () => deleteMemoryItem(index);
+        row.append(text, edit, del);
+        el.memoryList.appendChild(row);
       });
     }
     function addMemoryItem() {
-      const value=prompt('What should Your Friend remember?'); if (!value?.trim()) return;
-      setMemoryItems([...getMemoryItems(), value.trim().slice(0,240)]); renderMemoryList();
+      const value = prompt('What should Your Friend remember for this chat?');
+      if (!value?.trim()) return;
+      setMemoryItems([...getMemoryItems(), value.trim().slice(0, 240)]);
+      renderMemoryList();
     }
     function editMemoryItem(index) {
-      const items=getMemoryItems(); const value=prompt('Edit this memory', items[index] || ''); if (value===null || !value.trim()) return;
-      items[index]=value.trim().slice(0,240); setMemoryItems(items); renderMemoryList();
+      const items = getMemoryItems();
+      const value = prompt('Edit this memory', items[index] || '');
+      if (value === null || !value.trim()) return;
+      items[index] = value.trim().slice(0, 240);
+      setMemoryItems(items);
+      renderMemoryList();
     }
     function deleteMemoryItem(index) {
-      const items=getMemoryItems(); if (!items[index]) return;
+      const items = getMemoryItems();
+      if (!items[index]) return;
       if (!confirm('Delete this saved memory?')) return;
-      items.splice(index,1); setMemoryItems(items); renderMemoryList();
+      items.splice(index, 1);
+      setMemoryItems(items);
+      renderMemoryList();
     }
     function openMemoryEditor() {
       if (!currentUserId) return alert('Please log in first.');
       loadPersonalAISettings();
-      el.memoryEditor.value = memorySummary || '';
-      el.systemPromptEditor.value = customSystemPrompt || DEFAULT_SYSTEM_PROMPT;
-      updateMemoryCount(); renderMemoryList();
+      memorySummary = getMemorySummaryForSession(currentSessionId);
+      if (el.memoryEditor) el.memoryEditor.value = memorySummary || '';
+      if (el.systemPromptEditor) el.systemPromptEditor.value = customSystemPrompt || DEFAULT_SYSTEM_PROMPT;
+      updateMemoryCount();
+      renderMemoryList();
       el.memoryModal.style.display = 'flex';
     }
     function closeMemoryEditor(){ el.memoryModal.style.display = 'none'; }
     function updateMemoryCount(){
-      const count=el.memoryEditor?.value.length || 0;
+      const count = el.memoryEditor?.value.length || 0;
       if (el.memoryCharCount) el.memoryCharCount.textContent = `${count} characters`;
-      if (el.memoryTokenCount) el.memoryTokenCount.textContent = `~${Math.max(0,Math.ceil(count / 4))} tokens`;
+      if (el.memoryTokenCount) el.memoryTokenCount.textContent = `~${Math.max(0, Math.ceil(count / 4))} tokens`;
     }
     function saveMemorySettings(){
-      memorySummary = (el.memoryEditor.value || '').trim().slice(0, 6000);
-      customSystemPrompt = (el.systemPromptEditor.value || '').trim().slice(0, 6000);
+      memorySummary = (el.memoryEditor?.value || '').trim().slice(0, 6000);
+      customSystemPrompt = (el.systemPromptEditor?.value || '').trim().slice(0, 6000);
       if (!customSystemPrompt) customSystemPrompt = DEFAULT_SYSTEM_PROMPT;
-      localStorage.setItem(memoryKey('memory_summary'), memorySummary);
+      setMemorySummaryForSession(currentSessionId, memorySummary);
       localStorage.setItem(memoryKey('system_prompt'), customSystemPrompt);
-      memoryDirty = false; updateMemoryCount(); renderMemoryList(); beep(760,0.05); alert('Memory and system prompt saved.');
+      memoryDirty = false;
+      updateMemoryCount();
+      renderMemoryList();
+      beep(760, 0.05);
+      alert('Memory and system prompt saved.');
     }
     function rebuildMemorySummary(){
-      memorySummary = buildCompactMemorySummary(); el.memoryEditor.value = memorySummary; updateMemoryCount(); renderMemoryList(); memoryDirty = false;
+      memorySummary = buildCompactMemorySummary();
+      setMemorySummaryForSession(currentSessionId, memorySummary);
+      if (el.memoryEditor) el.memoryEditor.value = memorySummary;
+      updateMemoryCount();
+      renderMemoryList();
+      memoryDirty = false;
     }
     function resetMemorySettings(){
-      const confirmation = prompt('This permanently clears saved memories and your custom instructions. Type RESET to continue.');
+      const confirmation = prompt('This clears saved memories for this chat and resets instructions. Type RESET to continue.');
       if (confirmation !== 'RESET') return;
-      memorySummary = ''; customSystemPrompt = DEFAULT_SYSTEM_PROMPT;
-      localStorage.setItem(memoryKey('memory_summary'), ''); localStorage.setItem(memoryKey('system_prompt'), customSystemPrompt);
-      el.memoryEditor.value = ''; el.systemPromptEditor.value = customSystemPrompt; updateMemoryCount(); renderMemoryList();
+      memorySummary = '';
+      setMemorySummaryForSession(currentSessionId, '');
+      customSystemPrompt = DEFAULT_SYSTEM_PROMPT;
+      localStorage.setItem(memoryKey('system_prompt'), customSystemPrompt);
+      if (el.memoryEditor) el.memoryEditor.value = '';
+      if (el.systemPromptEditor) el.systemPromptEditor.value = customSystemPrompt;
+      updateMemoryCount();
+      renderMemoryList();
     }
 
     function toggleAnimations(){
-      settings.animations=!settings.animations; el.animationToggle?.classList.toggle('on',settings.animations);
-      document.documentElement.dataset.motion=settings.animations?'full':'reduced'; localStorage.setItem(memoryKey('animations'),String(settings.animations));
+      settings.animations = !settings.animations;
+      el.animationToggle?.classList.toggle('on', settings.animations);
+      document.documentElement.dataset.motion = settings.animations ? 'full' : 'reduced';
+      localStorage.setItem(memoryKey('animations'), String(settings.animations));
     }
-    function togglePrivacyMode(){ settings.privacyMode=!settings.privacyMode; el.privacyToggle?.classList.toggle('on',settings.privacyMode); localStorage.setItem(memoryKey('privacy_mode'),String(settings.privacyMode)); }
+    function togglePrivacyMode(){
+      settings.privacyMode = !settings.privacyMode;
+      el.privacyToggle?.classList.toggle('on', settings.privacyMode);
+      localStorage.setItem(memoryKey('privacy_mode'), String(settings.privacyMode));
+    }
     function shareConversation(){
-      const session=userSessions[currentSessionId]; if (!session) return alert('No conversation to share yet.');
-      const text=(session.messages||[]).filter(m=>m.role!=='system').map(m=>`${m.role==='user'?'You':'Your Friend'}: ${messageTextForCopy(m.content)}`).join('\n\n');
-      if (navigator.share) navigator.share({title:sessionDisplayTitle(currentSessionId,session),text}).catch(()=>{});
-      else if (navigator.clipboard) navigator.clipboard.writeText(text).then(()=>alert('Conversation copied to your clipboard.')).catch(()=>alert('Sharing is not available in this browser.'));
+      const session = userSessions[currentSessionId];
+      if (!session) return alert('No conversation to share yet.');
+      const text = (session.messages || []).filter(m => m.role !== 'system').map(m => `${m.role === 'user' ? 'You' : 'Your Friend'}: ${messageTextForCopy(m.content)}`).join('\n\n');
+      if (navigator.share) navigator.share({ title: sessionDisplayTitle(currentSessionId, session), text }).catch(() => {});
+      else if (navigator.clipboard) navigator.clipboard.writeText(text).then(() => alert('Conversation copied to your clipboard.')).catch(() => alert('Sharing is not available in this browser.'));
       else alert('Sharing is not available in this browser.');
     }
     function exportAppData(){
-      const payload={version:1,exportedAt:new Date().toISOString(),settings:{...settings},memorySummary,customSystemPrompt,sessions:userSessions};
-      const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='your-friend-data.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      const sessionsWithMemory = {};
+      for (const [sid, sess] of Object.entries(userSessions || {})) {
+        sessionsWithMemory[sid] = {
+          ...sess,
+          memorySummary: getMemorySummaryForSession(sid)
+        };
+      }
+      const payload = {
+        version: 2,
+        exportedAt: new Date().toISOString(),
+        settings: { ...settings },
+        customSystemPrompt,
+        sessions: sessionsWithMemory
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'your-friend-data.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     }
     async function importAppData(file){
       if (!file) return;
       try {
-        const payload=JSON.parse(await file.text());
+        const payload = JSON.parse(await file.text());
         if (!payload || typeof payload !== 'object') throw new Error('Invalid file');
-        if (typeof payload.memorySummary === 'string') { memorySummary=payload.memorySummary.slice(0,6000); localStorage.setItem(memoryKey('memory_summary'),memorySummary); }
-        if (typeof payload.customSystemPrompt === 'string') { customSystemPrompt=payload.customSystemPrompt.slice(0,6000); localStorage.setItem(memoryKey('system_prompt'),customSystemPrompt); }
-        const importedSettings=payload.settings && typeof payload.settings==='object' ? payload.settings : {};
-        const allowedSettings=['compact','enterToSend','sound','autoScroll','chatFontSize','memoryEnabled','pdfPreview','responseLength','privacyMode','animations','language','model'];
-        for (const key of allowedSettings) if (Object.prototype.hasOwnProperty.call(importedSettings,key)) settings[key]=importedSettings[key];
-        localStorage.setItem(memoryKey('memory_enabled'),String(settings.memoryEnabled)); localStorage.setItem(memoryKey('pdf_preview'),String(settings.pdfPreview)); localStorage.setItem(memoryKey('privacy_mode'),String(settings.privacyMode)); localStorage.setItem(memoryKey('animations'),String(settings.animations)); localStorage.setItem(memoryKey('language'),settings.language); localStorage.setItem(memoryKey('model'),settings.model);
-        loadPersonalAISettings(); updateMemoryCount(); renderMemoryList(); alert('Your local preferences were imported.');
-      } catch { alert('This data file could not be imported.'); }
-      if (el.importDataInput) el.importDataInput.value='';
+        if (typeof payload.customSystemPrompt === 'string') {
+          customSystemPrompt = payload.customSystemPrompt.slice(0, 6000);
+          localStorage.setItem(memoryKey('system_prompt'), customSystemPrompt);
+        }
+        if (payload.sessions && typeof payload.sessions === 'object') {
+          for (const [sid, sess] of Object.entries(payload.sessions)) {
+            if (sess?.memorySummary && typeof sess.memorySummary === 'string') {
+              setMemorySummaryForSession(sid, sess.memorySummary);
+            }
+          }
+        }
+        if (typeof payload.memorySummary === 'string' && currentSessionId) {
+          setMemorySummaryForSession(currentSessionId, payload.memorySummary.slice(0, 6000));
+        }
+        const importedSettings = payload.settings && typeof payload.settings === 'object' ? payload.settings : {};
+        const allowedSettings = ['compact', 'enterToSend', 'sound', 'autoScroll', 'chatFontSize', 'memoryEnabled', 'pdfPreview', 'responseLength', 'privacyMode', 'animations', 'language', 'model'];
+        for (const key of allowedSettings) {
+          if (Object.prototype.hasOwnProperty.call(importedSettings, key)) settings[key] = importedSettings[key];
+        }
+        localStorage.setItem(memoryKey('memory_enabled'), String(settings.memoryEnabled));
+        localStorage.setItem(memoryKey('pdf_preview'), String(settings.pdfPreview));
+        localStorage.setItem(memoryKey('privacy_mode'), String(settings.privacyMode));
+        localStorage.setItem(memoryKey('animations'), String(settings.animations));
+        localStorage.setItem(memoryKey('language'), settings.language);
+        localStorage.setItem(memoryKey('model'), settings.model);
+        loadPersonalAISettings();
+        updateMemoryCount();
+        renderMemoryList();
+        alert('Your local preferences were imported.');
+      } catch {
+        alert('This data file could not be imported.');
+      }
+      if (el.importDataInput) el.importDataInput.value = '';
     }
     function resetAllSettings(){
       if (!confirm('Reset theme, chat preferences, and personalization settings? Your chats and memories will stay safe.')) return;
-      ['theme','compactMode','enterToSend','sound','autoScroll','chatFontSize','responseLength'].forEach(key=>localStorage.removeItem(key));
-      ['memory_enabled','pdf_preview','response_length','privacy_mode','language','model','animations'].forEach(key=>localStorage.removeItem(memoryKey(key)));
-      settings={compact:false,enterToSend:true,sound:false,autoScroll:true,chatFontSize:.98,memoryEnabled:true,pdfPreview:true,responseLength:4096,privacyMode:false,animations:true,language:'en',model:'llama-3.3-70b-versatile'};
-      setTheme(THEME_DEFAULT); setChatFontSize(.98); el.compactToggle.classList.remove('on'); el.enterSendToggle.classList.add('on'); el.soundToggle.classList.remove('on'); el.autoScrollToggle.classList.add('on'); loadPersonalAISettings();
+      ['theme', 'compactMode', 'enterToSend', 'sound', 'autoScroll', 'chatFontSize', 'responseLength'].forEach(key => localStorage.removeItem(key));
+      ['memory_enabled', 'pdf_preview', 'response_length', 'privacy_mode', 'language', 'model', 'animations'].forEach(key => localStorage.removeItem(memoryKey(key)));
+      settings = { compact: false, enterToSend: true, sound: false, autoScroll: true, chatFontSize: 0.98, memoryEnabled: true, pdfPreview: true, responseLength: 4096, privacyMode: false, animations: true, language: 'en', model: 'llama-3.3-70b-versatile' };
+      setTheme(THEME_DEFAULT);
+      setChatFontSize(0.98);
+      el.compactToggle.classList.remove('on');
+      el.enterSendToggle.classList.add('on');
+      el.soundToggle.classList.remove('on');
+      el.autoScrollToggle.classList.add('on');
+      loadPersonalAISettings();
     }
 
-    function toggleMemory(){ settings.memoryEnabled=!settings.memoryEnabled; el.memoryToggle.classList.toggle('on',settings.memoryEnabled); localStorage.setItem(memoryKey('memory_enabled'),String(settings.memoryEnabled)); }
-    function togglePdfPreview(){ settings.pdfPreview=!settings.pdfPreview; el.pdfPreviewToggle.classList.toggle('on',settings.pdfPreview); localStorage.setItem(memoryKey('pdf_preview'),String(settings.pdfPreview)); }
-    function setResponseLength(v){ settings.responseLength=Number(v)||4096; localStorage.setItem(memoryKey('response_length'),String(settings.responseLength)); }
+    function toggleMemory(){
+      settings.memoryEnabled = !settings.memoryEnabled;
+      el.memoryToggle.classList.toggle('on', settings.memoryEnabled);
+      localStorage.setItem(memoryKey('memory_enabled'), String(settings.memoryEnabled));
+    }
+    function togglePdfPreview(){
+      settings.pdfPreview = !settings.pdfPreview;
+      el.pdfPreviewToggle.classList.toggle('on', settings.pdfPreview);
+      localStorage.setItem(memoryKey('pdf_preview'), String(settings.pdfPreview));
+    }
+    function setResponseLength(v){
+      settings.responseLength = Number(v) || 4096;
+      localStorage.setItem(memoryKey('response_length'), String(settings.responseLength));
+    }
 
     function buildLongTermMemoryContext() {
       return refreshMemorySummaryIfNeeded();
@@ -3871,16 +4061,21 @@ EXAMPLES:
         aiTextNode = typingRow.querySelector('.text');
         el.chatContainer.appendChild(typingRow);
 
-        const longTermMemory = settings.memoryEnabled && !settings.privacyMode ? buildLongTermMemoryContext() : 'Saved memory is disabled for this request.';
+        const activeMemory = (settings.memoryEnabled && !settings.privacyMode)
+          ? (refreshMemorySummaryIfNeeded() || '').trim()
+          : '';
+        const hasValidMemory = Boolean(activeMemory && !/^no long-term memory/i.test(activeMemory));
+
+        let systemPromptText = getEffectiveSystemPrompt();
+        if (hasValidMemory) {
+          systemPromptText += '\n\nRELEVANT LONG-TERM MEMORY CONTEXT:\n' + activeMemory;
+        }
+        systemPromptText += '\n\n' + TOOL_SYSTEM_INSTRUCTIONS;
+
         let aiMessages = [
           {
             role: 'system',
-            content:
-              getEffectiveSystemPrompt() +
-              '\n\n' +
-              'RELEVANT LONG-TERM MEMORY CONTEXT:\n' + longTermMemory +
-              '\n\n' +
-              TOOL_SYSTEM_INSTRUCTIONS
+            content: systemPromptText
           },
           ...currentSession.messages
             .filter(m => m.role !== 'system')
@@ -4279,8 +4474,15 @@ EXAMPLES:
           title: keepTitle,
           messages: [{ role: 'system', content: DEFAULT_SYSTEM_PROMPT, createdAtMs: Date.now() }],
           createdAtMs: Date.now(),
-          lastCreatedAtMs: Date.now()
+          lastCreatedAtMs: Date.now(),
+          memorySummary: ''
         };
+        memorySummary = '';
+        memoryDirty = false;
+        setMemorySummaryForSession(currentSessionId, '');
+        if (el.memoryEditor) el.memoryEditor.value = '';
+        updateMemoryCount();
+        renderMemoryList();
         renderHistorySidebar();
         renderActiveChat();
         beep(360, 0.05);
@@ -4407,8 +4609,26 @@ EXAMPLES:
     window.enhanceModalPrompt = enhanceModalPrompt;
     window.showReferencePreview = showReferencePreview;
     window.addMemoryItem = addMemoryItem;
+    window.editMemoryItem = editMemoryItem;
+    window.deleteMemoryItem = deleteMemoryItem;
+    window.openMemoryEditor = openMemoryEditor;
+    window.closeMemoryEditor = closeMemoryEditor;
+    window.saveMemorySettings = saveMemorySettings;
+    window.rebuildMemorySummary = rebuildMemorySummary;
+    window.resetMemorySettings = resetMemorySettings;
     window.toggleAnimations = toggleAnimations;
     window.togglePrivacyMode = togglePrivacyMode;
+    window.toggleMemory = toggleMemory;
+    window.togglePdfPreview = togglePdfPreview;
+    window.toggleAutoScroll = toggleAutoScroll;
+    window.toggleEnterToSend = toggleEnterToSend;
+    window.toggleCompactMode = toggleCompactMode;
+    window.toggleSound = toggleSound;
+    window.clearCurrentChat = clearCurrentChat;
+    window.exportCurrentChat = exportCurrentChat;
+    window.switchSession = switchSession;
+    window.renameChat = renameChat;
+    window.togglePinChat = togglePinChat;
     window.exportAppData = exportAppData;
     window.resetAllSettings = resetAllSettings;
     window.toggleSidebar = toggleSidebar;
