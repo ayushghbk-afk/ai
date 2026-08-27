@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <title>Your Friend - AI Assistant</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -85,6 +85,16 @@
 
     *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
     html, body { height: 100%; }
+
+    /* ===== AUTO-ADAPTIVE UI TOKENS =====
+       Fluid sizes scale automatically between phone and desktop, so the
+       layout "auto-corrects" to any viewport without extra breakpoints. */
+    :root{
+      --pad-x: clamp(10px, 2.5vw, 18px);
+      --radius-lg: clamp(16px, 2.5vw, 24px);
+      --radius-md: clamp(12px, 2vw, 18px);
+    }
+
 
     body{
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
@@ -330,7 +340,7 @@
       background: linear-gradient(180deg, rgba(10,15,27,.96), rgba(8,12,22,.90));
       display:flex;
       flex-direction:column;
-      padding:14px;
+      padding: max(14px, env(safe-area-inset-top)) 14px max(14px, env(safe-area-inset-bottom));
       border-right:1px solid rgba(255,255,255,.08);
       flex-shrink:0;
       position:fixed;
@@ -346,7 +356,11 @@
       border-right:1px solid rgba(16,24,40,.08);
     }
 
-    @media (min-width: 768px){
+    /* Desktop breakpoint is 769px so 768px-wide devices (iPad portrait and
+       many Android tablets) keep the mobile drawer. The old 768px split made
+       both the static sidebar AND its 88vw mobile width apply at the same
+       time, squeezing the chat UI down to ~90px (invisible on tablets). */
+    @media (min-width: 769px){
       aside{ position:relative; transform:translateX(0) !important; }
       #sidebar-overlay{ display:none !important; }
       .menu-btn{ display:none !important; }
@@ -365,7 +379,8 @@
     }
 
     header{
-      padding:12px 14px;
+      padding:max(12px, env(safe-area-inset-top)) var(--pad-x) 12px;
+      min-height:56px;
       font-size:1rem;
       font-weight:900;
       color: var(--text-main);
@@ -441,6 +456,9 @@
     #chat-container{
       flex:1;
       overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
       padding: var(--chat-padding) 0;
       display:flex;
       flex-direction:column;
@@ -495,8 +513,10 @@
 
     .text{
       flex:1;
+      min-width:0;
       white-space: pre-wrap;
       word-break: break-word;
+      overflow-wrap: anywhere;
       line-height: 1.6;
       font-size: var(--chat-font-size);
       padding-top: 1px;
@@ -682,7 +702,7 @@
     }
 
     footer{
-      padding: 10px 10px 14px 10px;
+      padding: 10px max(10px, env(safe-area-inset-right)) 14px max(10px, env(safe-area-inset-left));
       display:flex;
       justify-content:center;
       background: rgba(10,15,27,.68);
@@ -793,6 +813,7 @@
     html[data-theme="light"] .memory-editor{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.12);}
     .memory-meta{display:flex;justify-content:space-between;gap:10px;color:var(--text-sub);font-size:.75rem;font-weight:800;margin:6px 2px 12px;}
     .pdf-preview{width:100%;height:360px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:#fff;margin-top:10px;}
+    .pdf-preview-fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:14px;}
     .pdf-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px;}
     .pdf-actions button{flex:1;min-width:100px;}
     .toolbar button{
@@ -852,15 +873,15 @@
     @media (max-width:768px){
       body{width:100%;max-width:100vw;}
       main{width:100%;max-width:100vw;}
-      header{padding:9px 10px;gap:7px;}
+      header{padding:max(9px, env(safe-area-inset-top)) 10px 9px;gap:7px;min-height:50px;}
       .header-actions{gap:5px;}
+      /* Auto-fitting header actions: only the emoji stays visible on phones
+         (labels hide), buttons keep a comfortable 40px tap target. */
       .header-actions .icon-btn{
         width:40px;height:40px;padding:0;
-        justify-content:center;font-size:0;
+        justify-content:center;
       }
-      .header-actions .icon-btn:first-child{font-size:0;}
-      .header-actions .icon-btn:first-child::before{content:'🎨';font-size:18px;}
-      .header-actions .icon-btn:last-child{font-size:18px;}
+      .header-actions .icon-btn .label{display:none;}
       .menu-btn{width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;}
       #chat-container{padding:12px 0;gap:8px;}
       .message-row{padding:0 8px;}
@@ -888,6 +909,28 @@
       .memory-editor{min-height:130px;max-height:32vh;}
       .pdf-preview{height:300px;}
       .image-grid{gap:9px;}
+      /* 16px+ controls stop iOS Safari from zooming the page when a
+         select/input is focused. */
+      .settings-row select,
+      .settings-row input[type="file"],
+      .image-tool-card select,
+      .image-tool-card textarea,
+      .memory-editor{font-size:16px;}
+      .message-action-btn{min-height:34px;}
+      .lightbox-caption{max-width:60vw;}
+    }
+
+    /* Landscape phones: compact chrome so the chat gets the limited height. */
+    @media (max-height:480px) and (orientation:landscape) and (max-width:948px){
+      header{min-height:42px;padding-top:6px;padding-bottom:6px;}
+      footer{padding-top:5px;padding-bottom:max(5px, env(safe-area-inset-bottom));}
+      .input-container{padding:5px 6px 5px 10px;}
+      .send-btn{width:36px;height:36px;}
+      .welcome-card{gap:12px;}
+      .welcome-copy{padding:16px 20px;min-height:auto;}
+      .welcome-preview{display:none;}
+      .welcome-actions{margin-bottom:10px;gap:8px;}
+      .welcome-btn{min-height:40px;padding:8px 14px;}
     }
 
     @media (max-width:380px){
@@ -939,7 +982,8 @@
     /* ===== Welcome, accessibility, and interaction polish ===== */
     #welcome-screen{
       position:fixed; inset:0; z-index:1200; display:flex; align-items:center; justify-content:center;
-      padding:24px; overflow:auto; background:
+      padding:max(24px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+      overflow:auto; background:
         radial-gradient(700px 420px at 10% 0%, rgba(124,92,255,.32), transparent 65%),
         radial-gradient(680px 420px at 95% 15%, rgba(255,77,141,.23), transparent 62%),
         radial-gradient(700px 420px at 55% 100%, rgba(38,214,166,.16), transparent 65%), var(--bg-main);
@@ -987,7 +1031,7 @@
     .settings-section-label{text-align:left;color:var(--text-sub);font-size:.73rem;font-weight:950;text-transform:uppercase;letter-spacing:.1em;margin:5px 3px -2px;}.settings-row select{max-width:180px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-main);font:850 .85rem inherit;}.settings-row input[type="file"]{max-width:220px;font-size:.75rem;color:var(--text-sub);}
     .privacy-note{font-size:.74rem;line-height:1.45;color:var(--text-sub);font-weight:750;text-align:left;padding:10px 2px;}.privacy-note strong{color:var(--text-main);}
     [data-motion="reduced"] *,[data-motion="reduced"] *::before,[data-motion="reduced"] *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important;}
-    @media (max-width:760px){.welcome-card{grid-template-columns:1fr;gap:14px}.welcome-copy{min-height:auto;padding:28px 22px}.welcome-preview{min-height:auto;padding:13px}.welcome-copy h1{font-size:clamp(2.25rem,12vw,3.7rem)}.welcome-actions{margin-bottom:20px}.feature-list{grid-template-columns:1fr 1fr}.feature-item{padding:9px}.feature-item span{font-size:.7rem}.message-actions{gap:4px}.message-action-btn{padding:6px 7px;font-size:.68rem}.generation-bar{padding:0 8px}.code-tools{width:100%;justify-content:flex-start}}
+    @media (max-width:768px){.welcome-card{grid-template-columns:1fr;gap:14px}.welcome-copy{min-height:auto;padding:28px 22px}.welcome-preview{min-height:auto;padding:13px}.welcome-copy h1{font-size:clamp(2.25rem,12vw,3.7rem)}.welcome-actions{margin-bottom:20px}.feature-list{grid-template-columns:1fr 1fr}.feature-item{padding:9px}.feature-item span{font-size:.7rem}.message-actions{gap:4px}.message-action-btn{padding:6px 7px;font-size:.68rem}.generation-bar{padding:0 8px}.code-tools{width:100%;justify-content:flex-start}}
     @media (max-width:390px){.welcome-copy{padding:24px 18px}.feature-list{grid-template-columns:1fr}.welcome-preview{display:none}.welcome-actions .welcome-btn{flex:1 1 100%}}
 
   </style>
@@ -1048,11 +1092,11 @@
   <div id="settings-modal" aria-modal="true" role="dialog">
     <div class="settings-card">
       <div class="settings-header">
-        <div style="flex:1;text-align:left;">
+        <div style="flex:1;text-align:left;min-width:0;">
           <h2 style="font-size:1.2rem; letter-spacing:.2px;">Settings</h2>
           <div class="subhead">Make it yours. On phone, everything stays clean.</div>
         </div>
-        <div style="width: 44px;"></div>
+        <button type="button" class="icon-btn" style="padding:8px 11px;flex-shrink:0;" title="Close settings" aria-label="Close settings" onclick="closeSettings()">✕</button>
       </div>
 
       <div class="settings-row">
@@ -1274,14 +1318,14 @@
 
   <main>
     <header>
-      <button class="menu-btn" onclick="toggleSidebar()">☰</button>
+      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
       <div class="title-wrap">
         <span class="spark"></span>
         <span>Your Friend</span>
       </div>
       <div class="header-actions">
-        <button class="icon-btn" title="Image Generator" onclick="openImageModal()">🎨 Image Tool</button>
-        <button class="icon-btn" title="Settings" onclick="openSettings()">⚙️</button>
+        <button class="icon-btn" title="Image Generator" aria-label="Open image generator" onclick="openImageModal()">🎨 <span class="label">Image Tool</span></button>
+        <button class="icon-btn" title="Settings" aria-label="Open settings" onclick="openSettings()">⚙️ <span class="label">Settings</span></button>
       </div>
     </header>
 
@@ -1300,7 +1344,72 @@
   <script>
     const SUPABASE_URL = "https://mxhmcapcmeatnmwiwnri.supabase.co";
     const SUPABASE_KEY = "sb_publishable_zAZ8LWIFxUX8cF0H6Gy9uw_H0Yc0BgD";
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+
+    // BOOT GUARD — if a CDN script fails (flaky mobile network, blocked CDN),
+    // the old code crashed on createClient() and took EVERY button and handler
+    // down with it: the page looked completely broken ("UI not showing").
+    // Now the app still boots with an offline stub and shows a clear banner.
+    function makeOfflineSupabaseStub() {
+      const offlineError = { message: 'You appear to be offline. Reconnect and reload to use Your Friend.', name: 'OfflineError' };
+      function offlineQuery() {
+        const q = {
+          then: (res, rej) => Promise.resolve({ data: null, error: offlineError }).then(res, rej),
+          catch: (rej) => Promise.resolve({ data: null, error: offlineError }).catch(rej),
+          finally: (fn) => Promise.resolve({ data: null, error: offlineError }).finally(fn)
+        };
+        for (const m of ['select','insert','update','upsert','delete','eq','neq','gt','gte','lt','lte','like','ilike','is','in','contains','or','not','order','limit','range','single','maybeSingle','textSearch','throwOnError']) q[m] = () => q;
+        return q;
+      }
+      return {
+        __offlineStub: true,
+        from: () => offlineQuery(),
+        storage: { from: () => ({ createSignedUrl: async () => ({ data: null, error: offlineError }), upload: async () => ({ data: null, error: offlineError }), remove: async () => ({ data: null, error: offlineError }), list: async () => ({ data: [], error: null }), getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },
+        auth: {
+          getSession: async () => ({ data: { session: null } }),
+          getUser: async () => ({ data: { user: null } }),
+          onAuthStateChange: () => ({ data: { subscription: { unsubscribe() {} } } }),
+          signInWithPassword: async () => ({ data: null, error: offlineError }),
+          signUp: async () => ({ data: null, error: offlineError }),
+          signOut: async () => ({ error: null })
+        }
+      };
+    }
+
+    function showBootWarningBanner() {
+      try {
+        if (document.getElementById('boot-warning')) return;
+        const banner = document.createElement('div');
+        banner.id = 'boot-warning';
+        banner.setAttribute('role', 'alert');
+        banner.style.cssText = 'position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2000;max-width:min(92vw,520px);display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;background:rgba(255,107,107,.14);border:1px solid rgba(255,107,107,.35);color:#ffd9d9;font-weight:800;font-size:.86rem;box-shadow:0 18px 50px rgba(0,0,0,.35);backdrop-filter:blur(10px);';
+        const msg = document.createElement('span');
+        msg.textContent = '⚠️ Some components failed to load. Check your connection — chat and sign-in need internet.';
+        msg.style.cssText = 'min-width:0;';
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.textContent = '↻ Reload';
+        retry.style.cssText = 'flex-shrink:0;border:0;border-radius:10px;padding:8px 12px;background:linear-gradient(135deg,#7c5cff,#ff4d8d);color:#fff;font-weight:900;cursor:pointer;';
+        retry.onclick = () => location.reload();
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.textContent = '✕';
+        close.setAttribute('aria-label', 'Dismiss');
+        close.style.cssText = 'flex-shrink:0;border:0;background:transparent;color:#ffd9d9;font-weight:900;cursor:pointer;font-size:1rem;';
+        close.onclick = () => banner.remove();
+        banner.append(msg, retry, close);
+        document.body.appendChild(banner);
+      } catch (e) { console.warn('Boot banner failed:', e); }
+    }
+
+    let supabaseClient;
+    try {
+      if (!window.supabase || typeof window.supabase.createClient !== 'function') throw new Error('supabase-js failed to load from CDN');
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+    } catch (bootErr) {
+      console.error('Boot error:', bootErr);
+      supabaseClient = makeOfflineSupabaseStub();
+      (window.onloadQueue = window.onloadQueue || []).push(showBootWarningBanner);
+    }
     const PROXY_URL = 'https://groq-proxy.mr-hackerdon808.workers.dev/api/chat';
 
     const el = {};
@@ -1546,6 +1655,7 @@ EXAMPLES:
         .replace(/[^\x20-\x7E]/g, '')
         .replace(/\s+/g, '_')
         .replace(/_+/g, '_')
+        .replace(/_+\./g, '.')
         .replace(/^_+|_+$/g, '')
         .trim();
       if (!safe) safe = 'document.pdf';
@@ -1553,10 +1663,39 @@ EXAMPLES:
       return safe.slice(0, 120);
     }
 
-    // jsPDF's built-in fonts only cover WinAnsi (Latin-1). Models love emojis
-    // and unicode punctuation, so map them to safe equivalents instead of
-    // letting them render as missing/garbage glyphs inside the PDF.
-    function toPdfSafeLine(line) {
+    // ---- PDF text pipeline -------------------------------------------------
+    // jsPDF's built-in fonts only cover WinAnsi (CP1252/Latin-1). The old code
+    // DELETED every character outside that range, so Hindi, Bengali, emoji,
+    // CJK — entire words — silently vanished from generated PDFs. Now:
+    //   • CP1252-safe text keeps the crisp, selectable vector path.
+    //   • Anything else is rendered through an offscreen <canvas> with the
+    //     browser's real fonts (full Unicode + correct complex-script shaping
+    //     for Devanagari conjuncts etc.) and embedded as a high-res image.
+    const PDF_PX_PER_MM = 8;            // ~203 DPI for canvas-rendered text
+    const PDF_MM_PER_PT = 0.352778;
+    const PDF_SANS_STACK = '"Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Noto Sans Devanagari", "Noto Sans Bengali", "Noto Sans Tamil", "Noto Sans Telugu", "Noto Sans Arabic", sans-serif';
+    const PDF_MONO_STACK = 'ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", "Courier New", monospace';
+    // Characters the standard jsPDF fonts can draw via CP1252 beyond Latin-1
+    // (curly quotes, en/em dash, bullet, euro, TM, ...). They stay vector.
+    const PDF_CP1252_EXTRA = '\u20AC\u201A\u0192\u201E\u2026\u2020\u2021\u02C6\u2030\u0160\u2039\u0152\u017D\u2018\u2019\u201C\u201D\u2022\u2013\u2014\u02DC\u2122\u0161\u203A\u0153\u017E\u0178';
+    // \n/\r/\t are line structure, not glyphs — they stay vector-safe.
+    const PDF_VECTOR_SAFE_RE = new RegExp('^[' + '\\x20-\\x7E\\u00A0-\\u00FF\\n\\r\\t' + PDF_CP1252_EXTRA + ']*$');
+
+    function needsUnicodeFont(text) {
+      return !PDF_VECTOR_SAFE_RE.test(String(text || ''));
+    }
+
+    // Remove invisible/control characters but KEEP every visible Unicode char.
+    function cleanInvisibleText(value) {
+      return String(value || '')
+        .replace(/\r\n?/g, '\n')
+        .replace(/[\u200B\u200C\u200D\uFEFF\u2060\u00AD]/g, '')
+        .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+    }
+
+    // Vector path: map exotic punctuation to CP1252-safe equivalents and drop
+    // anything the built-in fonts cannot draw (that text takes the canvas path).
+    function toLatinSafeLine(line) {
       let s = String(line || '');
       s = s.replace(/\t/g, '  ');
       s = s.replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '');
@@ -1573,19 +1712,98 @@ EXAMPLES:
       s = s.replace(/\u00A9/g, '(C)').replace(/\u00AE/g, '(R)');
       s = s.replace(/[\u2713\u2714]/g, '[ok]').replace(/[\u2717\u2718]/g, '[x]');
       s = s.replace(/\u2020/g, '+').replace(/\u2021/g, '++');
+      s = s.replace(/\u2022/g, '*');
       // Drop everything outside printable ASCII + Latin-1 (emoji, CJK, ...).
       s = s.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, '');
       return s;
     }
 
-    function sanitizePdfText(value) {
-      return String(value || '')
-        .replace(/\r\n/g, '\n')
-        .replace(/\r/g, '\n')
+    function sanitizeVectorText(value) {
+      return cleanInvisibleText(value)
         .split('\n')
-        .map(toPdfSafeLine)
+        .map(toLatinSafeLine)
         .join('\n')
         .replace(/\u0000/g, '');
+    }
+
+    function stripPdfEmphasis(value) {
+      return String(value || '').replace(/\*\*/g, '').replace(/__/g, '');
+    }
+
+    function pdfCssColor(rgb) {
+      const c = Array.isArray(rgb) ? rgb : [31, 36, 48];
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+
+    function pdfCanvasAvailable() {
+      try {
+        const c = document.createElement('canvas');
+        const ctx = c.getContext && c.getContext('2d');
+        return !!(ctx && typeof c.toDataURL === 'function');
+      } catch { return false; }
+    }
+
+    function pdfGetContext(widthPx, heightPx) {
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.max(1, Math.ceil(widthPx));
+      canvas.height = Math.max(1, Math.ceil(heightPx));
+      return { canvas, ctx: canvas.getContext('2d') };
+    }
+
+    function pdfWrapCanvasLines(ctx, text, maxWidthPx) {
+      const out = [];
+      for (const rawLine of String(text || '').split('\n')) {
+        const words = rawLine.split(/\s+/).filter(Boolean);
+        if (!words.length) { out.push(''); continue; }
+        let current = '';
+        for (const word of words) {
+          const candidate = current ? current + ' ' + word : word;
+          if (!current && ctx.measureText(candidate).width > maxWidthPx && candidate.length > 1) {
+            // Break absurdly long single tokens (URLs, hashes) by character.
+            let piece = '';
+            for (const ch of candidate) {
+              if (piece && ctx.measureText(piece + ch).width > maxWidthPx) { out.push(piece); piece = ch; }
+              else piece += ch;
+            }
+            current = piece;
+          } else if (ctx.measureText(candidate).width <= maxWidthPx) {
+            current = candidate;
+          } else {
+            out.push(current);
+            current = word;
+          }
+        }
+        if (current) out.push(current);
+      }
+      return out;
+    }
+
+    // Render wrapped lines to a transparent PNG sized in PDF millimetres.
+    function pdfRenderLineImage({ lines, fontPx, fontCss, color, widthPx, lineHMm, align = 'left' }) {
+      const lineHPx = lineHMm * PDF_PX_PER_MM;
+      const probe = pdfGetContext(10, 10).ctx;
+      probe.font = fontCss;
+      const sample = probe.measureText('Hg');
+      const ascent = Math.max(2, (sample.actualBoundingBoxAscent || fontPx * 0.82));
+      const descent = Math.max(1, (sample.actualBoundingBoxDescent || fontPx * 0.24));
+      const heightPx = Math.ceil(ascent + descent + (Math.max(lines.length, 1) - 1) * lineHPx) + 2;
+      const { canvas, ctx } = pdfGetContext(widthPx, heightPx);
+      ctx.font = fontCss;
+      ctx.fillStyle = color || '#1f2430';
+      ctx.textBaseline = 'alphabetic';
+      lines.forEach((line, i) => {
+        if (!line) return;
+        const baseline = ascent + i * lineHPx;
+        const w = ctx.measureText(line).width;
+        const x = align === 'center' ? (canvas.width - w) / 2 : 0;
+        ctx.fillText(line, x, baseline);
+      });
+      return {
+        dataUrl: canvas.toDataURL('image/png'),
+        widthMm: canvas.width / PDF_PX_PER_MM,
+        heightMm: canvas.height / PDF_PX_PER_MM,
+        ascentMm: ascent / PDF_PX_PER_MM
+      };
     }
 
     // Pre-parse content into structured blocks BEFORE rendering. The old
@@ -1684,13 +1902,15 @@ EXAMPLES:
       images = []
     }) {
       if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library failed to load.');
-      const safeTitle = sanitizePdfText(title || 'Document').slice(0, 200);
-      const safeContent = sanitizePdfText(content);
-      const pdfImages = Array.isArray(images) ? images.filter(image => image && typeof image.url === 'string' && image.url.trim()).slice(0, 6) : [];
-      if (!safeContent.trim()) throw new Error('PDF content cannot be empty.');
-      if (safeContent.length > 100000) throw new Error('PDF content is too large. Maximum size is 100,000 characters.');
-
+      const rawTitle = cleanInvisibleText(title || 'Document');
+      const rawContent = cleanInvisibleText(content);
+      const canvasOk = pdfCanvasAvailable();
       const safeFilename = sanitizePdfFilename(filename);
+      const pdfImages = Array.isArray(images) ? images.filter(image => image && typeof image.url === 'string' && image.url.trim()).slice(0, 6) : [];
+      if (!rawContent.trim()) throw new Error('PDF content cannot be empty.');
+      if (rawContent.length > 100000) throw new Error('PDF content is too large. Maximum size is 100,000 characters.');
+      const safeTitle = (canvasOk && needsUnicodeFont(rawTitle) ? rawTitle : sanitizeVectorText(rawTitle)).slice(0, 200);
+
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4', compress: true });
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -1713,15 +1933,62 @@ EXAMPLES:
       function ensure(h) {
         if (y + h > bottom) newPage();
       }
-      function writeWrapped(text, x, width, lineHeight, opts = {}) {
-        const lines = pdf.splitTextToSize(String(text || ''), width);
-        for (const line of lines) {
-          ensure(lineHeight);
-          pdf.text(line, x, y, opts);
-          y += lineHeight;
+
+      // Wrap text for either engine: vector via jsPDF, Unicode via canvas.
+      function wrapForEngine(text, widthMm, sizePt, bold, mono) {
+        const weight = bold ? 'bold ' : '';
+        const family = mono ? PDF_MONO_STACK : PDF_SANS_STACK;
+        if (!needsUnicodeFont(text) || !canvasOk) {
+          const prepared = needsUnicodeFont(text) ? sanitizeVectorText(text) : text;
+          pdf.setFont(mono ? 'courier' : 'helvetica', bold ? 'bold' : 'normal');
+          pdf.setFontSize(sizePt);
+          const lines = pdf.splitTextToSize(prepared, widthMm);
+          return { engine: 'vector', lines };
         }
-        return lines.length;
+        const fontPx = Math.max(6, Math.round(sizePt * PDF_MM_PER_PT * PDF_PX_PER_MM));
+        const fontCss = `${weight}${fontPx}px ${family}`;
+        const probe = pdfGetContext(10, 10).ctx;
+        probe.font = fontCss;
+        const lines = pdfWrapCanvasLines(probe, text, widthMm * PDF_PX_PER_MM);
+        return { engine: 'canvas', lines, fontPx, fontCss };
       }
+
+      // Write wrapped lines with automatic page breaks. Handles both engines so
+      // Unicode text never runs off the page (each chunk is sized to fit).
+      function writeLinesAuto(wrapped, opts) {
+        const lineHMm = opts.lineHMm;
+        let idx = 0;
+        while (idx < wrapped.lines.length) {
+          let n = 0;
+          while (idx + n < wrapped.lines.length && (y + n * lineHMm + 1) <= bottom) n++;
+          if (!n) { newPage(); continue; }
+          if (wrapped.engine === 'vector') {
+            pdf.setTextColor(...(opts.color || ink));
+            pdf.setFont(opts.mono ? 'courier' : 'helvetica', opts.bold ? 'bold' : 'normal');
+            pdf.setFontSize(opts.sizePt);
+            const x = opts.align === 'center' ? pageWidth / 2 : opts.x;
+            const alignOpt = opts.align === 'center' ? { align: 'center' } : undefined;
+            for (let k = 0; k < n; k++) pdf.text(wrapped.lines[idx + k], x, y + k * lineHMm, alignOpt);
+          } else {
+            const img = pdfRenderLineImage({
+              lines: wrapped.lines.slice(idx, idx + n),
+              fontPx: wrapped.fontPx,
+              fontCss: wrapped.fontCss,
+              color: pdfCssColor(opts.color || ink),
+              widthPx: Math.ceil(opts.widthMm * PDF_PX_PER_MM),
+              lineHMm,
+              align: opts.align || 'left'
+            });
+            const x = opts.align === 'center' ? margin + (contentWidth - img.widthMm) / 2 : opts.x;
+            pdf.addImage(img.dataUrl, 'PNG', x, y - img.ascentMm, img.widthMm, img.heightMm);
+          }
+          y += n * lineHMm;
+          idx += n;
+          if (idx < wrapped.lines.length) newPage();
+        }
+        y += (opts.afterMm || 0);
+      }
+
       function sectionRule() {
         ensure(8);
         pdf.setDrawColor(...accent);
@@ -1729,37 +1996,27 @@ EXAMPLES:
         pdf.line(margin, y, margin + 28, y);
         y += 6;
       }
+
       function addCallout(rawText) {
-        // The callout box is drawn in PER-PAGE segments. The old version sized
-        // one box for every line and then wrote all lines with no page-break
-        // check, so a tall callout spilled out of its box, ran over the footer,
-        // and "floated" onto the next page with no background. Now each segment
-        // is measured to fit the current page before anything is drawn.
-        const text = String(rawText || '').replace(/^>\s?/, '');
+        // The callout box is drawn in PER-PAGE segments. Each segment is
+        // measured to fit the current page before anything is drawn, so text
+        // never spills over the footer or floats onto a bare next page.
+        const text = stripPdfEmphasis(String(rawText || '').replace(/^>\s?/, ''));
         const padX = 8;
         const barW = 2.5;
         const lineH = 5;
         const topInset = 5;   // box top -> first text baseline
         const bottomPad = 4;  // last text baseline -> box bottom
         const innerX = margin + padX + 2;
-        const lines = pdf.splitTextToSize(text, contentWidth - padX * 2 - barW - 2);
+        const innerWidthMm = contentWidth - padX * 2 - barW - 2;
+        const wrapped = wrapForEngine(text, innerWidthMm, 10.2, false, false);
+        const lines = wrapped.lines;
         if (!lines.length) return;
-
-        pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10.2);
-        pdf.setTextColor(...ink);
 
         let idx = 0;
         while (idx < lines.length) {
-          // How many wrapped lines fit on the CURRENT page? A line is only
-          // admitted when its segment box (including bottom padding) stays
-          // above the content bottom, so text never reaches the footer.
           let n = 0;
-          while (idx + n < lines.length) {
-            const baseline = y + n * lineH;
-            if (baseline + bottomPad > bottom) break;
-            n++;
-          }
+          while (idx + n < lines.length && (y + n * lineH) + bottomPad <= bottom) n++;
           if (n === 0) { newPage(); continue; }
 
           const boxTop = y - topInset;
@@ -1773,8 +2030,21 @@ EXAMPLES:
           pdf.setFillColor(...accent);
           pdf.roundedRect(margin, boxTop, barW, boxBottom - boxTop, 1.2, 1.2, 'F');
 
-          for (let k = 0; k < n; k++) {
-            pdf.text(lines[idx + k], innerX, y + k * lineH);
+          if (wrapped.engine === 'vector') {
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(10.2);
+            pdf.setTextColor(...ink);
+            for (let k = 0; k < n; k++) pdf.text(lines[idx + k], innerX, y + k * lineH);
+          } else {
+            const img = pdfRenderLineImage({
+              lines: lines.slice(idx, idx + n),
+              fontPx: wrapped.fontPx,
+              fontCss: wrapped.fontCss,
+              color: pdfCssColor(ink),
+              widthPx: Math.ceil(innerWidthMm * PDF_PX_PER_MM),
+              lineHMm: lineH
+            });
+            pdf.addImage(img.dataUrl, 'PNG', innerX, y - img.ascentMm, img.widthMm, img.heightMm);
           }
 
           y = boxBottom;
@@ -1783,14 +2053,17 @@ EXAMPLES:
         }
         y += 5;
       }
+
       function addCodeBlock(text, lang) {
-        const codeLines = pdf.splitTextToSize(text || '', contentWidth - 12);
+        // Code usually stays ASCII (crisp vector courier). Unicode inside code
+        // (arrows, box drawing, non-Latin comments) takes the canvas path.
+        const body = (canvasOk && needsUnicodeFont(text)) ? String(text || '') : sanitizeVectorText(text);
+        const wrapped = wrapForEngine(body, contentWidth - 12, 8.5, false, true);
+        const codeLines = wrapped.lines;
         if (!codeLines.length) return;
         const lineH = 5;
         let idx = 0;
         while (idx < codeLines.length) {
-          // How many wrapped lines fit on the CURRENT page? Draw the box in
-          // per-page segments so long code blocks never spill off the page.
           let n = 0;
           let probe = y;
           while (idx + n < codeLines.length && probe <= bottom) { n++; probe += lineH; }
@@ -1804,47 +2077,76 @@ EXAMPLES:
             pdf.setTextColor(...muted);
             pdf.setFont('helvetica', 'bold');
             pdf.setFontSize(7);
-            pdf.text(lang.toUpperCase(), pageWidth - margin - 6, y - 0.5, { align: 'right' });
+            pdf.text(sanitizeVectorText(lang).toUpperCase().slice(0, 24) || 'CODE', pageWidth - margin - 6, y - 0.5, { align: 'right' });
           }
-          pdf.setTextColor(...ink);
-          pdf.setFont('courier', 'normal');
-          pdf.setFontSize(8.5);
-          for (let k = 0; k < n; k++) pdf.text(codeLines[idx + k], margin + 6, y + k * lineH);
+          if (wrapped.engine === 'vector') {
+            pdf.setTextColor(...ink);
+            pdf.setFont('courier', 'normal');
+            pdf.setFontSize(8.5);
+            for (let k = 0; k < n; k++) pdf.text(codeLines[idx + k], margin + 6, y + k * lineH);
+          } else {
+            const img = pdfRenderLineImage({
+              lines: codeLines.slice(idx, idx + n),
+              fontPx: wrapped.fontPx,
+              fontCss: wrapped.fontCss,
+              color: pdfCssColor(ink),
+              widthPx: Math.ceil((contentWidth - 12) * PDF_PX_PER_MM),
+              lineHMm: lineH
+            });
+            pdf.addImage(img.dataUrl, 'PNG', margin + 6, y - img.ascentMm, img.widthMm, img.heightMm);
+          }
           y = boxBottom + 6;
           idx += n;
           if (idx < codeLines.length) newPage();
         }
       }
 
-      // Cover / title block. Font auto-shrinks so long titles never overlap
-      // the subtitle or spill out of the cover card.
+      // Cover / title block. The font auto-shrinks so long titles never
+      // overlap the subtitle, and Unicode titles render through the canvas.
       pdf.setFillColor(...accent);
       pdf.roundedRect(margin, 15, contentWidth, 34, 5, 5, 'F');
-      pdf.setTextColor(255, 255, 255);
-      pdf.setFont('helvetica', 'bold');
-      let titleSize = safeTitle.length > 110 ? 15 : safeTitle.length > 60 ? 17.5 : 21;
-      pdf.setFontSize(titleSize);
-      let titleLines = pdf.splitTextToSize(safeTitle, contentWidth - 18);
-      if (titleLines.length > 2) {
+      const titleText = stripPdfEmphasis(safeTitle);
+      function wrapTitle(sizePt) { return wrapForEngine(titleText, contentWidth - 18, sizePt, true, false); }
+      let titleSize = titleText.length > 110 ? 15 : titleText.length > 60 ? 17.5 : 21;
+      let titleWrap = wrapTitle(titleSize);
+      if (titleWrap.lines.length > 2) {
         titleSize = Math.max(13, titleSize - 3);
-        pdf.setFontSize(titleSize);
-        titleLines = pdf.splitTextToSize(safeTitle, contentWidth - 18);
+        titleWrap = wrapTitle(titleSize);
       }
-      titleLines = titleLines.slice(0, 2);
-      pdf.text(titleLines, margin + 9, titleLines.length > 1 ? 27.5 : 32);
+      const titleLines = titleWrap.lines.slice(0, 2);
+      const titleLineHMm = titleSize * PDF_MM_PER_PT * 1.18;
+      const titleBaseline = titleLines.length > 1 ? 27.5 : 32;
+      if (titleWrap.engine === 'vector') {
+        pdf.setTextColor(255, 255, 255);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(titleSize);
+        pdf.text(titleLines, margin + 9, titleBaseline);
+      } else {
+        const img = pdfRenderLineImage({
+          lines: titleLines,
+          fontPx: titleWrap.fontPx,
+          fontCss: titleWrap.fontCss,
+          color: '#ffffff',
+          widthPx: Math.ceil((contentWidth - 18) * PDF_PX_PER_MM),
+          lineHMm: titleLineHMm
+        });
+        pdf.addImage(img.dataUrl, 'PNG', margin + 9, titleBaseline - img.ascentMm, img.widthMm, img.heightMm);
+      }
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8.5);
+      pdf.setTextColor(255, 255, 255);
       pdf.text('YOUR FRIEND  •  AI-GENERATED DOCUMENT', margin + 9, 43);
       y = 58;
 
-      // Quick document metadata strip.
+      // Quick document metadata strip (ASCII-only so it always stays vector).
       pdf.setFillColor(...light);
       pdf.setDrawColor(225, 227, 235);
       pdf.roundedRect(margin, y - 4, contentWidth, 13, 3, 3, 'FD');
       pdf.setTextColor(...muted);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8.5);
-      pdf.text(`${new Date().toLocaleDateString()}  •  ${safeContent.split(/\n+/).filter(Boolean).length} content blocks`, margin + 7, y + 4);
+      const dateLabel = new Date().toISOString().slice(0, 10);
+      pdf.text(`${dateLabel}  •  ${parsePdfBlocks(rawContent).length} content blocks`, margin + 7, y + 4);
       y += 17;
 
       // Embed images without forcing a new page unless necessary.
@@ -1870,23 +2172,17 @@ EXAMPLES:
           if (image.alt) {
             // Wrap the caption so a long alt string can't overflow the page;
             // center the wrapped lines and keep them with the image.
-            pdf.setTextColor(...muted);
-            pdf.setFont('helvetica', 'normal');
-            pdf.setFontSize(8);
-            const capLines = pdf.splitTextToSize(String(image.alt).slice(0, 200), contentWidth);
-            for (const capLine of capLines) {
-              ensure(6);
-              pdf.text(capLine, pageWidth / 2, y, { align: 'center' });
-              y += 4.4;
-            }
-            y += 3;
+            const capText = stripPdfEmphasis(cleanInvisibleText(image.alt)).slice(0, 200);
+            const capWrap = wrapForEngine(capText, contentWidth, 8, false, false);
+            for (const capLine of capWrap.lines) ensure(6);
+            writeLinesAuto(capWrap, { x: margin, widthMm: contentWidth, sizePt: 8, lineHMm: 4.4, color: muted, align: 'center', afterMm: 3 });
           }
         } catch (error) { console.warn('Could not embed PDF image:', error); }
       }
 
-      // Render the pre-parsed blocks (the old for...of + shift() version
-      // silently dropped lines that came after code fences).
-      const blocks = parsePdfBlocks(safeContent);
+      // Render the pre-parsed blocks. Unicode blocks automatically switch to
+      // the canvas engine, so non-Latin text is preserved instead of deleted.
+      const blocks = parsePdfBlocks(rawContent);
       for (const block of blocks) {
         if (block.type === 'heading') {
           const level = Math.min(Math.max(block.level, 1), 3);
@@ -1896,42 +2192,34 @@ EXAMPLES:
           // Reserve space for the section rule, EVERY wrapped heading line, and
           // the first two body lines — otherwise a long/wrapped heading could
           // be stranded at the bottom of a page with its text on the next.
-          pdf.setFont('helvetica', 'bold');
-          pdf.setFontSize(font);
-          const headLines = pdf.splitTextToSize(block.text, contentWidth);
-          ensure(6 + headLines.length * lineH + after + 2 * 5.8);
+          const headWrap = wrapForEngine(stripPdfEmphasis(block.text), contentWidth, font, true, false);
+          ensure(6 + headWrap.lines.length * lineH + after + 2 * 5.8);
           sectionRule();
-          pdf.setTextColor(...(level === 1 ? accent : ink));
-          pdf.setFont('helvetica', 'bold');
-          pdf.setFontSize(font);
-          writeWrapped(block.text, margin, contentWidth, lineH);
-          y += after;
+          writeLinesAuto(headWrap, { x: margin, widthMm: contentWidth, sizePt: font, bold: true, lineHMm: lineH, color: level === 1 ? accent : ink, afterMm: after });
           continue;
         }
         if (block.type === 'callout') { addCallout(block.text); continue; }
         if (block.type === 'code') { addCodeBlock(block.text, block.lang); continue; }
         if (block.type === 'bullet') {
-          pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5);
-          const lines = pdf.splitTextToSize(block.text, contentWidth - 7);
+          const wrapped = wrapForEngine(stripPdfEmphasis(block.text), contentWidth - 7, 10.5, false, false);
           // Reserve the marker AND the first text line together so the bullet
           // can never be left stranded at the very bottom of a page.
-          ensure(lines.length > 1 ? 5.8 * 2 + 2 : 7);
+          ensure(wrapped.lines.length > 1 ? 5.8 * 2 + 2 : 7);
           pdf.setFillColor(...accent2); pdf.circle(margin + 2, y - 1.5, 1, 'F');
-          writeWrapped(block.text, margin + 7, contentWidth - 7, 5.8); y += 1; continue;
+          writeLinesAuto(wrapped, { x: margin + 7, widthMm: contentWidth - 7, sizePt: 10.5, lineHMm: 5.8, color: ink, afterMm: 1 });
+          continue;
         }
         if (block.type === 'numbered') {
-          const lines = pdf.splitTextToSize(block.text, contentWidth - 8);
-          ensure(lines.length > 1 ? 5.8 * 2 + 2 : 7);
+          const wrapped = wrapForEngine(stripPdfEmphasis(block.text), contentWidth - 8, 10.5, false, false);
+          ensure(wrapped.lines.length > 1 ? 5.8 * 2 + 2 : 7);
           pdf.setTextColor(...accent); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5);
           pdf.text(`${block.num}.`, margin, y);
-          pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal');
-          writeWrapped(block.text, margin + 8, contentWidth - 8, 5.8); y += 1; continue;
+          writeLinesAuto(wrapped, { x: margin + 8, widthMm: contentWidth - 8, sizePt: 10.5, lineHMm: 5.8, color: ink, afterMm: 1 });
+          continue;
         }
-        // paragraph — lightweight emphasis without a heavy markdown parser.
-        const cleaned = block.text.replace(/\*\*/g, '').replace(/__/g, '');
-        pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5);
-        writeWrapped(cleaned, margin, contentWidth, 5.8);
-        y += 2;
+        // paragraph
+        const wrapped = wrapForEngine(stripPdfEmphasis(block.text), contentWidth, 10.5, false, false);
+        writeLinesAuto(wrapped, { x: margin, widthMm: contentWidth, sizePt: 10.5, lineHMm: 5.8, color: ink, afterMm: 2 });
       }
 
       // Closing takeaway strip gives short PDFs a finished look without fake filler.
@@ -1961,6 +2249,45 @@ EXAMPLES:
       a.click();
       document.body.removeChild(a);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    // iOS Safari cannot render PDFs inside iframes — the preview showed up as
+    // a blank white box on iPhone/iPad. There we show a tappable "Open PDF"
+    // card instead of an empty frame; everywhere else the iframe stays.
+    function canEmbedPdfInline() {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      return !isIOS;
+    }
+
+    function buildPdfPreviewFrame(src, title) {
+      const label = title || 'PDF preview';
+      if (canEmbedPdfInline()) {
+        const frame = document.createElement('iframe');
+        frame.className = 'pdf-preview';
+        frame.title = label;
+        frame.loading = 'lazy';
+        frame.src = src;
+        return frame;
+      }
+      const fallback = document.createElement('div');
+      fallback.className = 'pdf-preview pdf-preview-fallback';
+      const icon = document.createElement('div');
+      icon.textContent = '📄';
+      icon.style.cssText = 'font-size:1.6rem;';
+      const name = document.createElement('div');
+      name.textContent = label;
+      name.style.cssText = 'font-weight:900;color:#1f2430;font-size:.9rem;max-width:90%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+      const hint = document.createElement('div');
+      hint.textContent = 'Inline preview isn\u2019t supported on this device.';
+      hint.style.cssText = 'color:#5b657d;font-size:.75rem;font-weight:700;';
+      const open = document.createElement('button');
+      open.type = 'button';
+      open.textContent = '↗ Open PDF';
+      open.style.cssText = 'border:0;border-radius:10px;padding:9px 14px;background:linear-gradient(135deg,#7c5cff,#ff4d8d);color:#fff;font-weight:900;cursor:pointer;font-size:.85rem;';
+      open.onclick = () => window.open(src, '_blank', 'noopener,noreferrer');
+      fallback.append(icon, name, hint, open);
+      return fallback;
     }
 
     function buildPdfDownloadCard(pdfResult) {
@@ -2104,13 +2431,9 @@ EXAMPLES:
       card.appendChild(title);
       card.appendChild(status);
       if (pdfResult.blob && settings.pdfPreview) {
-        const preview = document.createElement('iframe');
-        preview.className = 'pdf-preview';
-        preview.title = pdfResult.title || 'PDF preview';
-        preview.loading = 'lazy';
         // Keep the blob URL alive for the page lifetime: the PDF viewer loads
         // pages lazily, so revoking it would blank the preview after a minute.
-        preview.src = URL.createObjectURL(pdfResult.blob);
+        const preview = buildPdfPreviewFrame(URL.createObjectURL(pdfResult.blob), pdfResult.title || 'PDF preview');
         card.appendChild(preview);
       }
       const actions = document.createElement('div');
@@ -2802,6 +3125,12 @@ EXAMPLES:
       el.overlay.style.display = isOpen ? 'none' : 'block';
     }
 
+    // Matches the CSS breakpoint (max-width: 768px) exactly — the old
+    // window.innerWidth < 768 check disagreed with the 769px desktop rules.
+    function isMobileLayout() {
+      return window.matchMedia('(max-width: 768px)').matches;
+    }
+
     function setAuthMode(mode){
       authMode = mode;
       const isLogin = mode === 'login';
@@ -2971,7 +3300,7 @@ EXAMPLES:
       if (el.memoryEditor) el.memoryEditor.value = '';
       updateMemoryCount();
       renderMemoryList();
-      if (!silent && window.innerWidth < 768) toggleSidebar();
+      if (!silent && isMobileLayout()) toggleSidebar();
     }
 
     function chatMetaKey(kind) { return `yf_chat_${kind}_${currentUserId || 'guest'}`; }
@@ -3088,7 +3417,7 @@ EXAMPLES:
       renderMemoryList();
       renderHistorySidebar();
       renderActiveChat();
-      if (window.innerWidth < 768) toggleSidebar();
+      if (isMobileLayout()) toggleSidebar();
       beep(520, 0.03);
     }
 
@@ -3164,11 +3493,7 @@ EXAMPLES:
         const label = document.createElement('div');
         label.textContent = `📄 ${record.title || filename}`;
         label.style.cssText = 'font-weight:900;margin-bottom:7px;';
-        const frame = document.createElement('iframe');
-        frame.className = 'pdf-preview';
-        frame.title = record.title || filename;
-        frame.loading = 'lazy';
-        frame.src = data.signedUrl;
+        const frame = buildPdfPreviewFrame(data.signedUrl, record.title || filename);
         frame.style.height = '320px';
         card.appendChild(label); card.appendChild(frame);
         textDiv.appendChild(card);
@@ -3220,7 +3545,7 @@ EXAMPLES:
       el.userInput.value = message.content;
       autoResize(el.userInput);
       el.userInput.focus();
-      if (window.innerWidth < 768) el.userInput.scrollIntoView({ block:'center', behavior:'smooth' });
+      if (isMobileLayout()) el.userInput.scrollIntoView({ block:'center', behavior:'smooth' });
     }
 
     async function regenerateResponse(index) {
@@ -4504,6 +4829,7 @@ EXAMPLES:
     }
 
     window.onload = async () => {
+      try { (window.onloadQueue || []).forEach(fn => { try { fn(); } catch {} }); } catch {}
       cacheEls();
 
       const savedTheme = localStorage.getItem('theme') || THEME_DEFAULT;
@@ -4534,7 +4860,7 @@ EXAMPLES:
       el.importDataInput?.addEventListener('change', e => importAppData(e.target.files?.[0]));
       window.addEventListener('resize', () => { if (document.activeElement === el.userInput) el.userInput.scrollIntoView({ block:'nearest' }); });
       window.visualViewport?.addEventListener('resize', () => { if (document.activeElement === el.userInput) setTimeout(() => el.userInput.scrollIntoView({ block:'nearest' }), 40); });
-      document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; closeSettings(); closeMemoryEditor(); closeImageModal(); if (el.sidebar?.classList.contains('open')) toggleSidebar(); });
+      document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; closeSettings(); closeMemoryEditor(); closeImageModal(); if (el.authModal) el.authModal.style.display = 'none'; if (el.sidebar?.classList.contains('open')) toggleSidebar(); });
 
       attachEnterToSendHandler();
 
