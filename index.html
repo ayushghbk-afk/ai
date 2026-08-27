@@ -6,7 +6,6 @@
   <title>Your Friend - AI Assistant</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@4.0.0/dist/jspdf.umd.min.js"></script>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
@@ -438,6 +437,35 @@
       transform: translateY(-1px);
     }
     .icon-btn:active{ transform: translateY(0px) scale(.99); }
+
+    .ai-status{
+      display:flex;
+      align-items:center;
+      gap:7px;
+      padding:8px 11px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(255,255,255,.04);
+      color:var(--text-main);
+      font-size:.8rem;
+      font-weight:800;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:background .2s ease,border-color .2s ease,box-shadow .2s ease;
+    }
+    .ai-status:hover{background:rgba(255,255,255,.07);border-color:rgba(124,92,255,.25);}
+    .ai-status .ai-status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:var(--text-sub);}
+    .ai-status.online{border-color:rgba(38,214,166,.35);background:rgba(38,214,166,.08);color:#9ff0da;}
+    .ai-status.online .ai-status-dot{background:#26d6a6;box-shadow:0 0 0 4px rgba(38,214,166,.15),0 0 14px rgba(38,214,166,.35);}
+    .ai-status.busy{border-color:rgba(255,199,0,.35);background:rgba(255,199,0,.08);color:#ffe3a1;}
+    .ai-status.busy .ai-status-dot{background:#ffc700;box-shadow:0 0 0 4px rgba(255,199,0,.15),0 0 14px rgba(255,199,0,.3);animation:pulse-dot 1.1s ease-in-out infinite;}
+    .ai-status.offline{border-color:rgba(255,107,107,.35);background:rgba(255,107,107,.08);color:#ffd9d9;}
+    .ai-status.offline .ai-status-dot{background:#ff6b6b;box-shadow:0 0 0 4px rgba(255,107,107,.15);}
+    .ai-status.checking .ai-status-dot{background:var(--accent-3);animation:pulse-dot 1.1s ease-in-out infinite;}
+
+    .memory-context-preview{margin-top:12px;padding:12px;border:1px solid rgba(124,92,255,.25);background:rgba(124,92,255,.06);border-radius:14px;}
+    .memory-context-preview pre{max-height:240px;overflow:auto;white-space:pre-wrap;word-break:break-word;color:var(--text-sub);font:700 .76rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:10px;border-radius:10px;background:rgba(0,0,0,.2);border:1px solid var(--border);}
+    html[data-theme="light"] .memory-context-preview pre{background:rgba(0,0,0,.05);}
 
     .menu-btn{
       background: rgba(255,255,255,.04);
@@ -882,6 +910,8 @@
         justify-content:center;
       }
       .header-actions .icon-btn .label{display:none;}
+      .ai-status{width:40px;height:40px;padding:0;justify-content:center;border-radius:12px;}
+      .ai-status .ai-status-text{display:none;}
       .menu-btn{width:40px;height:40px;padding:0;display:flex;align-items:center;justify-content:center;}
       #chat-container{padding:12px 0;gap:8px;}
       .message-row{padding:0 8px;}
@@ -1213,7 +1243,13 @@
       <div class="toolbar">
         <button type="button" onclick="saveMemorySettings()">💾 Save</button>
         <button type="button" onclick="rebuildMemorySummary()">🔄 Rebuild Summary</button>
+        <button type="button" onclick="toggleMemoryContextPreview()" style="box-shadow:none;">👁 Show what gets sent</button>
         <button type="button" onclick="resetMemorySettings()" style="background:rgba(255,107,107,.12);box-shadow:none;">↩ Reset</button>
+      </div>
+      <div id="memoryContextPreview" class="memory-context-preview" hidden>
+        <div class="label">Exact context sent to the AI</div>
+        <div class="sub" style="margin:4px 0 8px;">This preview matches what the proxy receives for each new request. Privacy mode removes the memory block.</div>
+        <pre id="memoryContextPreviewText"></pre>
       </div>
       <button type="button" onclick="closeMemoryEditor()">Done</button>
     </div>
@@ -1300,6 +1336,7 @@
         <span style="font-weight:900; font-size:.9rem;">📚 PDF Backups</span>
         <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
       </div>
+      <input id="pdfSearchInput" class="history-search" type="search" placeholder="Search PDFs…" aria-label="Search PDFs" />
       <div id="pdfBackupList"></div>
     </div>
     <div id="imageHistorySection" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
@@ -1324,6 +1361,10 @@
         <span>Your Friend</span>
       </div>
       <div class="header-actions">
+        <button id="aiStatus" class="ai-status checking" type="button" title="AI provider status. Click to re-check." onclick="checkProxyHealth()">
+          <span class="ai-status-dot" aria-hidden="true"></span>
+          <span class="ai-status-text">Checking AI…</span>
+        </button>
         <button class="icon-btn" title="Image Generator" aria-label="Open image generator" onclick="openImageModal()">🎨 <span class="label">Image Tool</span></button>
         <button class="icon-btn" title="Settings" aria-label="Open settings" onclick="openSettings()">⚙️ <span class="label">Settings</span></button>
       </div>
@@ -1622,6 +1663,17 @@ EXAMPLES:
     let lastFailedRequest = null;
     let editingMessageIndex = null;
     let selectedFeedback = {};
+    let pdfSearchTerm = '';
+    let aiHealthCache = null;
+    let aiHealthCheckedAt = 0;
+
+    const MODEL_LABELS = {
+      'llama-3.3-70b-versatile': 'Llama 3.3 70B',
+      'llama-3.1-8b-instant': 'Llama 3.1 8B',
+      'openai/gpt-oss-120b': 'GPT-OSS 120B',
+      'gpt-oss-120b': 'GPT-OSS 120B'
+    };
+    const PROXY_HEALTH_URL = 'https://groq-proxy.mr-hackerdon808.workers.dev/';
 
     const renderHtml = (value) => String(value)
       .replaceAll('&','&amp;')
@@ -1895,13 +1947,39 @@ EXAMPLES:
       return "JPEG";
     }
 
+    let pdfLibPromise = null;
+    function loadScriptOnce(src) {
+      return new Promise((resolve, reject) => {
+        const existing = [...document.scripts].find(s => s.src === src);
+        if (existing) {
+          if (existing.dataset.loaded === '1') return resolve();
+          existing.addEventListener('load', () => { existing.dataset.loaded = '1'; resolve(); }, { once:true });
+          existing.addEventListener('error', () => reject(new Error('Could not load a required tool. Check your connection.')), { once:true });
+          return;
+        }
+        const s = document.createElement('script');
+        s.src = src; s.async = true;
+        s.onload = () => { s.dataset.loaded = '1'; resolve(); };
+        s.onerror = () => reject(new Error('Could not load the PDF engine. Check your connection and try again.'));
+        document.head.appendChild(s);
+      });
+    }
+    async function ensurePdfLibrary() {
+      if (!pdfLibPromise) {
+        pdfLibPromise = loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@4.0.0/dist/jspdf.umd.min.js')
+          .then(() => { if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('Could not initialize the PDF engine.'); return window.jspdf; });
+      }
+      return pdfLibPromise;
+    }
+
     async function createPdfDocument({
       title,
       filename,
       content,
       images = []
     }) {
-      if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library failed to load.');
+      await ensurePdfLibrary();
+      if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF engine is unavailable. Please try again.');
       const rawTitle = cleanInvisibleText(title || 'Document');
       const rawContent = cleanInvisibleText(content);
       const canvasOk = pdfCanvasAvailable();
@@ -2693,102 +2771,115 @@ EXAMPLES:
       }
     }
 
-    function renderPdfHistory() {
-      const container =
-        document.getElementById(
-          'pdfBackupList'
-        );
+    async function renamePdfBackup(pdf) {
+      if (!pdf?.id || !currentUserId) return;
+      const current = pdf.title || pdf.filename || 'PDF';
+      const next = prompt('Rename this PDF backup', String(current).replace(/\.pdf$/i, ''));
+      if (next === null || !next.trim()) return;
+      const clean = next.trim().slice(0, 120);
+      try {
+        const { error } = await supabaseClient.from('pdf_files').update({ title: clean }).eq('id', pdf.id).eq('user_id', currentUserId);
+        if (error) throw error;
+        pdf.title = clean;
+        window.userPdfHistory = (window.userPdfHistory || []).map(x => x.id === pdf.id ? { ...x, title: clean } : x);
+        renderPdfHistory();
+        beep(780, 0.04);
+      } catch (err) {
+        console.error('PDF rename error:', err);
+        alert('Unable to rename this PDF. Please try again.');
+      }
+    }
 
+    function formatPdfSize(bytes) {
+      const n = Number(bytes) || 0;
+      if (!n) return '';
+      if (n >= 1024 * 1024) return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+      if (n >= 1024) return `${Math.round(n / 1024)} KB`;
+      return `${n} B`;
+    }
+
+    function renderPdfHistory() {
+      const container = document.getElementById('pdfBackupList');
       if (!container) return;
 
       container.replaceChildren();
 
-      const pdfs =
-        window.userPdfHistory || [];
+      const allPdfs = window.userPdfHistory || [];
+      const filtered = pdfSearchTerm ? allPdfs.filter(pdf => {
+        const hay = `${pdf.title || ''} ${pdf.filename || ''}`.toLowerCase();
+        return hay.includes(pdfSearchTerm.toLowerCase());
+      }) : allPdfs;
 
-      if (!pdfs.length) {
-        const empty =
-          document.createElement('div');
+      const dupNames = new Set();
+      const seenNames = new Set();
+      for (const pdf of allPdfs) {
+        const key = String(pdf.title || pdf.filename || '').toLowerCase();
+        if (!key) continue;
+        if (seenNames.has(key)) dupNames.add(key);
+        else seenNames.add(key);
+      }
 
-        empty.textContent =
-          'No PDF backups yet.';
-
-        empty.style.cssText = `
-          color:var(--text-sub);
-          font-size:.82rem;
-          padding:8px 2px;
-          font-weight:700;
-        `;
-
+      if (!allPdfs.length) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No PDF backups yet.';
+        empty.style.cssText = 'color:var(--text-sub);font-size:.82rem;padding:8px 2px;font-weight:700;';
+        container.appendChild(empty);
+        return;
+      }
+      if (!filtered.length) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No PDFs match your search.';
+        empty.style.cssText = 'color:var(--text-sub);font-size:.82rem;padding:8px 2px;font-weight:700;';
         container.appendChild(empty);
         return;
       }
 
-      for (const pdf of pdfs.slice(0, 5)) {
-        const item =
-          document.createElement('div');
+      for (const pdf of filtered.slice(0, 5)) {
+        const item = document.createElement('div');
+        item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px;margin-bottom:6px;border-radius:10px;background:rgba(255,255,255,.035);';
 
-        item.style.cssText = `
-          display:flex;
-          align-items:center;
-          gap:8px;
-          padding:8px;
-          margin-bottom:6px;
-          border-radius:10px;
-          background:rgba(255,255,255,.035);
-        `;
+        const info = document.createElement('div');
+        info.style.cssText = 'min-width:0;flex:1;';
 
-        const info =
-          document.createElement('div');
+        const name = document.createElement('div');
+        name.textContent = pdf.title || pdf.filename || 'PDF';
+        name.title = name.textContent;
+        name.style.cssText = 'font-weight:800;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        if (dupNames.has(String(pdf.title || pdf.filename || '').toLowerCase())) {
+          name.textContent += ' (duplicate)';
+          name.style.color = '#ffc700';
+        }
 
-        info.style.cssText = `
-          min-width:0;
-          flex:1;
-        `;
+        const meta = document.createElement('div');
+        const size = formatPdfSize(pdf.file_size);
+        meta.textContent = [new Date(pdf.created_at).toLocaleDateString(), size].filter(Boolean).join(' · ');
+        meta.style.cssText = 'color:var(--text-sub);font-size:.7rem;margin-top:2px;';
 
-        const name =
-          document.createElement('div');
+        info.appendChild(name);
+        info.appendChild(meta);
 
-        name.textContent =
-          pdf.title || pdf.filename;
-
-        name.style.cssText = `
-          font-weight:800;
-          font-size:.82rem;
-          overflow:hidden;
-          text-overflow:ellipsis;
-          white-space:nowrap;
-        `;
-
-        const date =
-          document.createElement('div');
-
-        date.textContent =
-          new Date(
-            pdf.created_at
-          ).toLocaleDateString();
-
-        date.style.cssText = `
-          color:var(--text-sub);
-          font-size:.7rem;
-          margin-top:2px;
-        `;
+        const rename = document.createElement('button');
+        rename.type = 'button'; rename.textContent = '✎'; rename.title = 'Rename PDF'; rename.setAttribute('aria-label', rename.title);
+        rename.style.cssText = 'border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;';
+        rename.onclick = () => renamePdfBackup(pdf);
 
         const button = document.createElement('button');
-        button.type='button'; button.textContent='⬇️'; button.title='Download PDF';
-        button.style.cssText='border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;';
-        button.onclick=()=>downloadBackedUpPdf(pdf);
-        const del=document.createElement('button');
-        del.type='button'; del.textContent='🗑️'; del.title='Delete PDF';
-        del.style.cssText='border:0;border-radius:8px;padding:7px 9px;background:rgba(255,107,107,.12);color:var(--text-main);cursor:pointer;font-weight:900;';
-        del.onclick=()=>deletePdfBackup(pdf);
-        info.appendChild(name); info.appendChild(date);
-        item.appendChild(info); item.appendChild(button); item.appendChild(del);
+        button.type = 'button'; button.textContent = '⬇️'; button.title = 'Download PDF'; button.setAttribute('aria-label', button.title);
+        button.style.cssText = 'border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;';
+        button.onclick = () => downloadBackedUpPdf(pdf);
 
+        const del = document.createElement('button');
+        del.type = 'button'; del.textContent = '🗑️'; del.title = 'Delete PDF'; del.setAttribute('aria-label', del.title);
+        del.style.cssText = 'border:0;border-radius:8px;padding:7px 9px;background:rgba(255,107,107,.12);color:var(--text-main);cursor:pointer;font-weight:900;';
+        del.onclick = () => deletePdfBackup(pdf);
+
+        item.appendChild(info);
+        item.appendChild(rename);
+        item.appendChild(button);
+        item.appendChild(del);
         container.appendChild(item);
       }
     }
-
     function cacheEls(){
       el.sidebar = document.getElementById('sidebar');
       el.overlay = document.getElementById('sidebar-overlay');
@@ -2842,6 +2933,10 @@ EXAMPLES:
       el.languageSelect = document.getElementById('languageSelect');
       el.modelSelect = document.getElementById('modelSelect');
       el.importDataInput = document.getElementById('importDataInput');
+      el.aiStatus = document.getElementById('aiStatus');
+      el.pdfSearchInput = document.getElementById('pdfSearchInput');
+      el.memoryContextPreview = document.getElementById('memoryContextPreview');
+      el.memoryContextPreviewText = document.getElementById('memoryContextPreviewText');
     }
 
     function setGenerationState(active, label = 'Your Friend is thinking…') {
@@ -2849,6 +2944,71 @@ EXAMPLES:
       el.generationStatus.hidden = !active;
       if (el.generationLabel) el.generationLabel.textContent = label;
       if (el.cancelGenerationBtn) el.cancelGenerationBtn.disabled = !active;
+    }
+
+    function getModelDisplayName(model) {
+      return MODEL_LABELS[String(model || '')] || String(model || 'Switching wisely');
+    }
+
+    function setAiStatus(state, text) {
+      if (!el.aiStatus) return;
+      el.aiStatus.className = `ai-status ${state}`;
+      const textEl = el.aiStatus.querySelector('.ai-status-text');
+      if (textEl) textEl.textContent = text;
+      el.aiStatus.title = text;
+    }
+
+    function friendlyProxyError(err, status) {
+      const code = Number(status) || 0;
+      const raw = getErrorMessage(err || '').toLowerCase();
+      const msg = String(getErrorMessage(err || '') || '');
+      if (code === 429 || raw.includes('rate limit') || raw.includes('429') || raw.includes('quota') || raw.includes('busy')) {
+        return 'The AI service is busy right now. It will try another provider on your next attempt. Please try again in a moment.';
+      }
+      if (code === 401 || code === 403 || raw.includes('invalid api key') || raw.includes('unauthorized') || raw.includes('forbidden') || raw.includes('no available')) {
+        return 'The AI service could not authenticate a provider. Please wait a moment and try again; if this keeps happening, let the site owner know.';
+      }
+      if (code >= 400 && code < 500) {
+        return 'That request could not be processed. Please shorten the message or try again.';
+      }
+      if (code >= 500 || raw.includes('500') || raw.includes('502') || raw.includes('503')) {
+        return 'The AI service is temporarily unavailable. It will retry automatically on your next message.';
+      }
+      if (raw.includes('failed to fetch') || raw.includes('network') || raw.includes('load failed') || raw.includes('cors') || raw.includes('ssl')) {
+        return 'Could not reach the AI service. Check your internet connection and try again.';
+      }
+      if (raw.includes('abort') || raw.includes('canceled') || raw.includes('cancel')) {
+        return 'Generation canceled.';
+      }
+      return msg || 'Something went wrong. Please try again.';
+    }
+
+    async function checkProxyHealth() {
+      if (!el.aiStatus) return;
+      setAiStatus('checking', 'Checking AI…');
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 7000);
+        const res = await fetch(PROXY_HEALTH_URL, { method: 'GET', headers: { 'Accept': 'application/json' }, signal: controller.signal });
+        clearTimeout(timer);
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok || payload?.ok === false) throw new Error('unhealthy');
+        const keys = Number(payload.configured_keys || 0);
+        aiHealthCache = {
+          ok: true,
+          status: payload.status || 'online',
+          configuredKeys: keys,
+          at: Date.now()
+        };
+        aiHealthCheckedAt = Date.now();
+        setAiStatus('online', `● AI Online · Model: ${getModelDisplayName(settings.model)}`);
+        return aiHealthCache;
+      } catch (err) {
+        aiHealthCache = { ok: false, at: Date.now() };
+        aiHealthCheckedAt = Date.now();
+        setAiStatus('checking', 'AI status unknown · Send a message');
+        return aiHealthCache;
+      }
     }
 
     function cancelGeneration() {
@@ -2894,8 +3054,12 @@ EXAMPLES:
 
     function getErrorMessage(err) {
       if (!err) return 'Unknown error';
-      if (typeof err === 'string') return err;
-      return err.message || err.error || err.details || err.msg || err.statusText || JSON.stringify(err);
+      let text;
+      if (typeof err === 'string') text = err;
+      else text = err.message || err.error || err.details || err.msg || err.statusText || JSON.stringify(err);
+      // Never surface API keys, bearer tokens, or huge payloads to the UI.
+      text = String(text || '').replace(/\b(sk|key|token|authorization)[-_ ]?[\w.-]{6,}\b/gi, '[redacted]');
+      return text.length > 260 ? text.slice(0, 257) + '…' : text;
     }
 
     function setWelcomeVisible(visible) {
@@ -3348,12 +3512,12 @@ EXAMPLES:
         return Number(userSessions[b]?.lastCreatedAtMs || 0) - Number(userSessions[a]?.lastCreatedAtMs || 0);
       });
       const visibleIds = sessionIds.filter(id => !query || sessionDisplayTitle(id, userSessions[id]).toLowerCase().includes(query));
-      if (el.historyCount) el.historyCount.textContent = `${visibleIds.length}/${sessionIds.length}`;
+      if (el.historyCount) el.historyCount.textContent = query ? `${visibleIds.length}/${sessionIds.length}` : String(sessionIds.length);
       sessionNavigation = sessionIds;
 
       if (!visibleIds.length) {
         const emptyDiv = document.createElement('div'); emptyDiv.style.cssText='text-align:center;color:var(--text-sub);padding:20px 8px;font-size:.82rem;font-weight:800;';
-        emptyDiv.textContent = query ? 'No chats match your search.' : 'No chats yet. Start a new conversation!'; el.historyList.appendChild(emptyDiv); return;
+        emptyDiv.textContent = query ? 'No chats match your search.' : (currentUserId ? 'No chats yet. Start a new conversation!' : 'Sign in to see and start your chats.'); el.historyList.appendChild(emptyDiv); return;
       }
       const frag = document.createDocumentFragment();
       for (const id of visibleIds) {
@@ -4091,11 +4255,27 @@ EXAMPLES:
       return memorySummary || '';
     }
 
+    const MAX_MEMORY_ITEMS = 50;
+    const MAX_MEMORY_ITEM_CHARS = 240;
+    const MAX_MEMORY_TOTAL_CHARS = 6000;
     function getMemoryItems() {
       return String(memorySummary || '').split(/\n/).map(item => item.replace(/^-\s*/, '').trim()).filter(item => item && !/^no long-term memory/i.test(item));
     }
     function setMemoryItems(items) {
-      memorySummary = items.map(item => `- ${String(item).trim()}`).filter(Boolean).join('\n');
+      const clean = [];
+      const seen = new Set();
+      for (const raw of items || []) {
+        const text = String(raw).trim().replace(/^-\s*/, '').slice(0, MAX_MEMORY_ITEM_CHARS);
+        if (!text) continue;
+        const key = text.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        clean.push(`- ${text}`);
+        if (clean.length >= MAX_MEMORY_ITEMS) break;
+      }
+      let joined = clean.join('\n').slice(0, MAX_MEMORY_TOTAL_CHARS);
+      if (joined.length && !joined.endsWith('\n')) joined = joined.replace(/\n?-?[^\n]*$/, '');
+      memorySummary = joined;
       setMemorySummaryForSession(currentSessionId, memorySummary);
       if (el.memoryEditor) el.memoryEditor.value = memorySummary;
       memoryDirty = false;
@@ -4132,16 +4312,23 @@ EXAMPLES:
       });
     }
     function addMemoryItem() {
+      if (getMemoryItems().length >= MAX_MEMORY_ITEMS) return alert(`You can save up to ${MAX_MEMORY_ITEMS} memories in a chat.`);
       const value = prompt('What should Your Friend remember for this chat?');
       if (!value?.trim()) return;
-      setMemoryItems([...getMemoryItems(), value.trim().slice(0, 240)]);
+      const normalized = value.trim().slice(0, MAX_MEMORY_ITEM_CHARS);
+      const exists = getMemoryItems().some(item => item.toLowerCase() === normalized.toLowerCase());
+      if (exists) return alert('That memory already exists for this chat.');
+      setMemoryItems([...getMemoryItems(), normalized]);
       renderMemoryList();
     }
     function editMemoryItem(index) {
       const items = getMemoryItems();
       const value = prompt('Edit this memory', items[index] || '');
       if (value === null || !value.trim()) return;
-      items[index] = value.trim().slice(0, 240);
+      const normalized = value.trim().slice(0, MAX_MEMORY_ITEM_CHARS);
+      const dup = items.findIndex((item, i) => i !== index && item.toLowerCase() === normalized.toLowerCase());
+      if (dup >= 0) return alert('Another saved memory already uses that text.');
+      items[index] = normalized;
       setMemoryItems(items);
       renderMemoryList();
     }
@@ -4200,6 +4387,24 @@ EXAMPLES:
       if (el.systemPromptEditor) el.systemPromptEditor.value = customSystemPrompt;
       updateMemoryCount();
       renderMemoryList();
+    }
+
+    function buildMemoryContextPreviewText() {
+      const editorSystemPrompt = (el.systemPromptEditor?.value || customSystemPrompt || DEFAULT_SYSTEM_PROMPT).trim() || DEFAULT_SYSTEM_PROMPT;
+      const editorMemory = (el.memoryEditor?.value || memorySummary || '').trim();
+      const memoryBlock = (settings.memoryEnabled && !settings.privacyMode && editorMemory)
+        ? `\n\nRELEVANT LONG-TERM MEMORY CONTEXT:\n${editorMemory}`
+        : '';
+      return `${editorSystemPrompt}${memoryBlock}\n\nTOOL USE RULES:\n(create_pdf / generate_image tools are included automatically)`;
+    }
+
+    function toggleMemoryContextPreview() {
+      if (!el.memoryContextPreview) return;
+      const wasHidden = el.memoryContextPreview.hidden;
+      el.memoryContextPreview.hidden = !wasHidden;
+      if (wasHidden && el.memoryContextPreviewText) {
+        el.memoryContextPreviewText.textContent = buildMemoryContextPreviewText();
+      }
     }
 
     function toggleAnimations(){
@@ -4316,6 +4521,26 @@ EXAMPLES:
 
     function buildLongTermMemoryContext() {
       return refreshMemorySummaryIfNeeded();
+    }
+
+    async function proxyFetch(requestBody) {
+      setAiStatus('busy', `⚠ AI trying ${getModelDisplayName(settings.model)}…`);
+      try {
+        const response = await fetch(PROXY_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+          signal: currentRequestController.signal
+        });
+        if (response.ok) {
+          setAiStatus('online', `● AI Online · Model: ${getModelDisplayName(settings.model)}`);
+        }
+        return response;
+      } catch (err) {
+        if (err?.name === 'AbortError') throw err;
+        setAiStatus('offline', '⚠ AI unreachable · Click to retry');
+        throw err;
+      }
     }
 
     async function sendMessage() {
@@ -4435,12 +4660,7 @@ EXAMPLES:
           model: settings.model || 'llama-3.3-70b-versatile'
         };
 
-        const response = await fetch(PROXY_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(requestBody),
-          signal: currentRequestController.signal
-        });
+        const response = await proxyFetch(requestBody);
 
         if (!response.ok) {
           let errorMsg;
@@ -4450,7 +4670,8 @@ EXAMPLES:
           } catch {
             errorMsg = `HTTP ${response.status}`;
           }
-          throw new Error(errorMsg);
+          setAiStatus('busy', `⚠ AI busy · ${getModelDisplayName(settings.model)}`);
+          throw new Error(friendlyProxyError(errorMsg, response.status));
         }
 
         const data = await response.json();
@@ -4577,12 +4798,7 @@ EXAMPLES:
               });
 
               const followUpResponse =
-                await fetch(PROXY_URL, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({
+                await proxyFetch({
                     messages: aiMessages,
                     temperature: 0.7,
                     max_tokens: 4096,
@@ -4596,13 +4812,11 @@ EXAMPLES:
 
                     parallel_tool_calls: false,
                     model: settings.model || 'llama-3.3-70b-versatile'
-                  }),
-                  signal: currentRequestController.signal
-                });
+                  });
 
               if (!followUpResponse.ok) {
                 throw new Error(
-                  `AI follow-up failed: HTTP ${followUpResponse.status}`
+                  friendlyProxyError(`HTTP ${followUpResponse.status}`, followUpResponse.status)
                 );
               }
 
@@ -4700,7 +4914,8 @@ EXAMPLES:
         }
       } catch (err) {
         const canceled = err?.name === 'AbortError';
-        const errorMsg = canceled ? 'Generation canceled.' : `Could not complete that request: ${getErrorMessage(err)}`;
+        if (!canceled) setAiStatus('busy', '⚠ AI temporarily busy · Trying another provider…');
+        const errorMsg = canceled ? 'Generation canceled.' : friendlyProxyError(err);
         lastFailedRequest = { sessionId:currentSessionId, userMessageIndex };
         if (aiTextNode) showRetryableError(aiTextNode, canceled ? 'Generation canceled. You can retry when ready.' : errorMsg, lastFailedRequest);
         else appendErrorUI(errorMsg);
@@ -4757,8 +4972,11 @@ EXAMPLES:
       const username = el.usernameInput.value.trim();
 
       if (!email) return alert("Please enter your email.");
+      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return alert("Please enter a valid email address.");
       if (!password) return alert("Please enter your password.");
+      if (password.length < 6) return alert("Password must be at least 6 characters.");
       if (authMode === 'signup' && !username) return alert("Please enter your username.");
+      if (authMode === 'signup' && username.length < 3) return alert("Username must be at least 3 characters.");
 
       if (authMode === 'signup') await signUp(email, password, username);
       else await login(email, password);
@@ -4849,13 +5067,18 @@ EXAMPLES:
       el.responseLengthSelect && (el.responseLengthSelect.value = String(settings.responseLength));
       el.responseLengthSelect?.addEventListener('change', e => setResponseLength(e.target.value));
       el.languageSelect?.addEventListener('change', e => { settings.language=e.target.value; localStorage.setItem(memoryKey('language'),settings.language); });
-      el.modelSelect?.addEventListener('change', e => { settings.model=e.target.value; localStorage.setItem(memoryKey('model'),settings.model); });
+      el.modelSelect?.addEventListener('change', e => { settings.model=e.target.value; localStorage.setItem(memoryKey('model'),settings.model); setAiStatus('checking', `→ ${getModelDisplayName(settings.model)}…`); checkProxyHealth(); });
       el.memoryEditor?.addEventListener('input', updateMemoryCount);
 
       el.fontSizeRange && (el.fontSizeRange.value = String(settings.chatFontSize));
       setChatFontSize(settings.chatFontSize);
       document.documentElement.dataset.motion = localStorage.getItem('animations') === 'false' ? 'reduced' : 'full';
       el.historySearch?.addEventListener('input', renderHistorySidebar);
+      el.pdfSearchInput?.addEventListener('input', e => { pdfSearchTerm = e.target.value || ''; renderPdfHistory(); });
+      renderHistorySidebar();
+      renderPdfHistory();
+      setGenerationState(false);
+      checkProxyHealth();
       document.getElementById('imgReferenceInput')?.addEventListener('change', showReferencePreview);
       el.importDataInput?.addEventListener('change', e => importAppData(e.target.files?.[0]));
       window.addEventListener('resize', () => { if (document.activeElement === el.userInput) el.userInput.scrollIntoView({ block:'nearest' }); });
@@ -4942,6 +5165,8 @@ EXAMPLES:
     window.saveMemorySettings = saveMemorySettings;
     window.rebuildMemorySummary = rebuildMemorySummary;
     window.resetMemorySettings = resetMemorySettings;
+    window.toggleMemoryContextPreview = toggleMemoryContextPreview;
+    window.checkProxyHealth = checkProxyHealth;
     window.toggleAnimations = toggleAnimations;
     window.togglePrivacyMode = togglePrivacyMode;
     window.toggleMemory = toggleMemory;
@@ -4977,6 +5202,7 @@ EXAMPLES:
       renderPdfHistory();
     };
     window.downloadBackedUpPdf = downloadBackedUpPdf;
+    window.renamePdfBackup = renamePdfBackup;
   </script>
 </body>
   </html>
