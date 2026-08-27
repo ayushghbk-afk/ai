@@ -1598,21 +1598,59 @@ EXAMPLES:
         pdf.line(margin, y, margin + 28, y);
         y += 6;
       }
-      function addCallout(text) {
-        const lines = pdf.splitTextToSize(text.replace(/^>\s?/, ''), contentWidth - 14);
-        const h = Math.max(13, lines.length * 5 + 8);
-        ensure(h + 3);
-        pdf.setFillColor(244, 242, 255);
-        pdf.setDrawColor(...accent);
-        pdf.setLineWidth(0.6);
-        pdf.roundedRect(margin, y - 4, contentWidth, h, 3, 3, 'FD');
-        pdf.setFillColor(...accent);
-        pdf.roundedRect(margin, y - 4, 2.5, h, 1.2, 1.2, 'F');
+      function addCallout(rawText) {
+        // The callout box is drawn in PER-PAGE segments. The old version sized
+        // one box for every line and then wrote all lines with no page-break
+        // check, so a tall callout spilled out of its box, ran over the footer,
+        // and "floated" onto the next page with no background. Now each segment
+        // is measured to fit the current page before anything is drawn.
+        const text = String(rawText || '').replace(/^>\s?/, '');
+        const padX = 8;
+        const barW = 2.5;
+        const lineH = 5;
+        const topInset = 5;   // box top -> first text baseline
+        const bottomPad = 4;  // last text baseline -> box bottom
+        const innerX = margin + padX + 2;
+        const lines = pdf.splitTextToSize(text, contentWidth - padX * 2 - barW - 2);
+        if (!lines.length) return;
+
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(10.2);
         pdf.setTextColor(...ink);
-        for (const line of lines) { pdf.text(line, margin + 8, y + 2); y += 5; }
-        y += 6;
+
+        let idx = 0;
+        while (idx < lines.length) {
+          // How many wrapped lines fit on the CURRENT page? A line is only
+          // admitted when its segment box (including bottom padding) stays
+          // above the content bottom, so text never reaches the footer.
+          let n = 0;
+          while (idx + n < lines.length) {
+            const baseline = y + n * lineH;
+            if (baseline + bottomPad > bottom) break;
+            n++;
+          }
+          if (n === 0) { newPage(); continue; }
+
+          const boxTop = y - topInset;
+          const boxBottom = y + (n - 1) * lineH + bottomPad;
+
+          pdf.setFillColor(244, 242, 255);
+          pdf.setDrawColor(...accent);
+          pdf.setLineWidth(0.6);
+          pdf.roundedRect(margin, boxTop, contentWidth, boxBottom - boxTop, 3, 3, 'FD');
+          // Accent side bar.
+          pdf.setFillColor(...accent);
+          pdf.roundedRect(margin, boxTop, barW, boxBottom - boxTop, 1.2, 1.2, 'F');
+
+          for (let k = 0; k < n; k++) {
+            pdf.text(lines[idx + k], innerX, y + k * lineH);
+          }
+
+          y = boxBottom;
+          idx += n;
+          if (idx < lines.length) newPage();
+        }
+        y += 5;
       }
       function addCodeBlock(text, lang) {
         const codeLines = pdf.splitTextToSize(text || '', contentWidth - 12);
@@ -1699,7 +1737,18 @@ EXAMPLES:
           pdf.addImage(imageData, format, margin + (contentWidth - imageWidth) / 2, y, imageWidth, imageHeight, undefined, 'FAST');
           y += imageHeight + 8;
           if (image.alt) {
-            pdf.setTextColor(...muted); pdf.setFontSize(8); pdf.text(String(image.alt).slice(0, 120), pageWidth / 2, y, { align: 'center' }); y += 7;
+            // Wrap the caption so a long alt string can't overflow the page;
+            // center the wrapped lines and keep them with the image.
+            pdf.setTextColor(...muted);
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(8);
+            const capLines = pdf.splitTextToSize(String(image.alt).slice(0, 200), contentWidth);
+            for (const capLine of capLines) {
+              ensure(6);
+              pdf.text(capLine, pageWidth / 2, y, { align: 'center' });
+              y += 4.4;
+            }
+            y += 3;
           }
         } catch (error) { console.warn('Could not embed PDF image:', error); }
       }
@@ -1710,30 +1759,38 @@ EXAMPLES:
       for (const block of blocks) {
         if (block.type === 'heading') {
           const level = Math.min(Math.max(block.level, 1), 3);
-          if (level === 3) {
-            ensure(18); sectionRule();
-            pdf.setTextColor(...ink); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13);
-            writeWrapped(block.text, margin, contentWidth, 6.5); y += 2;
-          } else if (level === 2) {
-            ensure(20); sectionRule();
-            pdf.setTextColor(...ink); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15);
-            writeWrapped(block.text, margin, contentWidth, 7); y += 2;
-          } else {
-            ensure(22); sectionRule();
-            pdf.setTextColor(...accent); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(17);
-            writeWrapped(block.text, margin, contentWidth, 8); y += 3;
-          }
+          const font = level === 1 ? 17 : level === 2 ? 15 : 13;
+          const lineH = level === 1 ? 8 : level === 2 ? 7 : 6.5;
+          const after = level === 1 ? 3 : 2;
+          // Reserve space for the section rule, EVERY wrapped heading line, and
+          // the first two body lines — otherwise a long/wrapped heading could
+          // be stranded at the bottom of a page with its text on the next.
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(font);
+          const headLines = pdf.splitTextToSize(block.text, contentWidth);
+          ensure(6 + headLines.length * lineH + after + 2 * 5.8);
+          sectionRule();
+          pdf.setTextColor(...(level === 1 ? accent : ink));
+          pdf.setFont('helvetica', 'bold');
+          pdf.setFontSize(font);
+          writeWrapped(block.text, margin, contentWidth, lineH);
+          y += after;
           continue;
         }
         if (block.type === 'callout') { addCallout(block.text); continue; }
         if (block.type === 'code') { addCodeBlock(block.text, block.lang); continue; }
         if (block.type === 'bullet') {
-          ensure(7); pdf.setFillColor(...accent2); pdf.circle(margin + 2, y - 1.5, 1, 'F');
           pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5);
+          const lines = pdf.splitTextToSize(block.text, contentWidth - 7);
+          // Reserve the marker AND the first text line together so the bullet
+          // can never be left stranded at the very bottom of a page.
+          ensure(lines.length > 1 ? 5.8 * 2 + 2 : 7);
+          pdf.setFillColor(...accent2); pdf.circle(margin + 2, y - 1.5, 1, 'F');
           writeWrapped(block.text, margin + 7, contentWidth - 7, 5.8); y += 1; continue;
         }
         if (block.type === 'numbered') {
-          ensure(7);
+          const lines = pdf.splitTextToSize(block.text, contentWidth - 8);
+          ensure(lines.length > 1 ? 5.8 * 2 + 2 : 7);
           pdf.setTextColor(...accent); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5);
           pdf.text(`${block.num}.`, margin, y);
           pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal');
