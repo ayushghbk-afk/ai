@@ -6,10 +6,44 @@
   <title>Your Friend - AI Assistant</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@4.0.0/dist/jspdf.umd.min.js"></script>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+  <script>
+    // LAZY LIBRARY LOADER
+    // jsPDF (~350 KB) and highlight.js (~120 KB) used to be blocking <script>
+    // tags in <head>, so every visitor paid for PDF + syntax highlighting before
+    // the chat UI could even render. They are now fetched on demand:
+    //   • jsPDF      → the first time a PDF is actually created
+    //   • highlight.js → the first time a code block is rendered
+    // The chat UI, auth and image tools work without either one.
+    window.__libPromises = {};
+    window.loadScriptOnce = function (src) {
+      const cache = window.__libPromises;
+      if (!cache[src]) {
+        cache[src] = new Promise((resolve, reject) => {
+          const s = document.createElement('script');
+          s.src = src;
+          s.async = true;
+          s.onload = () => resolve(true);
+          s.onerror = () => { delete cache[src]; reject(new Error('Could not load ' + src)); };
+          document.head.appendChild(s);
+        });
+      }
+      return cache[src];
+    };
+    window.ensurePdfLibrary = async function () {
+      if (window.jspdf && window.jspdf.jsPDF) return window.jspdf;
+      await window.loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@4.0.0/dist/jspdf.umd.min.js');
+      if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library failed to load.');
+      return window.jspdf;
+    };
+    window.ensureHighlighter = function () {
+      if (window.hljs) return Promise.resolve(window.hljs);
+      return window.loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js')
+        .then(() => window.hljs)
+        .catch((err) => { console.warn('Syntax highlighting unavailable:', err); return null; });
+    };
+  </script>
 
   <style>
     :root{
@@ -1023,6 +1057,18 @@
     .message-status{font-size:.76rem;font-weight:800;color:var(--text-sub);margin-left:2px;}.message-status.error{color:var(--danger);}
     .markdown-content p{margin:0 0 8px;}.markdown-content p:last-child{margin-bottom:0;}.markdown-content h1,.markdown-content h2,.markdown-content h3{margin:5px 0 8px;line-height:1.2;}.markdown-content h1{font-size:1.35em}.markdown-content h2{font-size:1.2em}.markdown-content h3{font-size:1.08em}.markdown-content ul,.markdown-content ol{padding-left:20px;margin:4px 0 9px}.markdown-content li{margin:3px 0}.markdown-content blockquote{border-left:3px solid var(--accent);padding:3px 0 3px 11px;color:var(--text-sub);margin:7px 0}.markdown-content a{color:#b7aaff;text-decoration:underline}.markdown-content code:not(.hljs){font-family:ui-monospace,monospace;padding:2px 5px;border-radius:6px;background:rgba(0,0,0,.18);font-size:.9em}.code-block-header{flex-wrap:wrap}.code-tools{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.code-pre.collapsed{max-height:180px;overflow:hidden;position:relative}.code-pre.collapsed::after{content:"";position:absolute;left:0;right:0;bottom:0;height:55px;background:linear-gradient(transparent,var(--bg-card));pointer-events:none}.code-pre code{counter-reset:line;display:block}.code-line{display:block;min-height:1.55em}.code-line::before{counter-increment:line;content:counter(line);display:inline-block;width:2.5em;margin-right:1em;color:var(--text-sub);opacity:.55;text-align:right;user-select:none;border-right:1px solid rgba(255,255,255,.1);padding-right:.7em;}.code-line .hljs{background:transparent;}
 
+    .ai-status{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text-sub);font:850 .72rem inherit;cursor:pointer;white-space:nowrap;transition:background .2s ease,border-color .2s ease,color .2s ease;}
+    .ai-status:hover{background:rgba(255,255,255,.08);color:var(--text-main);}
+    .ai-status .ai-status-dot{width:8px;height:8px;border-radius:50%;flex:none;background:var(--text-sub);box-shadow:0 0 0 3px rgba(255,255,255,.06);}
+    .ai-status[data-state="online"]{border-color:rgba(38,214,166,.35);color:var(--text-main);}
+    .ai-status[data-state="online"] .ai-status-dot{background:var(--accent-3);box-shadow:0 0 0 3px rgba(38,214,166,.16);}
+    .ai-status[data-state="busy"]{border-color:rgba(255,196,87,.4);color:#ffe4ab;}
+    .ai-status[data-state="busy"] .ai-status-dot{background:#ffc457;box-shadow:0 0 0 3px rgba(255,196,87,.18);animation:pulse-dot 1.1s ease-in-out infinite;}
+    .ai-status[data-state="offline"]{border-color:rgba(255,107,107,.4);color:#ffd9d9;}
+    .ai-status[data-state="offline"] .ai-status-dot{background:var(--danger);box-shadow:0 0 0 3px rgba(255,107,107,.18);}
+    .ai-status[data-state="checking"] .ai-status-dot{animation:pulse-dot 1.1s ease-in-out infinite;}
+    .ai-status-detail{margin:0 0 12px;padding:11px 12px;border-radius:14px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text-sub);font-size:.78rem;font-weight:800;line-height:1.5;}
+    .ai-status-detail strong{color:var(--text-main);}
     .generation-bar{width:100%;max-width:900px;display:flex;align-items:center;gap:9px;margin:0 auto 7px;color:var(--text-sub);font-size:.78rem;font-weight:850;}.generation-bar[hidden]{display:none}.generation-bar .generation-dot{width:8px;height:8px;border-radius:50%;background:var(--accent-3);box-shadow:0 0 0 5px rgba(38,214,166,.11);animation:pulse-dot 1.2s ease-in-out infinite;}.generation-bar button{margin-left:auto;min-height:34px;padding:6px 11px;border-radius:10px;border:1px solid rgba(255,107,107,.25);background:rgba(255,107,107,.1);color:var(--danger);font:900 .75rem inherit;cursor:pointer;}.generation-bar button:hover{background:rgba(255,107,107,.18);}@keyframes pulse-dot{50%{opacity:.35;transform:scale(.8)}}
     .retry-btn{margin-top:9px!important;border-color:rgba(124,92,255,.35)!important;background:rgba(124,92,255,.14)!important;color:var(--text-main)!important;border-radius:10px!important;padding:7px 11px!important;font-weight:900!important;cursor:pointer!important;}
     .editing-badge{display:none;align-items:center;gap:7px;align-self:center;width:100%;max-width:900px;color:var(--text-sub);font-size:.75rem;font-weight:850;padding:0 2px 5px;}.editing-badge.show{display:flex}.editing-badge button{border:0;background:transparent;color:var(--accent);font-weight:900;cursor:pointer;}
@@ -1097,6 +1143,14 @@
           <div class="subhead">Make it yours. On phone, everything stays clean.</div>
         </div>
         <button type="button" class="icon-btn" style="padding:8px 11px;flex-shrink:0;" title="Close settings" aria-label="Close settings" onclick="closeSettings()">✕</button>
+      </div>
+
+      <div class="ai-status-detail" id="aiStatusDetail" aria-live="polite">
+        <strong id="aiStatusHeadline">AI · checking…</strong><br />
+        <span id="aiStatusSubline">Connecting to the AI backend…</span>
+      </div>
+      <div class="toolbar" style="margin-top:-4px;">
+        <button type="button" onclick="checkAiHealth(true)">↻ Re-check AI connection</button>
       </div>
 
       <div class="settings-row">
@@ -1203,7 +1257,10 @@
         <div class="memory-meta"><span id="memoryCharCount">0 characters</span><span>Keep it concise for lower token usage. Resets with every new chat.</span></div>
         <div class="memory-stat"><span>Estimated context usage</span><strong id="memoryTokenCount">0 tokens</strong></div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;"><div class="label">Saved memories</div><button type="button" onclick="addMemoryItem()" style="padding:7px 10px;font-size:.78rem;box-shadow:none;">＋ Add memory</button></div>
+        <div class="sub" style="margin:2px 0 8px;">Up to 40 memories per chat, 240 characters each. Duplicates are ignored automatically.</div>
         <div id="memoryList" class="memory-list"></div>
+        <button type="button" id="aiPayloadToggle" onclick="showAiPayloadPreview()" style="margin-top:10px;padding:8px 11px;font-size:.78rem;box-shadow:none;">🔍 Show exactly what the AI receives</button>
+        <div id="aiPayloadPreview" hidden style="margin-top:8px;"></div>
       </div>
       <div class="settings-row" style="display:block;">
         <div class="label">System prompt</div>
@@ -1298,8 +1355,12 @@
     <div id="pdfBackupSection" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;">
         <span style="font-weight:900; font-size:.9rem;">📚 PDF Backups</span>
-        <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
+        <span style="display:flex;align-items:center;gap:6px;">
+          <span id="pdfBackupCount" style="color:var(--text-sub);font-size:.72rem;font-weight:900;">0</span>
+          <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
+        </span>
       </div>
+      <input id="pdfSearchInput" class="history-search" type="search" placeholder="Search PDFs…" aria-label="Search PDF backups" oninput="renderPdfHistory()" />
       <div id="pdfBackupList"></div>
     </div>
     <div id="imageHistorySection" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
@@ -1324,6 +1385,10 @@
         <span>Your Friend</span>
       </div>
       <div class="header-actions">
+        <button class="ai-status" id="aiStatusChip" type="button" data-state="checking" onclick="openSettings()" title="AI backend status — tap to open settings" aria-label="AI backend status">
+          <span class="ai-status-dot" aria-hidden="true"></span>
+          <span id="aiStatusText">AI · checking…</span>
+        </button>
         <button class="icon-btn" title="Image Generator" aria-label="Open image generator" onclick="openImageModal()">🎨 <span class="label">Image Tool</span></button>
         <button class="icon-btn" title="Settings" aria-label="Open settings" onclick="openSettings()">⚙️ <span class="label">Settings</span></button>
       </div>
@@ -1332,7 +1397,7 @@
     <div id="chat-container"></div>
 
     <footer>
-      <div id="generationStatus" class="generation-bar" aria-live="polite" hidden><span class="generation-dot" aria-hidden="true"></span><span id="generationLabel">Your Friend is thinking…</span><button id="cancelGenerationBtn" type="button" onclick="cancelGeneration()">Cancel generation</button></div>
+      <div id="generationStatus" class="generation-bar" aria-live="polite" hidden><span class="generation-dot" aria-hidden="true"></span><span id="generationLabel">Your Friend is thinking…</span><button id="cancelGenerationBtn" type="button" onclick="cancelGeneration()" disabled>Cancel generation</button></div>
       <div id="editingBadge" class="editing-badge"><span>Editing a sent message</span><button type="button" onclick="cancelEditing()">Cancel</button></div>
       <div class="input-container">
         <textarea id="userInput" placeholder="Message Your Friend or type /image prompt..." rows="1" oninput="autoResize(this)"></textarea>
@@ -1411,6 +1476,161 @@
       (window.onloadQueue = window.onloadQueue || []).push(showBootWarningBanner);
     }
     const PROXY_URL = 'https://groq-proxy.mr-hackerdon808.workers.dev/api/chat';
+
+    /* ------------------------------------------------------------------
+       AI BACKEND STATUS + FRIENDLY ERROR HANDLING
+
+       Goals:
+       1. The user always knows which model is active and whether the backend
+          is answering (header chip + Settings panel).
+       2. Raw provider/API text (Groq key errors, stack traces, JSON blobs)
+          never reaches the chat UI — it is logged to the console instead and
+          replaced with a short, human sentence plus a next step.
+       ------------------------------------------------------------------ */
+    const AI_MODEL_LABELS = {
+      'llama-3.3-70b-versatile': 'Llama 3.3 70B',
+      'llama-3.1-8b-instant': 'Llama 3.1 8B',
+      'openai/gpt-oss-120b': 'GPT OSS 120B'
+    };
+    const AI_DEFAULT_MODEL = 'llama-3.3-70b-versatile';
+    const aiStatus = { state: 'checking', note: '', model: AI_DEFAULT_MODEL, keys: null, lastError: '', lastOkAt: 0 };
+
+    function aiModelLabel(model) { return AI_MODEL_LABELS[model] || model || 'default model'; }
+
+    function renderAiStatus() {
+      const chip = document.getElementById('aiStatusChip');
+      const chipText = document.getElementById('aiStatusText');
+      const headline = document.getElementById('aiStatusHeadline');
+      const subline = document.getElementById('aiStatusSubline');
+      const label = aiModelLabel(aiStatus.model);
+      const texts = {
+        online: `AI Online · ${label}`,
+        busy: 'AI busy · retrying…',
+        offline: 'AI offline',
+        checking: 'AI · checking…'
+      };
+      const short = texts[aiStatus.state] || `AI · ${label}`;
+      if (chip) chip.dataset.state = aiStatus.state;
+      if (chip) chip.title = `${short}${aiStatus.note ? ' — ' + aiStatus.note : ''}`;
+      if (chipText) chipText.textContent = short;
+      if (headline) headline.textContent = short;
+      if (subline) {
+        const extras = [];
+        if (aiStatus.state === 'online' && aiStatus.keys) extras.push(`${aiStatus.keys} provider key${aiStatus.keys === 1 ? '' : 's'} configured`);
+        if (aiStatus.lastOkAt) extras.push('last reply ' + new Date(aiStatus.lastOkAt).toLocaleTimeString());
+        subline.textContent = [aiStatus.note || (aiStatus.state === 'online' ? 'Connected to the AI backend.' : 'Waiting for the AI backend…'), extras.join(' · ')].filter(Boolean).join(' — ');
+      }
+    }
+
+    function setAiStatus(state, note = '') {
+      aiStatus.state = state;
+      aiStatus.note = note || '';
+      renderAiStatus();
+    }
+
+    // Turn any proxy failure into { title, hint, retryable, kind }.
+    // `title` is what the user sees; the technical body stays in the console.
+    function describeAiFailure(status, rawBody) {
+      const raw = typeof rawBody === 'string' ? rawBody : (() => { try { return JSON.stringify(rawBody || ''); } catch { return ''; } })();
+      const lower = raw.toLowerCase();
+      const keysDown = /all (the )?(api )?keys|no (available|working|valid) key|every key|keys (are )?(unavailable|exhausted|invalid)/.test(lower);
+      const rateLimited = status === 429 || /rate.?limit|too many requests|quota/.test(lower);
+      const tooLong = status === 413 || /reduce the length|maximum context|context length|too many tokens/.test(lower);
+      const badModel = status === 404 || /model .* (not|isn't) (found|available)|invalid model|unsupported model/.test(lower);
+
+      if (status === 0) return { kind: 'offline', title: 'You appear to be offline.', hint: 'Check your connection, then hit Retry.', retryable: true };
+      if (tooLong) return { kind: 'too-long', title: 'That conversation got too long for one request.', hint: 'Start a new chat, or send a shorter message.', retryable: true };
+      if (badModel) return { kind: 'model', title: 'That AI model is not available right now.', hint: 'Pick another model in Settings → AI model.', retryable: true };
+      if (status === 401 || status === 403) return { kind: 'auth', title: 'The AI service refused the request.', hint: 'This is a backend configuration issue — try again in a minute.', retryable: true };
+      if (rateLimited || keysDown) return { kind: 'busy', title: 'AI temporarily busy.', hint: keysDown ? 'Every provider is busy right now — please try again in a minute.' : 'Switching to another provider — try again in a few seconds.', retryable: true };
+      if (status >= 500) return { kind: 'server', title: 'The AI service had a temporary problem.', hint: 'Nothing was lost — hit Retry in a moment.', retryable: true };
+      if (status === 400) return { kind: 'payload', title: 'That message could not be processed.', hint: 'Try rephrasing it, or start a new chat.', retryable: true };
+      return { kind: 'unknown', title: 'Something went wrong talking to the AI.', hint: 'Please try again.', retryable: true };
+    }
+
+    /* Context budget guard.
+       Long chats and very long single messages used to be sent verbatim, which
+       made the provider answer `400 – please reduce the length of the messages
+       or completion`. Now every request is trimmed to a conservative budget:
+         • the system prompt and the newest user message are always kept
+         • older turns are capped per message, then dropped oldest-first
+       ~4 characters ≈ 1 token, and the budgets below stay far under the models'
+       real context windows so the completion tokens still fit. */
+    const AI_CONTEXT_CHAR_BUDGET = {
+      'llama-3.3-70b-versatile': 96000,
+      'llama-3.1-8b-instant': 96000,
+      'openai/gpt-oss-120b': 120000
+    };
+    const AI_DEFAULT_CHAR_BUDGET = 96000;
+    const AI_MAX_HISTORY_MESSAGE_CHARS = 1200;
+    const AI_MAX_LAST_MESSAGE_CHARS = 8000;
+
+    function estimateChars(messages) {
+      return (messages || []).reduce((sum, m) => sum + String(m?.content || '').length + 8, 0);
+    }
+
+    function fitMessagesToContextBudget(messages, model) {
+      const list = (Array.isArray(messages) ? messages : []).filter(m => m && m.role);
+      if (!list.length) return list;
+      const budget = AI_CONTEXT_CHAR_BUDGET[model] || AI_DEFAULT_CHAR_BUDGET;
+      const maxTokens = Number(settings?.responseLength) || 4096;
+      // Reserve room for the completion (~4 chars/token) and a little slack.
+      const promptBudget = Math.max(12000, budget - maxTokens * 4 - 2000);
+      const lastIndex = list.length - 1;
+
+      const trimmed = list.map((msg, index) => {
+        const content = String(msg.content || '');
+        const cap = index === lastIndex ? AI_MAX_LAST_MESSAGE_CHARS : AI_MAX_HISTORY_MESSAGE_CHARS;
+        if (content.length > cap) return { ...msg, content: content.slice(0, cap) + '\n…[truncated]' };
+        return msg;
+      });
+
+      // Drop whole turns (oldest first) until the prompt fits. Never drop the
+      // system prompt at index 0 or the newest user message.
+      let total = estimateChars(trimmed);
+      while (total > promptBudget) {
+        const dropIndex = trimmed.findIndex((m, i) => i > 0 && i < trimmed.length - 1);
+        if (dropIndex === -1) break;
+        total -= String(trimmed[dropIndex].content || '').length + 8;
+        trimmed.splice(dropIndex, 1);
+      }
+      return trimmed;
+    }
+
+    function makeAiError(failure, status, rawBody) {
+      const err = new Error(failure.title);
+      err.friendly = failure;
+      err.status = status;
+      // Technical detail for the console only — never rendered in the chat.
+      console.error('[AI proxy]', { status, kind: failure.kind, body: typeof rawBody === 'string' ? rawBody.slice(0, 500) : rawBody });
+      return err;
+    }
+
+    // The proxy answers a plain GET with { ok, status, configured_keys }.
+    async function checkAiHealth(manual = false) {
+      setAiStatus('checking', manual ? 'Re-checking the AI connection…' : 'Connecting to the AI backend…');
+      try {
+        const controller = typeof AbortController === 'function' ? new AbortController() : null;
+        const timer = controller ? setTimeout(() => controller.abort(), 8000) : null;
+        const res = await fetch(PROXY_URL, { method: 'GET', headers: { Accept: 'application/json' }, signal: controller ? controller.signal : undefined });
+        if (timer) clearTimeout(timer);
+        const text = await res.text().catch(() => '');
+        let payload = null;
+        try { payload = JSON.parse(text); } catch {}
+        if (!res.ok) throw makeAiError(describeAiFailure(res.status, text), res.status, text);
+        aiStatus.keys = Number(payload?.configured_keys) || aiStatus.keys;
+        aiStatus.lastOkAt = Date.now();
+        setAiStatus('online', payload?.message || 'AI backend reachable.');
+        return true;
+      } catch (err) {
+        // A failed health probe is a hint, not a verdict: CORS or a cold start can
+        // fail here while real chat requests still work.
+        aiStatus.lastError = getErrorMessage(err);
+        if (err?.friendly) aiStatus.note = err.friendly.hint;
+        setAiStatus(typeof navigator !== 'undefined' && navigator.onLine === false ? 'offline' : 'unknown', aiStatus.note || 'Could not reach the AI status endpoint. Chat may still work.');
+        return false;
+      }
+    }
 
     const el = {};
     let currentUser = null;
@@ -1901,6 +2121,9 @@ EXAMPLES:
       content,
       images = []
     }) {
+      // jsPDF is loaded on demand (see the loader in <head>), so a user who never
+      // creates a PDF never downloads it.
+      await (window.ensurePdfLibrary ? window.ensurePdfLibrary() : Promise.resolve());
       if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('PDF library failed to load.');
       const rawTitle = cleanInvisibleText(title || 'Document');
       const rawContent = cleanInvisibleText(content);
@@ -2693,38 +2916,79 @@ EXAMPLES:
       }
     }
 
+    function formatPdfBytes(bytes) {
+      const n = Number(bytes);
+      if (!Number.isFinite(n) || n <= 0) return '';
+      if (n < 1024) return `${n} B`;
+      if (n < 1024 * 1024) return `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB`;
+      return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+    }
+
+    // Same filename + same size = the same document generated twice.
+    function findDuplicatePdfs(pdf, all) {
+      return (all || []).filter(other =>
+        other !== pdf &&
+        other.filename &&
+        other.filename === pdf.filename &&
+        Number(other.file_size || 0) === Number(pdf.file_size || 0)
+      );
+    }
+
+    async function renamePdfBackup(pdf) {
+      if (!pdf?.id || !currentUserId) return;
+      const next = prompt('Rename this PDF', pdf.title || pdf.filename || '');
+      if (next === null) return;
+      const clean = String(next).trim().slice(0, 120);
+      if (!clean) return;
+      try {
+        const { error } = await supabaseClient.from('pdf_files').update({ title: clean }).eq('id', pdf.id).eq('user_id', currentUserId);
+        if (error) throw error;
+        pdf.title = clean;
+        renderPdfHistory();
+        beep(720, 0.04);
+      } catch (err) {
+        console.error('PDF rename error:', err);
+        alert('Unable to rename this PDF. Check your database permissions.');
+      }
+    }
+
+    let pdfHistoryExpanded = false;
+
     function renderPdfHistory() {
-      const container =
-        document.getElementById(
-          'pdfBackupList'
-        );
+      const container = document.getElementById('pdfBackupList');
 
       if (!container) return;
 
       container.replaceChildren();
 
-      const pdfs =
-        window.userPdfHistory || [];
+      const all = window.userPdfHistory || [];
+      const countEl = document.getElementById('pdfBackupCount');
+      if (countEl) countEl.textContent = String(all.length);
 
-      if (!pdfs.length) {
-        const empty =
-          document.createElement('div');
+      const query = String(document.getElementById('pdfSearchInput')?.value || '').trim().toLowerCase();
+      const pdfs = query
+        ? all.filter(p => `${p.title || ''} ${p.filename || ''}`.toLowerCase().includes(query))
+        : all;
 
-        empty.textContent =
-          'No PDF backups yet.';
-
-        empty.style.cssText = `
-          color:var(--text-sub);
-          font-size:.82rem;
-          padding:8px 2px;
-          font-weight:700;
-        `;
-
+      if (!all.length) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No PDF backups yet.';
+        empty.style.cssText = 'color:var(--text-sub);font-size:.82rem;padding:8px 2px;font-weight:700;';
         container.appendChild(empty);
         return;
       }
 
-      for (const pdf of pdfs.slice(0, 5)) {
+      if (!pdfs.length) {
+        const empty = document.createElement('div');
+        empty.textContent = 'No PDFs match your search.';
+        empty.style.cssText = 'color:var(--text-sub);font-size:.82rem;padding:8px 2px;font-weight:700;';
+        container.appendChild(empty);
+        return;
+      }
+
+      const visible = pdfHistoryExpanded ? pdfs : pdfs.slice(0, 5);
+
+      for (const pdf of visible) {
         const item =
           document.createElement('div');
 
@@ -2763,29 +3027,50 @@ EXAMPLES:
         const date =
           document.createElement('div');
 
-        date.textContent =
-          new Date(
-            pdf.created_at
-          ).toLocaleDateString();
+        const createdMs = new Date(pdf.created_at).getTime();
+        const sizeText = formatPdfBytes(pdf.file_size);
+        const duplicates = findDuplicatePdfs(pdf, all);
+        date.textContent = [
+          Number.isFinite(createdMs) && createdMs > 0 ? new Date(createdMs).toLocaleString() : 'Unknown date',
+          sizeText ? sizeText : '',
+          duplicates.length ? `⚠ ${duplicates.length} duplicate${duplicates.length === 1 ? '' : 's'}` : ''
+        ].filter(Boolean).join(' · ');
 
         date.style.cssText = `
           color:var(--text-sub);
           font-size:.7rem;
           margin-top:2px;
         `;
+        if (duplicates.length) date.style.color = '#ffc457';
 
         const button = document.createElement('button');
         button.type='button'; button.textContent='⬇️'; button.title='Download PDF';
+        button.setAttribute('aria-label', `Download ${pdf.title || pdf.filename || 'PDF'}`);
         button.style.cssText='border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;';
         button.onclick=()=>downloadBackedUpPdf(pdf);
+        const rename=document.createElement('button');
+        rename.type='button'; rename.textContent='✎'; rename.title='Rename PDF';
+        rename.setAttribute('aria-label', `Rename ${pdf.title || pdf.filename || 'PDF'}`);
+        rename.style.cssText='border:0;border-radius:8px;padding:7px 9px;background:rgba(255,255,255,.07);color:var(--text-main);cursor:pointer;font-weight:900;';
+        rename.onclick=()=>renamePdfBackup(pdf);
         const del=document.createElement('button');
         del.type='button'; del.textContent='🗑️'; del.title='Delete PDF';
+        del.setAttribute('aria-label', `Delete ${pdf.title || pdf.filename || 'PDF'}`);
         del.style.cssText='border:0;border-radius:8px;padding:7px 9px;background:rgba(255,107,107,.12);color:var(--text-main);cursor:pointer;font-weight:900;';
         del.onclick=()=>deletePdfBackup(pdf);
         info.appendChild(name); info.appendChild(date);
-        item.appendChild(info); item.appendChild(button); item.appendChild(del);
+        item.appendChild(info); item.appendChild(button); item.appendChild(rename); item.appendChild(del);
 
         container.appendChild(item);
+      }
+
+      if (pdfs.length > 5) {
+        const more = document.createElement('button');
+        more.type = 'button';
+        more.textContent = pdfHistoryExpanded ? 'Show fewer' : `Show all ${pdfs.length} PDFs`;
+        more.style.cssText = 'width:100%;margin-top:2px;padding:8px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text-sub);font-weight:900;font-size:.76rem;cursor:pointer;';
+        more.onclick = () => { pdfHistoryExpanded = !pdfHistoryExpanded; renderPdfHistory(); };
+        container.appendChild(more);
       }
     }
 
@@ -3021,6 +3306,15 @@ EXAMPLES:
 
     function renderTextWithCodeBlocks(targetEl, text){
       const raw = String(text || '');
+      // Syntax highlighting is lazy-loaded: render plain text now, then upgrade
+      // this same node once highlight.js arrives (guarded so it runs once).
+      if (raw.includes('```') && !window.hljs && !targetEl.dataset.hljsPending) {
+        targetEl.dataset.hljsPending = '1';
+        window.ensureHighlighter?.().then((lib) => {
+          if (lib && targetEl.isConnected) { delete targetEl.dataset.hljsPending; renderTextWithCodeBlocks(targetEl, raw); }
+          else delete targetEl.dataset.hljsPending;
+        });
+      }
       const re = /```([a-zA-Z0-9_+#.-]*)\n?([\s\S]*?)```/g;
       const parts = [];
       let lastIndex = 0;
@@ -3189,6 +3483,10 @@ EXAMPLES:
       if (!user?.id) return;
       currentUserId = user.id;
       currentUser = null;
+      // Restore this user's saved AI settings immediately after login/refresh,
+      // otherwise the Settings panel keeps showing defaults until the first
+      // message is sent (the values were only loaded inside sendMessage()).
+      loadPersonalAISettings();
 
       try {
         const { data: { session } } = await supabaseClient.auth.getSession();
@@ -3221,6 +3519,10 @@ EXAMPLES:
         renderMemoryList();
         renderHistorySidebar();
         renderActiveChat();
+        // Per-user settings depend on currentUserId only, but memory/summary UI
+        // depends on the active chat, so refresh the panel once it is known.
+        loadPersonalAISettings();
+        renderAiStatus();
       }
     }
 
@@ -3282,6 +3584,13 @@ EXAMPLES:
     }
 
     function createNewChat(silent = false) {
+      // Duplicate guard: if the active chat has no user message yet, reuse it
+      // instead of stacking another empty "New Chat" in the sidebar.
+      const active = currentSessionId ? userSessions[currentSessionId] : null;
+      if (active && !(active.messages || []).some(m => m.role === 'user')) {
+        if (!silent) { renderActiveChat(); el.userInput?.focus?.(); }
+        return currentSessionId;
+      }
       const now = Date.now();
       currentSessionId = randomSessionId();
       userSessions[currentSessionId] = {
@@ -4042,12 +4351,19 @@ EXAMPLES:
         memorySummary = getMemorySummaryForSession(currentSessionId);
         settings.memoryEnabled = localStorage.getItem(memoryKey('memory_enabled')) !== 'false';
         settings.pdfPreview = localStorage.getItem(memoryKey('pdf_preview')) !== 'false';
-        settings.responseLength = Number(localStorage.getItem(memoryKey('response_length')) || 4096);
+        settings.responseLength = Number(localStorage.getItem(memoryKey('response_length')) || '4096');
         settings.privacyMode = localStorage.getItem(memoryKey('privacy_mode')) === 'true';
         settings.language = localStorage.getItem(memoryKey('language')) || 'en';
-        settings.model = localStorage.getItem(memoryKey('model')) || 'llama-3.3-70b-versatile';
+        settings.model = localStorage.getItem(memoryKey('model')) || AI_DEFAULT_MODEL;
         settings.animations = localStorage.getItem(memoryKey('animations')) !== 'false';
+        // Keep the global mirrors in sync so a refresh before login still shows
+        // the same choices instead of falling back to defaults.
+        localStorage.setItem('responseLength', String(settings.responseLength));
+        localStorage.setItem('model', settings.model);
+        localStorage.setItem('language', settings.language);
+        localStorage.setItem('animations', String(settings.animations));
       } catch {}
+      aiStatus.model = settings.model;
       el.memoryToggle?.classList.toggle('on', settings.memoryEnabled);
       document.documentElement.dataset.motion = settings.animations ? 'full' : 'reduced';
       el.pdfPreviewToggle?.classList.toggle('on', settings.pdfPreview);
@@ -4056,10 +4372,66 @@ EXAMPLES:
       el.animationToggle?.classList.toggle('on', settings.animations);
       if (el.languageSelect) el.languageSelect.value = settings.language;
       if (el.modelSelect) el.modelSelect.value = settings.model;
+      renderAiStatus();
     }
 
     function getEffectiveSystemPrompt() {
       return (customSystemPrompt || DEFAULT_SYSTEM_PROMPT).trim() || DEFAULT_SYSTEM_PROMPT;
+    }
+
+    // Single source of truth for what the request actually contains, so the
+    // "What the AI receives" preview can never drift from the real payload.
+    function buildSystemPromptForRequest() {
+      const activeMemory = (settings.memoryEnabled && !settings.privacyMode)
+        ? (refreshMemorySummaryIfNeeded() || '').trim()
+        : '';
+      const hasValidMemory = Boolean(activeMemory && !/^no long-term memory/i.test(activeMemory));
+      let systemPromptText = getEffectiveSystemPrompt();
+      if (hasValidMemory) systemPromptText += '\n\nRELEVANT LONG-TERM MEMORY CONTEXT:\n' + activeMemory;
+      systemPromptText += '\n\n' + TOOL_SYSTEM_INSTRUCTIONS;
+      return { systemPromptText, memoryIncluded: hasValidMemory, memoryText: hasValidMemory ? activeMemory : '' };
+    }
+
+    function buildAiPayloadPreview() {
+      const built = buildSystemPromptForRequest();
+      const session = userSessions[currentSessionId];
+      const history = (session?.messages || []).filter(m => m.role !== 'system');
+      const fitted = fitMessagesToContextBudget([{ role: 'system', content: built.systemPromptText }, ...history.map(m => ({ role: m.role, content: m.content }))], settings.model || AI_DEFAULT_MODEL);
+      const chars = fitted.reduce((sum, m) => sum + String(m.content || '').length, 0);
+      const reasons = [];
+      if (settings.privacyMode) reasons.push('Privacy mode is ON');
+      if (!settings.memoryEnabled) reasons.push('Memory is OFF');
+      return {
+        model: settings.model || AI_DEFAULT_MODEL,
+        modelLabel: aiModelLabel(settings.model || AI_DEFAULT_MODEL),
+        responseLength: settings.responseLength,
+        memoryIncluded: built.memoryIncluded,
+        memoryReason: built.memoryIncluded ? '' : (reasons.join(' and ') || 'No saved memories for this chat yet'),
+        systemPrompt: built.systemPromptText,
+        messageCount: fitted.length,
+        estimatedChars: chars,
+        estimatedTokens: Math.ceil(chars / 4)
+      };
+    }
+
+    function showAiPayloadPreview() {
+      const box = document.getElementById('aiPayloadPreview');
+      if (!box) return;
+      const info = buildAiPayloadPreview();
+      box.replaceChildren();
+      const head = document.createElement('div');
+      head.style.cssText = 'font-weight:900;font-size:.8rem;margin-bottom:6px;color:var(--text-main);';
+      head.textContent = `Model: ${info.modelLabel} · max ${info.responseLength} tokens · ${info.messageCount} messages sent · ~${info.estimatedTokens} tokens`;
+      const mem = document.createElement('div');
+      mem.style.cssText = 'font-weight:800;font-size:.76rem;margin-bottom:8px;color:var(--text-sub);';
+      mem.textContent = info.memoryIncluded
+        ? '✅ Saved memory IS included in this request (see the block below).'
+        : `🚫 Memory is NOT sent with this request — ${info.memoryReason}.`;
+      const pre = document.createElement('pre');
+      pre.style.cssText = 'max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;background:rgba(0,0,0,.28);border:1px solid var(--border);border-radius:12px;padding:10px;font-size:.7rem;line-height:1.5;color:var(--text-sub);margin:0;';
+      pre.textContent = info.systemPrompt;
+      box.append(head, mem, pre);
+      box.hidden = false;
     }
 
     function buildCompactMemorySummary() {
@@ -4094,12 +4466,49 @@ EXAMPLES:
     function getMemoryItems() {
       return String(memorySummary || '').split(/\n/).map(item => item.replace(/^-\s*/, '').trim()).filter(item => item && !/^no long-term memory/i.test(item));
     }
-    function setMemoryItems(items) {
-      memorySummary = items.map(item => `- ${String(item).trim()}`).filter(Boolean).join('\n');
+    // Memory limits: duplicates are dropped (case/punctuation-insensitive) and
+    // the list is capped, so the context block can never grow without bound.
+    const MAX_MEMORY_ITEMS = 40;
+    const MAX_MEMORY_ITEM_CHARS = 240;
+    const MAX_MEMORY_TOTAL_CHARS = 6000;
+
+    function dedupeMemoryItems(items) {
+      const seen = new Set();
+      const out = [];
+      for (const raw of items) {
+        const value = String(raw || '').replace(/\s+/g, ' ').trim();
+        if (!value) continue;
+        const key = value.toLowerCase().replace(/[^a-z0-9\u00C0-\u024F]+/g, ' ').trim();
+        if (!key || seen.has(key)) continue;
+        seen.add(key);
+        out.push(value.slice(0, MAX_MEMORY_ITEM_CHARS));
+      }
+      return out;
+    }
+
+    function setMemoryItems(items, { silent = false } = {}) {
+      const before = (items || []).filter(Boolean).length;
+      const cleaned = dedupeMemoryItems(items);
+      const dropped = before - cleaned.length;
+      if (cleaned.length > MAX_MEMORY_ITEMS) cleaned.length = MAX_MEMORY_ITEMS;
+      memorySummary = cleaned.map(item => `- ${item}`).join('\n');
+      if (memorySummary.length > MAX_MEMORY_TOTAL_CHARS) {
+        // Keep whole lines only, so the summary never ends mid-sentence.
+        let total = 0;
+        const kept = [];
+        for (const line of memorySummary.split('\n')) {
+          if (total + line.length + 1 > MAX_MEMORY_TOTAL_CHARS) break;
+          kept.push(line);
+          total += line.length + 1;
+        }
+        memorySummary = kept.join('\n');
+      }
       setMemorySummaryForSession(currentSessionId, memorySummary);
       if (el.memoryEditor) el.memoryEditor.value = memorySummary;
       memoryDirty = false;
       updateMemoryCount();
+      if (!silent && dropped > 0) alert(`That memory was already saved, so it was not added twice. (${MAX_MEMORY_ITEMS} memories max per chat.)`);
+      return { added: cleaned.length, duplicatesDropped: dropped };
     }
     function renderMemoryList() {
       if (!el.memoryList) return;
@@ -4134,14 +4543,16 @@ EXAMPLES:
     function addMemoryItem() {
       const value = prompt('What should Your Friend remember for this chat?');
       if (!value?.trim()) return;
-      setMemoryItems([...getMemoryItems(), value.trim().slice(0, 240)]);
+      const items = getMemoryItems();
+      if (items.length >= MAX_MEMORY_ITEMS) return alert(`You have reached the limit of ${MAX_MEMORY_ITEMS} saved memories for this chat. Delete one first.`);
+      setMemoryItems([...items, value.trim()]);
       renderMemoryList();
     }
     function editMemoryItem(index) {
       const items = getMemoryItems();
       const value = prompt('Edit this memory', items[index] || '');
       if (value === null || !value.trim()) return;
-      items[index] = value.trim().slice(0, 240);
+      items[index] = value.trim().slice(0, MAX_MEMORY_ITEM_CHARS);
       setMemoryItems(items);
       renderMemoryList();
     }
@@ -4206,7 +4617,10 @@ EXAMPLES:
       settings.animations = !settings.animations;
       el.animationToggle?.classList.toggle('on', settings.animations);
       document.documentElement.dataset.motion = settings.animations ? 'full' : 'reduced';
+      // Per-user key + global mirror: the mirror is what boot reads before the
+      // user is known, so the choice survives a refresh instead of resetting.
       localStorage.setItem(memoryKey('animations'), String(settings.animations));
+      localStorage.setItem('animations', String(settings.animations));
     }
     function togglePrivacyMode(){
       settings.privacyMode = !settings.privacyMode;
@@ -4311,7 +4725,10 @@ EXAMPLES:
     }
     function setResponseLength(v){
       settings.responseLength = Number(v) || 4096;
+      // Per-user key + global mirror (read at boot, before login is known).
       localStorage.setItem(memoryKey('response_length'), String(settings.responseLength));
+      localStorage.setItem('responseLength', String(settings.responseLength));
+      if (el.responseLengthSelect) el.responseLengthSelect.value = String(settings.responseLength);
     }
 
     function buildLongTermMemoryContext() {
@@ -4386,16 +4803,7 @@ EXAMPLES:
         aiTextNode = typingRow.querySelector('.text');
         el.chatContainer.appendChild(typingRow);
 
-        const activeMemory = (settings.memoryEnabled && !settings.privacyMode)
-          ? (refreshMemorySummaryIfNeeded() || '').trim()
-          : '';
-        const hasValidMemory = Boolean(activeMemory && !/^no long-term memory/i.test(activeMemory));
-
-        let systemPromptText = getEffectiveSystemPrompt();
-        if (hasValidMemory) {
-          systemPromptText += '\n\nRELEVANT LONG-TERM MEMORY CONTEXT:\n' + activeMemory;
-        }
-        systemPromptText += '\n\n' + TOOL_SYSTEM_INSTRUCTIONS;
+        const { systemPromptText } = buildSystemPromptForRequest();
 
         let aiMessages = [
           {
@@ -4410,20 +4818,7 @@ EXAMPLES:
             }))
         ];
 
-        aiMessages = aiMessages.map((msg, index) => {
-          if (index === aiMessages.length - 1) {
-            return msg;
-          }
-
-          if (msg.content && msg.content.length > 1000) {
-            return {
-              ...msg,
-              content: msg.content.substring(0, 1000) + '... [truncated]'
-            };
-          }
-
-          return msg;
-        });
+        aiMessages = fitMessagesToContextBudget(aiMessages, settings.model || AI_DEFAULT_MODEL);
 
         const requestBody = {
           messages: aiMessages,
@@ -4432,8 +4827,12 @@ EXAMPLES:
           tools: [PDF_TOOL, IMAGE_TOOL],
           tool_choice: "auto",
           parallel_tool_calls: false,
-          model: settings.model || 'llama-3.3-70b-versatile'
+          model: settings.model || AI_DEFAULT_MODEL
         };
+
+        const activeModelLabel = aiModelLabel(requestBody.model);
+        aiStatus.model = requestBody.model;
+        setAiStatus('busy', `Thinking with ${activeModelLabel}…`);
 
         const response = await fetch(PROXY_URL, {
           method: "POST",
@@ -4443,14 +4842,8 @@ EXAMPLES:
         });
 
         if (!response.ok) {
-          let errorMsg;
-          try {
-            const errorJson = await response.json();
-            errorMsg = errorJson?.error?.message || errorJson?.error || errorJson?.message || `HTTP ${response.status}`;
-          } catch {
-            errorMsg = `HTTP ${response.status}`;
-          }
-          throw new Error(errorMsg);
+          const rawBody = await response.text().catch(() => '');
+          throw makeAiError(describeAiFailure(response.status, rawBody), response.status, rawBody);
         }
 
         const data = await response.json();
@@ -4458,7 +4851,7 @@ EXAMPLES:
         let assistantMessage = data?.choices?.[0]?.message;
 
         if (!assistantMessage) {
-          throw new Error('AI response missing message');
+          throw makeAiError(describeAiFailure(500, data), 500, data);
         }
 
         const toolCalls = assistantMessage.tool_calls || [];
@@ -4601,9 +4994,8 @@ EXAMPLES:
                 });
 
               if (!followUpResponse.ok) {
-                throw new Error(
-                  `AI follow-up failed: HTTP ${followUpResponse.status}`
-                );
+                const rawFollowUp = await followUpResponse.text().catch(() => '');
+                throw makeAiError(describeAiFailure(followUpResponse.status, rawFollowUp), followUpResponse.status, rawFollowUp);
               }
 
               const followUpData =
@@ -4613,9 +5005,7 @@ EXAMPLES:
                 followUpData?.choices?.[0]?.message;
 
               if (!nextMessage) {
-                throw new Error(
-                  'AI follow-up returned no message.'
-                );
+                throw makeAiError(describeAiFailure(500, followUpData), 500, followUpData);
               }
 
               const nextToolCalls =
@@ -4674,8 +5064,11 @@ EXAMPLES:
         const reply = assistantMessage.content;
 
         if (!reply) {
-          throw new Error('AI response missing content');
+          throw makeAiError(describeAiFailure(500, data), 500, data);
         }
+
+        aiStatus.lastOkAt = Date.now();
+        setAiStatus('online', `Replied using ${aiModelLabel(settings.model || AI_DEFAULT_MODEL)}.`);
 
         const assistantId = await insertChatMessage(currentSessionId, 'assistant', reply);
         currentSession.messages.push({
@@ -4700,7 +5093,21 @@ EXAMPLES:
         }
       } catch (err) {
         const canceled = err?.name === 'AbortError';
-        const errorMsg = canceled ? 'Generation canceled.' : `Could not complete that request: ${getErrorMessage(err)}`;
+        // `err.friendly` comes from describeAiFailure(): the user sees a short
+        // human sentence, never the provider's raw JSON or key names.
+        const friendly = err?.friendly;
+        let errorMsg;
+        if (canceled) errorMsg = 'Generation canceled.';
+        else if (friendly) errorMsg = `${friendly.title} ${friendly.hint}`.trim();
+        else if (typeof navigator !== 'undefined' && navigator.onLine === false) errorMsg = 'You appear to be offline. Reconnect and hit Retry.';
+        else { console.error('[AI] Unmapped failure:', err); errorMsg = 'Could not complete that request. Please try again.'; }
+
+        if (canceled) setAiStatus('online', 'Generation canceled.');
+        else if (friendly?.kind === 'busy' || friendly?.kind === 'server') setAiStatus('busy', friendly.hint);
+        else if (friendly?.kind === 'offline' || friendly?.kind === 'auth') setAiStatus('offline', friendly.hint);
+        else if (friendly) setAiStatus('unknown', friendly.hint);
+        aiStatus.lastError = getErrorMessage(err);
+
         lastFailedRequest = { sessionId:currentSessionId, userMessageIndex };
         if (aiTextNode) showRetryableError(aiTextNode, canceled ? 'Generation canceled. You can retry when ready.' : errorMsg, lastFailedRequest);
         else appendErrorUI(errorMsg);
@@ -4841,6 +5248,11 @@ EXAMPLES:
       settings.autoScroll = localStorage.getItem('autoScroll') !== 'false';
       settings.chatFontSize = parseFloat(localStorage.getItem('chatFontSize') || '0.98');
       settings.responseLength = Number(localStorage.getItem('responseLength') || '4096');
+      // Global mirrors for the per-user AI settings, so the UI already shows the
+      // last used values before login/refresh finishes hydrating the account.
+      settings.model = localStorage.getItem('model') || settings.model;
+      settings.language = localStorage.getItem('language') || settings.language;
+      settings.animations = localStorage.getItem('animations') !== 'false';
 
       el.compactToggle?.classList.toggle('on', settings.compact);
       el.enterSendToggle?.classList.toggle('on', settings.enterToSend);
@@ -4848,8 +5260,8 @@ EXAMPLES:
       el.autoScrollToggle?.classList.toggle('on', settings.autoScroll);
       el.responseLengthSelect && (el.responseLengthSelect.value = String(settings.responseLength));
       el.responseLengthSelect?.addEventListener('change', e => setResponseLength(e.target.value));
-      el.languageSelect?.addEventListener('change', e => { settings.language=e.target.value; localStorage.setItem(memoryKey('language'),settings.language); });
-      el.modelSelect?.addEventListener('change', e => { settings.model=e.target.value; localStorage.setItem(memoryKey('model'),settings.model); });
+      el.languageSelect?.addEventListener('change', e => { settings.language=e.target.value; localStorage.setItem(memoryKey('language'),settings.language); localStorage.setItem('language', settings.language); });
+      el.modelSelect?.addEventListener('change', e => { settings.model=e.target.value; localStorage.setItem(memoryKey('model'),settings.model); localStorage.setItem('model', settings.model); aiStatus.model = settings.model; renderAiStatus(); });
       el.memoryEditor?.addEventListener('input', updateMemoryCount);
 
       el.fontSizeRange && (el.fontSizeRange.value = String(settings.chatFontSize));
@@ -4863,6 +5275,11 @@ EXAMPLES:
       document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; closeSettings(); closeMemoryEditor(); closeImageModal(); if (el.authModal) el.authModal.style.display = 'none'; if (el.sidebar?.classList.contains('open')) toggleSidebar(); });
 
       attachEnterToSendHandler();
+
+      // Probe the AI backend so the header chip can say "AI Online · <model>"
+      // before the user sends anything. Non-blocking on purpose.
+      renderAiStatus();
+      checkAiHealth();
 
       // Image modal options are populated from the shared constants, so the
       // UI can never drift from what the generator actually supports.
@@ -4973,10 +5390,24 @@ EXAMPLES:
     window.autoResize = autoResize;
     window.insertPdfPrompt = insertPdfPrompt;
     window.openPdfHistory = async () => {
+      pdfHistoryExpanded = true;
       await loadPdfHistory();
       renderPdfHistory();
     };
     window.downloadBackedUpPdf = downloadBackedUpPdf;
+    window.renamePdfBackup = renamePdfBackup;
+    window.renderPdfHistory = renderPdfHistory;
+    window.showAiPayloadPreview = showAiPayloadPreview;
+    window.checkAiHealth = checkAiHealth;
+
+    // Read-only introspection hook: used by the automated harness in
+    // .harness/app-test.mjs and handy for console debugging on the live site.
+    window.__appDebug = () => ({
+      userSessions, currentSessionId, currentUserId, currentUser,
+      settings, aiStatus, memorySummary, customSystemPrompt,
+      lastFailedRequest, sendInFlight,
+      describeAiFailure, fitMessagesToContextBudget, buildSystemPromptForRequest
+    });
   </script>
 </body>
   </html>

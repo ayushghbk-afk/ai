@@ -1,0 +1,5 @@
+{
+  "name": "groq-proxy-worker",
+  "private": true,
+  "type": "module"
+}

@@ -1,0 +1,16 @@
+name = "groq-proxy"
+main = "index.js"
+compatibility_date = "2026-08-01"
+
+# Secrets (never commit these):
+#   wrangler secret put GROQ_API_KEYS     -> "gsk_aaa,gsk_bbb,gsk_ccc,gsk_ddd"
+#
+# Optional overrides (defaults live in index.js):
+# [vars]
+# ALLOWED_ORIGINS = "https://ayushghbk-afk.github.io"
+# MAX_REQUESTS_PER_WINDOW = "12"
+# RATE_WINDOW_MS = "60000"
+# MAX_BURST = "4"
+# BURST_WINDOW_MS = "10000"
+# MAX_BODY_BYTES = "262144"
+# DEBUG_ERRORS = "false"
