@@ -894,6 +894,43 @@
       .settings-row .sub{font-size:.78rem;}
       .settings-row .label{font-size:.9rem;}
     }
+
+    /* ===== Image generator (v2): loading, retry, lightbox ===== */
+    .img-frame{position:relative;width:100%;overflow:hidden;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);min-height:120px;}
+    html[data-theme="light"] .img-frame{background:rgba(16,24,40,.04);}
+    .img-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transform:scale(1.03);transition:opacity .45s ease, transform .45s ease;cursor:zoom-in;}
+    .img-frame img.loaded{opacity:1;transform:scale(1);}
+    .img-frame img.loaded:hover{filter:saturate(1.08) contrast(1.02);}
+    .img-skeleton{position:absolute;inset:0;background:linear-gradient(100deg, rgba(255,255,255,.045) 30%, rgba(124,92,255,.18) 50%, rgba(255,255,255,.045) 70%);background-size:200% 100%;animation:shimmer 1.5s linear infinite;}
+    @keyframes shimmer{to{background-position:-200% 0;}}
+    .img-status{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(8,12,22,.78);border:1px solid rgba(255,255,255,.14);color:#fff;padding:5px 10px;border-radius:999px;font-size:.72rem;font-weight:800;white-space:nowrap;backdrop-filter:blur(6px);pointer-events:none;max-width:92%;overflow:hidden;text-overflow:ellipsis;}
+    .img-status .spin{flex-shrink:0;width:11px;height:11px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:var(--accent-3);animation:spin 0.9s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .img-error{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;background:rgba(8,12,22,.93);padding:12px;text-align:center;}
+    html[data-theme="light"] .img-error{background:rgba(240,243,255,.95);}
+    .img-error .msg{color:var(--text-sub);font-size:.78rem;font-weight:800;max-width:92%;}
+    .img-retry{border:0;border-radius:10px;padding:8px 15px;background:linear-gradient(135deg, var(--accent), var(--accent-2));color:#fff;font-weight:900;cursor:pointer;font-size:.82rem;box-shadow:0 10px 24px rgba(124,92,255,.25);}
+    .img-retry:hover{filter:saturate(1.1) brightness(1.05);}
+    .img-card-caption{font-size:.74rem;color:var(--text-sub);font-weight:700;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+    .img-chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:2px;}
+    .img-chip{font-size:.66rem;font-weight:900;color:var(--text-main);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.10);padding:3px 7px;border-radius:999px;white-space:nowrap;}
+    html[data-theme="light"] .img-chip{background:rgba(16,24,40,.04);border-color:rgba(16,24,40,.08);}
+    .img-card-actions{display:flex;gap:8px;}
+    .img-card-actions .dl-img-btn{flex:1;}
+    .img-progress{margin-top:10px;display:flex;align-items:center;gap:10px;color:var(--text-sub);font-size:.8rem;font-weight:800;}
+    .img-progress .bar{width:160px;max-width:40vw;height:5px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;}
+    .img-progress .bar > span{display:block;height:100%;width:0%;background:linear-gradient(90deg, var(--accent-3), var(--accent));border-radius:999px;transition:width .35s ease;}
+    #lightbox-overlay{position:fixed;inset:0;z-index:1300;background:rgba(4,8,18,.93);backdrop-filter:blur(10px);display:none;align-items:center;justify-content:center;flex-direction:column;padding:16px;gap:12px;}
+    #lightbox-overlay.open{display:flex;}
+    #lightbox-overlay img{max-width:94vw;max-height:78vh;border-radius:14px;border:1px solid rgba(255,255,255,.16);box-shadow:0 30px 80px rgba(0,0,0,.5);object-fit:contain;}
+    .lightbox-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;max-width:94vw;}
+    .lightbox-caption{color:#a9b4d0;font-weight:800;font-size:.85rem;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .lightbox-btn{border:1px solid rgba(255,255,255,.14);border-radius:11px;padding:9px 13px;background:rgba(255,255,255,.10);color:#fff;font-weight:900;cursor:pointer;font-size:.85rem;}
+    .lightbox-btn:hover{background:rgba(255,255,255,.18);}
+    .lightbox-btn.primary{background:linear-gradient(135deg, var(--accent), var(--accent-2));border:none;}
+    .lightbox-btn.primary:hover{filter:saturate(1.1) brightness(1.05);}
+    .lightbox-close{position:absolute;top:14px;right:14px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);color:#fff;font-size:1.1rem;font-weight:900;cursor:pointer;}
+    .lightbox-close:hover{background:rgba(255,255,255,.18);}
   </style>
 </head>
 <body>
@@ -1053,6 +1090,8 @@
           <option value="1024x1024">Square (1:1)</option>
           <option value="1280x720">Landscape (16:9)</option>
           <option value="720x1280">Portrait (9:16)</option>
+          <option value="1536x1024">Landscape (3:2)</option>
+          <option value="1024x1536">Portrait (2:3)</option>
         </select>
       </div>
 
@@ -1064,6 +1103,10 @@
           <option value="digital-art">🎨 Digital Art</option>
           <option value="anime">⛩️ Anime / Manga</option>
           <option value="3d-render">💎 3D Render</option>
+          <option value="illustration">🖌️ Illustration</option>
+          <option value="watercolor">💧 Watercolor</option>
+          <option value="pixel-art">🕹️ Pixel Art</option>
+          <option value="none">✨ No Style (raw prompt)</option>
         </select>
       </div>
 
@@ -1166,6 +1209,8 @@ IMAGE:
 - When the user asks for an image, use generate_image.
 - If the user asks for multiple images, set count accordingly.
 - Maximum 4 images per generate_image call.
+- dimensions: 1024x1024 (square, default), 1280x720 or 1536x1024 (landscape), 720x1280 or 1024x1536 (portrait). Match the user's requested shape.
+- style: photorealistic (default), cinematic, digital-art, anime, 3d-render, illustration, watercolor, pixel-art, or none when the user wants no style added.
 - Use detailed prompts.
 - Do not merely describe an image when the user asks to generate one.
 
@@ -1239,11 +1284,69 @@ EXAMPLES:
         }
       }
     };
+    // ---- Image generator: single source of truth for ratios & styles ----
+    // The modal, the /image command and the AI tool path all go through these
+    // constants + normalizers, so a user choice is never silently discarded.
+    const IMAGE_DIMENSIONS = {
+      "1024x1024": { label: "Square (1:1)", w: 1024, h: 1024 },
+      "1280x720": { label: "Landscape (16:9)", w: 1280, h: 720 },
+      "720x1280": { label: "Portrait (9:16)", w: 720, h: 1280 },
+      "1536x1024": { label: "Landscape (3:2)", w: 1536, h: 1024 },
+      "1024x1536": { label: "Portrait (2:3)", w: 1024, h: 1536 }
+    };
+    const IMAGE_STYLES = {
+      "photorealistic": { label: "📸 Ultra Realistic Photography", suffix: "highly detailed photograph, shot on DSLR with 50mm lens, natural sharp lighting, fine texture, ultra-realistic, 8k resolution, award-winning photography" },
+      "cinematic": { label: "🎬 Cinematic Movie Shot", suffix: "cinematic film still, dramatic lighting, anamorphic 35mm lens, atmospheric depth of field, professional color grading, movie scene" },
+      "digital-art": { label: "🎨 Digital Art", suffix: "epic digital artwork, detailed concept art, vibrant colors, intricate details, trending on ArtStation, high definition" },
+      "anime": { label: "⛩️ Anime / Manga", suffix: "anime style, clean lineart, cel shading, expressive characters, detailed anime background, studio quality, high quality anime illustration" },
+      "3d-render": { label: "💎 3D Render", suffix: "3D render, octane render, physically based rendering, soft global illumination, smooth shading, high detail, studio quality" },
+      "illustration": { label: "🖌️ Illustration", suffix: "beautiful detailed illustration, painterly style, soft colors, artistic, high quality" },
+      "watercolor": { label: "💧 Watercolor", suffix: "delicate watercolor painting, soft color washes, textured paper, gentle blending, artistic hand-painted look" },
+      "pixel-art": { label: "🕹️ Pixel Art", suffix: "pixel art, 16-bit retro game style, crisp pixels, limited color palette, detailed sprite art" },
+      "none": { label: "✨ No Style (raw prompt)", suffix: "" }
+    };
+    const IMAGE_STYLE_SYNONYMS = {
+      "digital art": "digital-art", "digitalart": "digital-art", "concept art": "digital-art",
+      "3d render": "3d-render", "3d": "3d-render", "render": "3d-render", "cgi": "3d-render",
+      "photo": "photorealistic", "photoreal": "photorealistic", "realistic": "photorealistic",
+      "movie": "cinematic", "film": "cinematic",
+      "manga": "anime", "japanese anime": "anime",
+      "sketch": "illustration", "drawing": "illustration", "painting": "illustration",
+      "aquarelle": "watercolor",
+      "pixel": "pixel-art", "retro": "pixel-art", "8-bit": "pixel-art", "16-bit": "pixel-art",
+      "raw": "none", "plain": "none"
+    };
+
+    function normalizeImageDimensions(value) {
+      const v = String(value || "").toLowerCase().replace(/[^0-9x]/g, "");
+      return Object.prototype.hasOwnProperty.call(IMAGE_DIMENSIONS, v) ? v : "1024x1024";
+    }
+
+    function normalizeImageStyle(value) {
+      let s = String(value || "").toLowerCase().trim();
+      if (IMAGE_STYLE_SYNONYMS[s]) s = IMAGE_STYLE_SYNONYMS[s];
+      if (!Object.prototype.hasOwnProperty.call(IMAGE_STYLES, s)) s = "photorealistic";
+      return s;
+    }
+
+    function enhanceImagePrompt(prompt, style) {
+      const info = IMAGE_STYLES[normalizeImageStyle(style)];
+      const base = String(prompt || "").trim();
+      return info && info.suffix ? `${base}, ${info.suffix}` : base;
+    }
+
+    function randomImageSeed() { return Math.floor(Math.random() * 9000000) + 1000000; }
+
+    function buildPollinationsUrl(prompt, dimensions, seed) {
+      const dim = IMAGE_DIMENSIONS[normalizeImageDimensions(dimensions)];
+      return `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=${dim.w}&height=${dim.h}&seed=${seed}&nologo=true&enhance=true&model=flux`;
+    }
+
     const IMAGE_TOOL = {
       type: "function",
       function: {
         name: "generate_image",
-        description: "Generate an image when the user asks for an image, picture, artwork, illustration, thumbnail, wallpaper, character, scene, portrait, or other visual. Use this tool instead of merely describing the image. Do not use it for ordinary conversation.",
+        description: "Generate an image when the user asks for an image, picture, artwork, illustration, thumbnail, wallpaper, character, scene, portrait, or other visual. Use this tool instead of merely describing the image. Do not use it for ordinary conversation. Match dimensions to the requested shape (portrait vs landscape) and set style to the requested art style.",
         parameters: {
           type: "object",
           properties: {
@@ -1259,13 +1362,13 @@ EXAMPLES:
             },
             dimensions: {
               type: "string",
-              enum: ["1024x1024", "1024x1536", "1536x1024"],
-              description: "Image dimensions. Use 1024x1024 unless the user requests portrait or landscape."
+              enum: Object.keys(IMAGE_DIMENSIONS),
+              description: "Image dimensions. 1024x1024 square (default), 1280x720 or 1536x1024 for landscape, 720x1280 or 1024x1536 for portrait. Match the user's requested shape."
             },
             style: {
               type: "string",
-              enum: ["photorealistic", "cinematic", "anime", "digital art", "illustration", "none"],
-              description: "Visual style. Use photorealistic by default unless another style is requested."
+              enum: Object.keys(IMAGE_STYLES),
+              description: "Visual style. Use photorealistic by default unless the user asks for another style."
             }
           },
           required: ["prompt"],
@@ -1307,33 +1410,134 @@ EXAMPLES:
     function sanitizePdfFilename(filename) {
       let safe = String(filename || 'document.pdf')
         .replace(/[<>:"/\\|?*\x00-\x1F]/g, '_')
+        // Drop non-ASCII (emoji, CJK, ...) so the name stays clean across
+        // Supabase storage paths and every OS.
+        .replace(/[^\x20-\x7E]/g, '')
         .replace(/\s+/g, '_')
         .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '')
         .trim();
       if (!safe) safe = 'document.pdf';
       if (!safe.toLowerCase().endsWith('.pdf')) safe += '.pdf';
       return safe.slice(0, 120);
     }
 
+    // jsPDF's built-in fonts only cover WinAnsi (Latin-1). Models love emojis
+    // and unicode punctuation, so map them to safe equivalents instead of
+    // letting them render as missing/garbage glyphs inside the PDF.
+    function toPdfSafeLine(line) {
+      let s = String(line || '');
+      s = s.replace(/\t/g, '  ');
+      s = s.replace(/[\u200B\u200C\u200D\uFEFF\u2060]/g, '');
+      s = s.replace(/[\u2018\u2019\u02BC]/g, "'");
+      s = s.replace(/[\u201C\u201E]/g, '"').replace(/[\u201D\u201F]/g, '"');
+      s = s.replace(/\u2013/g, '-').replace(/\u2014/g, '--').replace(/\u2212/g, '-');
+      s = s.replace(/\u2026/g, '...');
+      s = s.replace(/\u00AB/g, '"').replace(/\u00BB/g, '"');
+      s = s.replace(/\u2190/g, '<-').replace(/\u2192/g, '->').replace(/\u2194/g, '<->');
+      s = s.replace(/\u2264/g, '<=').replace(/\u2265/g, '>=').replace(/\u2260/g, '!=');
+      s = s.replace(/\u00D7/g, 'x').replace(/\u00F7/g, '/');
+      s = s.replace(/\u20AC/g, 'EUR ');
+      s = s.replace(/\u2122/g, '(TM)');
+      s = s.replace(/\u00A9/g, '(C)').replace(/\u00AE/g, '(R)');
+      s = s.replace(/[\u2713\u2714]/g, '[ok]').replace(/[\u2717\u2718]/g, '[x]');
+      s = s.replace(/\u2020/g, '+').replace(/\u2021/g, '++');
+      // Drop everything outside printable ASCII + Latin-1 (emoji, CJK, ...).
+      s = s.replace(/[^\x20-\x7E\u00A0-\u00FF]/g, '');
+      return s;
+    }
+
     function sanitizePdfText(value) {
       return String(value || '')
         .replace(/\r\n/g, '\n')
         .replace(/\r/g, '\n')
+        .split('\n')
+        .map(toPdfSafeLine)
+        .join('\n')
         .replace(/\u0000/g, '');
     }
 
-    async function downloadImageAsDataURL(url) {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Image download failed: HTTP ${response.status}`);
+    // Pre-parse content into structured blocks BEFORE rendering. The old
+    // version used for...of while calling shift() on the same array, which
+    // desynced the iterator and silently dropped lines after code fences
+    // (and an unclosed fence swallowed the rest of the document).
+    function parsePdfBlocks(content) {
+      const lines = String(content || '').split(/\n/);
+      const blocks = [];
+      const isBlockStart = (l) => /^(#{1,6}\s|>\s?|```|[-*]\s+\S|\d+[.)]\s+\S)/.test(l);
+      let i = 0;
+      while (i < lines.length) {
+        const line = lines[i].trim();
+        if (!line) { i++; continue; }
+
+        const fence = line.match(/^```(\w*)/);
+        if (fence) {
+          const lang = (fence[1] || '').trim();
+          i++;
+          const code = [];
+          while (i < lines.length && !lines[i].trim().startsWith('```')) { code.push(lines[i]); i++; }
+          i++; // skip the closing fence (or run past the end for unclosed fences)
+          blocks.push({ type: 'code', lang, text: code.join('\n') });
+          continue;
+        }
+
+        const heading = line.match(/^(#{1,6})\s+(.*)$/);
+        if (heading) { blocks.push({ type: 'heading', level: heading[1].length, text: heading[2].trim() }); i++; continue; }
+
+        if (line.startsWith('>')) {
+          let text = line.replace(/^>\s?/, '');
+          i++;
+          while (i < lines.length && lines[i].trim().startsWith('>')) {
+            text += '\n' + lines[i].trim().replace(/^>\s?/, '');
+            i++;
+          }
+          blocks.push({ type: 'callout', text });
+          continue;
+        }
+
+        const bullet = line.match(/^[-*]\s+(.*)$/);
+        if (bullet) { blocks.push({ type: 'bullet', text: bullet[1] }); i++; continue; }
+
+        const numbered = line.match(/^(\d+)[.)]\s+(.*)$/);
+        if (numbered) { blocks.push({ type: 'numbered', num: Number(numbered[1]), text: numbered[2] }); i++; continue; }
+
+        let para = line;
+        i++;
+        while (i < lines.length) {
+          const next = lines[i].trim();
+          if (!next || isBlockStart(next)) break;
+          para += ' ' + next;
+          i++;
+        }
+        blocks.push({ type: 'paragraph', text: para });
       }
-      const blob = await response.blob();
-      return await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(new Error("Could not convert image to data URL"));
-        reader.readAsDataURL(blob);
-      });
+      return blocks;
+    }
+
+    async function downloadImageAsDataURL(url, timeoutMs = 120000) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Image download failed: HTTP ${response.status}`);
+        }
+        const blob = await response.blob();
+        if (!blob || !String(blob.type || '').startsWith('image/')) {
+          throw new Error('Downloaded file is not an image');
+        }
+        return await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = () => reject(new Error("Could not convert image to data URL"));
+          reader.readAsDataURL(blob);
+        });
+      } catch (err) {
+        if (err && err.name === 'AbortError') throw new Error('Image download timed out');
+        throw err;
+      } finally {
+        clearTimeout(timer);
+      }
     }
 
     function getPdfImageFormat(dataUrl) {
@@ -1410,15 +1614,55 @@ EXAMPLES:
         for (const line of lines) { pdf.text(line, margin + 8, y + 2); y += 5; }
         y += 6;
       }
+      function addCodeBlock(text, lang) {
+        const codeLines = pdf.splitTextToSize(text || '', contentWidth - 12);
+        if (!codeLines.length) return;
+        const lineH = 5;
+        let idx = 0;
+        while (idx < codeLines.length) {
+          // How many wrapped lines fit on the CURRENT page? Draw the box in
+          // per-page segments so long code blocks never spill off the page.
+          let n = 0;
+          let probe = y;
+          while (idx + n < codeLines.length && probe <= bottom) { n++; probe += lineH; }
+          if (n === 0) { newPage(); continue; }
+          const boxTop = y - 3.2;
+          const boxBottom = y + (n - 1) * lineH + 2.2;
+          pdf.setFillColor(244, 245, 248);
+          pdf.setDrawColor(220, 222, 230);
+          pdf.roundedRect(margin, boxTop, contentWidth, boxBottom - boxTop, 2, 2, 'FD');
+          if (lang && idx === 0) {
+            pdf.setTextColor(...muted);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(7);
+            pdf.text(lang.toUpperCase(), pageWidth - margin - 6, y - 0.5, { align: 'right' });
+          }
+          pdf.setTextColor(...ink);
+          pdf.setFont('courier', 'normal');
+          pdf.setFontSize(8.5);
+          for (let k = 0; k < n; k++) pdf.text(codeLines[idx + k], margin + 6, y + k * lineH);
+          y = boxBottom + 6;
+          idx += n;
+          if (idx < codeLines.length) newPage();
+        }
+      }
 
-      // Cover / title block. Keep it compact so content starts on page 1.
+      // Cover / title block. Font auto-shrinks so long titles never overlap
+      // the subtitle or spill out of the cover card.
       pdf.setFillColor(...accent);
       pdf.roundedRect(margin, 15, contentWidth, 34, 5, 5, 'F');
       pdf.setTextColor(255, 255, 255);
       pdf.setFont('helvetica', 'bold');
-      pdf.setFontSize(21);
-      const titleLines = pdf.splitTextToSize(safeTitle, contentWidth - 18).slice(0, 3);
-      pdf.text(titleLines, margin + 9, 29);
+      let titleSize = safeTitle.length > 110 ? 15 : safeTitle.length > 60 ? 17.5 : 21;
+      pdf.setFontSize(titleSize);
+      let titleLines = pdf.splitTextToSize(safeTitle, contentWidth - 18);
+      if (titleLines.length > 2) {
+        titleSize = Math.max(13, titleSize - 3);
+        pdf.setFontSize(titleSize);
+        titleLines = pdf.splitTextToSize(safeTitle, contentWidth - 18);
+      }
+      titleLines = titleLines.slice(0, 2);
+      pdf.text(titleLines, margin + 9, titleLines.length > 1 ? 27.5 : 32);
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(8.5);
       pdf.text('YOUR FRIEND  •  AI-GENERATED DOCUMENT', margin + 9, 43);
@@ -1441,8 +1685,9 @@ EXAMPLES:
           const format = getPdfImageFormat(imageData);
           const img = await new Promise((resolve, reject) => {
             const element = new Image();
-            element.onload = () => resolve(element);
-            element.onerror = () => reject(new Error('Image could not be loaded'));
+            const timer = setTimeout(() => { element.src = ''; reject(new Error('Image load timed out')); }, 20000);
+            element.onload = () => { clearTimeout(timer); resolve(element); };
+            element.onerror = () => { clearTimeout(timer); reject(new Error('Image could not be loaded')); };
             element.src = imageData;
           });
           const maxWidth = contentWidth;
@@ -1459,62 +1704,43 @@ EXAMPLES:
         } catch (error) { console.warn('Could not embed PDF image:', error); }
       }
 
-      const blocks = safeContent.split(/\n/);
-      let listNumber = 0;
-      for (let raw of blocks) {
-        const line = raw.trim();
-        if (!line) { y += 3; continue; }
-
-        if (line.startsWith('### ')) {
-          ensure(18); sectionRule();
-          pdf.setTextColor(...ink); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13);
-          writeWrapped(line.slice(4), margin, contentWidth, 6.5); y += 2; continue;
-        }
-        if (line.startsWith('## ')) {
-          ensure(20); sectionRule();
-          pdf.setTextColor(...ink); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15);
-          writeWrapped(line.slice(3), margin, contentWidth, 7); y += 2; continue;
-        }
-        if (line.startsWith('# ')) {
-          ensure(22); sectionRule();
-          pdf.setTextColor(...accent); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(17);
-          writeWrapped(line.slice(2), margin, contentWidth, 8); y += 3; continue;
-        }
-        if (line.startsWith('>')) { addCallout(line); continue; }
-        if (line === '```' || line.startsWith('```')) {
-          const codeLines = [];
-          let foundEnd = false;
-          while (blocks.length > 0) {
-            const next = blocks.shift();
-            if (next.trim() === '```') { foundEnd = true; break; }
-            codeLines.push(next);
+      // Render the pre-parsed blocks (the old for...of + shift() version
+      // silently dropped lines that came after code fences).
+      const blocks = parsePdfBlocks(safeContent);
+      for (const block of blocks) {
+        if (block.type === 'heading') {
+          const level = Math.min(Math.max(block.level, 1), 3);
+          if (level === 3) {
+            ensure(18); sectionRule();
+            pdf.setTextColor(...ink); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(13);
+            writeWrapped(block.text, margin, contentWidth, 6.5); y += 2;
+          } else if (level === 2) {
+            ensure(20); sectionRule();
+            pdf.setTextColor(...ink); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(15);
+            writeWrapped(block.text, margin, contentWidth, 7); y += 2;
+          } else {
+            ensure(22); sectionRule();
+            pdf.setTextColor(...accent); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(17);
+            writeWrapped(block.text, margin, contentWidth, 8); y += 3;
           }
-          const codeText = codeLines.join('\n');
-          const wrapped = pdf.splitTextToSize(codeText, contentWidth - 12);
-          const h = Math.max(14, wrapped.length * 5 + 8);
-          ensure(h + 4);
-          pdf.setFillColor(244, 245, 248); pdf.setDrawColor(220, 222, 230); pdf.roundedRect(margin, y - 3, contentWidth, h, 2, 2, 'FD');
-          pdf.setTextColor(...ink); pdf.setFont('courier', 'normal'); pdf.setFontSize(8.5);
-          for (const codeLine of wrapped) { pdf.text(codeLine, margin + 6, y + 2); y += 5; }
-          y += 6; continue;
+          continue;
         }
-        const bullet = line.match(/^[-*]\s+(.+)/);
-        if (bullet) {
+        if (block.type === 'callout') { addCallout(block.text); continue; }
+        if (block.type === 'code') { addCodeBlock(block.text, block.lang); continue; }
+        if (block.type === 'bullet') {
           ensure(7); pdf.setFillColor(...accent2); pdf.circle(margin + 2, y - 1.5, 1, 'F');
           pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5);
-          writeWrapped(bullet[1], margin + 7, contentWidth - 7, 5.8); y += 1; continue;
+          writeWrapped(block.text, margin + 7, contentWidth - 7, 5.8); y += 1; continue;
         }
-        const numbered = line.match(/^(\d+)[.)]\s+(.+)/);
-        if (numbered) {
-          ensure(7); listNumber = Number(numbered[1]);
+        if (block.type === 'numbered') {
+          ensure(7);
           pdf.setTextColor(...accent); pdf.setFont('helvetica', 'bold'); pdf.setFontSize(10.5);
-          pdf.text(`${listNumber}.`, margin, y);
+          pdf.text(`${block.num}.`, margin, y);
           pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal');
-          writeWrapped(numbered[2], margin + 8, contentWidth - 8, 5.8); y += 1; continue;
+          writeWrapped(block.text, margin + 8, contentWidth - 8, 5.8); y += 1; continue;
         }
-
-        // Lightweight emphasis without a heavy markdown parser.
-        const cleaned = line.replace(/\*\*/g, '').replace(/__/g, '');
+        // paragraph — lightweight emphasis without a heavy markdown parser.
+        const cleaned = block.text.replace(/\*\*/g, '').replace(/__/g, '');
         pdf.setTextColor(...ink); pdf.setFont('helvetica', 'normal'); pdf.setFontSize(10.5);
         writeWrapped(cleaned, margin, contentWidth, 5.8);
         y += 2;
@@ -1578,7 +1804,9 @@ EXAMPLES:
         document.createElement('div');
 
       status.textContent =
-        '☁️ Secure backup saved';
+        pdfResult.backupOk
+          ? '☁️ Secure backup saved'
+          : '⚠️ Cloud backup unavailable — Download still works';
 
       status.style.cssText = `
         font-size:.82rem;
@@ -1610,9 +1838,31 @@ EXAMPLES:
       `;
 
       button.onclick = async () => {
+        // Prefer the in-memory blob: instant, offline, and independent of
+        // whether the cloud backup succeeded.
+        if (pdfResult.blob) {
+          try {
+            downloadPdfBlob(pdfResult.blob, pdfResult.filename);
+            button.disabled = true;
+            button.textContent = '✅ Downloaded';
+            setTimeout(() => {
+              button.textContent = '⬇️ Download PDF';
+              button.disabled = false;
+            }, 1500);
+            return;
+          } catch (blobErr) {
+            console.warn('Blob download failed, falling back to backup:', blobErr);
+          }
+        }
+        if (!pdfResult.storagePath) {
+          button.textContent = '❌ No copy available';
+          setTimeout(() => { button.textContent = '⬇️ Download PDF'; }, 1800);
+          return;
+        }
+
+        // Fallback: signed URL from Supabase Storage.
         button.disabled = true;
-        button.textContent =
-          '⏳ Preparing...';
+        button.textContent = '⏳ Preparing...';
 
         try {
           const { data, error } =
@@ -1669,9 +1919,9 @@ EXAMPLES:
         const preview = document.createElement('iframe');
         preview.className = 'pdf-preview';
         preview.title = pdfResult.title || 'PDF preview';
-        const previewUrl = URL.createObjectURL(pdfResult.blob);
-        preview.src = previewUrl;
-        preview.onload = () => setTimeout(() => URL.revokeObjectURL(previewUrl), 60000);
+        // Keep the blob URL alive for the page lifetime: the PDF viewer loads
+        // pages lazily, so revoking it would blank the preview after a minute.
+        preview.src = URL.createObjectURL(pdfResult.blob);
         card.appendChild(preview);
       }
       const actions = document.createElement('div');
@@ -1690,109 +1940,113 @@ EXAMPLES:
     }
 
     async function executePdfTool(toolArgs, aiTextNode) {
-      if (!currentUserId) {
-        throw new Error('You must be logged in to save PDFs.');
-      }
-
       const pdfResult =
         await createPdfDocument(toolArgs);
 
-      // Every generated PDF gets a unique storage path.
-      // This prevents the pdf_files_storage_path_key duplicate error.
-      const uniqueId =
-        (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function')
-          ? globalThis.crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-
-      const safeFilename =
-        String(pdfResult.filename || 'document.pdf')
-          .replace(/[\\/:*?"<>|#%]+/g, '_')
-          .replace(/\s+/g, '_');
-
-      const storagePath =
-        `${currentUserId}/${Date.now()}-${uniqueId}-${safeFilename}`;
-
-      console.log(
-        'Uploading PDF backup:',
-        storagePath
-      );
-
       // ------------------------------------------------------------
-      // UPLOAD PDF TO SUPABASE STORAGE
+      // BACKUP TO SUPABASE (best effort). The PDF itself is always
+      // handed to the user via the local blob, so a storage or
+      // database failure must not fail the whole tool.
       // ------------------------------------------------------------
 
-      const { error: uploadError } =
-        await supabaseClient.storage
-          .from('pdfs')
-          .upload(
-            storagePath,
-            pdfResult.blob,
-            {
-              contentType: 'application/pdf',
-              upsert: false,
-              cacheControl: '3600'
-            }
-          );
+      let storagePath = null;
+      let savedPdf = null;
 
-      if (uploadError) {
-        console.error(
-          'PDF Storage upload error:',
-          uploadError
+      if (currentUserId) {
+        // Every generated PDF gets a unique storage path.
+        // This prevents the pdf_files_storage_path_key duplicate error.
+        const uniqueId =
+          (globalThis.crypto && typeof globalThis.crypto.randomUUID === 'function')
+            ? globalThis.crypto.randomUUID()
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+        const safeFilename =
+          String(pdfResult.filename || 'document.pdf')
+            .replace(/[\\/:*?"<>|#%]+/g, '_')
+            .replace(/\s+/g, '_');
+
+        storagePath =
+          `${currentUserId}/${Date.now()}-${uniqueId}-${safeFilename}`;
+
+        console.log(
+          'Uploading PDF backup:',
+          storagePath
         );
 
-        throw new Error(
-          'PDF was created, but backup upload failed: ' +
-          getErrorMessage(uploadError)
-        );
-      }
-
-      // ------------------------------------------------------------
-      // SAVE PDF METADATA
-      // ------------------------------------------------------------
-
-      const { data: savedPdf, error: dbError } =
-        await supabaseClient
-          .from('pdf_files')
-          .insert({
-            user_id: currentUserId,
-            title: pdfResult.title,
-            filename: pdfResult.filename,
-            storage_path: storagePath,
-            file_size: pdfResult.blob.size,
-            mime_type: 'application/pdf'
-          })
-          .select()
-          .single();
-
-      if (dbError) {
-        console.error(
-          'PDF metadata error:',
-          dbError
-        );
-
-        // Remove the orphaned Storage file if metadata insertion fails.
         try {
-          await supabaseClient.storage
-            .from('pdfs')
-            .remove([storagePath]);
-        } catch (cleanupError) {
-          console.warn(
-            'PDF cleanup warning:',
-            cleanupError
-          );
-        }
+          const { error: uploadError } =
+            await supabaseClient.storage
+              .from('pdfs')
+              .upload(
+                storagePath,
+                pdfResult.blob,
+                {
+                  contentType: 'application/pdf',
+                  upsert: false,
+                  cacheControl: '3600'
+                }
+              );
 
-        throw new Error(
-          'PDF backup metadata could not be saved: ' +
-          getErrorMessage(dbError)
-        );
+          if (uploadError) {
+            console.warn(
+              'PDF backup upload failed (PDF still available locally):',
+              getErrorMessage(uploadError)
+            );
+            storagePath = null;
+          } else {
+            const { data, error: dbError } =
+              await supabaseClient
+                .from('pdf_files')
+                .insert({
+                  user_id: currentUserId,
+                  title: pdfResult.title,
+                  filename: pdfResult.filename,
+                  storage_path: storagePath,
+                  file_size: pdfResult.blob.size,
+                  mime_type: 'application/pdf'
+                })
+                .select()
+                .single();
+
+            if (dbError) {
+              console.warn(
+                'PDF backup metadata failed (removing orphan file):',
+                getErrorMessage(dbError)
+              );
+
+              // Remove the orphaned Storage file if metadata insertion fails.
+              try {
+                await supabaseClient.storage
+                  .from('pdfs')
+                  .remove([storagePath]);
+              } catch (cleanupError) {
+                console.warn(
+                  'PDF cleanup warning:',
+                  cleanupError
+                );
+              }
+
+              storagePath = null;
+            } else {
+              savedPdf = data;
+            }
+          }
+        } catch (backupErr) {
+          console.warn(
+            'PDF backup failed (PDF still available locally):',
+            getErrorMessage(backupErr)
+          );
+          storagePath = null;
+        }
       }
 
       // ------------------------------------------------------------
       // REFRESH PDF HISTORY
       // ------------------------------------------------------------
 
-      await loadPdfHistory();
+      if (storagePath) await loadPdfHistory();
+
+      const backupOk = Boolean(storagePath && savedPdf);
 
       // ------------------------------------------------------------
       // SHOW PDF CARD
@@ -1804,8 +2058,9 @@ EXAMPLES:
         const message =
           document.createElement('div');
 
-        message.textContent =
-          '📄 PDF created and backed up securely.';
+        message.textContent = backupOk
+          ? '📄 PDF created and backed up securely.'
+          : '📄 PDF created (cloud backup unavailable — use Download).';
 
         aiTextNode.appendChild(message);
 
@@ -1814,7 +2069,8 @@ EXAMPLES:
             ...pdfResult,
             blob: pdfResult.blob,
             storagePath,
-            backupId: savedPdf.id
+            backupId: savedPdf ? savedPdf.id : null,
+            backupOk
           })
         );
       }
@@ -1827,9 +2083,10 @@ EXAMPLES:
         filename: pdfResult.filename,
         title: pdfResult.title,
         storagePath,
-        backupId: savedPdf.id,
-        message:
-          'PDF created and securely backed up.'
+        backupId: savedPdf ? savedPdf.id : null,
+        message: backupOk
+          ? 'PDF created and securely backed up.'
+          : 'PDF created (cloud backup unavailable).'
       };
     }
 
@@ -2562,16 +2819,13 @@ EXAMPLES:
         typing.innerHTML = '<span></span><span></span><span></span>';
         textDiv.appendChild(typing);
       } else if (text && text.startsWith('IMAGE_GRID:')) {
-        const rawJson = text.replace('IMAGE_GRID:', '').trim();
-        try {
-          const payload = JSON.parse(rawJson);
-          textDiv.innerHTML = `<div>Generated ${payload.urls.length} Image(s) for "${payload.prompt}":</div>`;
-          const grid = document.createElement('div');
-          grid.className = 'image-grid';
-          payload.urls.forEach((url, idx) => grid.appendChild(buildImageCard(url, payload.prompt, idx)));
-          textDiv.appendChild(grid);
-        } catch {
-          textDiv.innerText = text;
+        const rawJson = text.slice('IMAGE_GRID:'.length).trim();
+        let payload = null;
+        try { payload = JSON.parse(rawJson); } catch { payload = null; }
+        if (!payload || typeof payload !== 'object' || !payload.prompt) {
+          textDiv.textContent = '🎨 An image was generated in this chat.';
+        } else {
+          textDiv.appendChild(buildImageGrid(payload, { live: false }));
         }
       } else {
         renderTextWithCodeBlocks(textDiv, text || '');
@@ -2584,24 +2838,256 @@ EXAMPLES:
       return row;
     }
 
-    function buildImageCard(url, prompt, idx) {
+    function buildImageCard(item, callbacks = {}) {
+      const prompt = String(item.prompt || 'Generated image');
+      const style = normalizeImageStyle(item.style || 'photorealistic');
+      const dimensions = normalizeImageDimensions(item.dimensions || '1024x1024');
+      const dim = IMAGE_DIMENSIONS[dimensions];
+      const index = Number(item.index || 0);
+      let currentUrl = item.url;
+      let attempt = 0;
+
       const card = document.createElement('div');
       card.className = 'image-card';
 
-      const img = document.createElement('img');
-      img.src = url;
-      img.className = 'chat-generated-img';
-      img.alt = prompt;
-      img.onclick = () => window.open(url, '_blank');
+      const frame = document.createElement('div');
+      frame.className = 'img-frame';
+      frame.style.aspectRatio = `${dim.w} / ${dim.h}`;
 
+      const skeleton = document.createElement('div');
+      skeleton.className = 'img-skeleton';
+
+      const status = document.createElement('div');
+      status.className = 'img-status';
+      const statusSpin = document.createElement('span');
+      statusSpin.className = 'spin';
+      const statusLabel = document.createElement('span');
+      statusLabel.textContent = 'Generating…';
+      status.appendChild(statusSpin);
+      status.appendChild(statusLabel);
+
+      const img = document.createElement('img');
+      img.alt = prompt;
+      img.referrerPolicy = 'no-referrer';
+      img.decoding = 'async';
+      img.onclick = () => { if (currentUrl) openImageLightbox(currentUrl, prompt); };
+
+      frame.appendChild(skeleton);
+      frame.appendChild(img);
+      frame.appendChild(status);
+
+      function setLoading() {
+        skeleton.style.display = 'block';
+        img.classList.remove('loaded');
+        const errorBox = frame.querySelector('.img-error');
+        if (errorBox) errorBox.remove();
+        status.style.display = 'flex';
+        statusLabel.textContent = attempt > 0 ? 'Retrying…' : 'Generating…';
+        if (callbacks.onState) callbacks.onState('loading');
+      }
+
+      function setLoaded() {
+        skeleton.style.display = 'none';
+        status.style.display = 'none';
+        img.classList.add('loaded');
+        if (callbacks.live) beep(920, 0.03);
+        if (callbacks.onState) callbacks.onState('loaded');
+      }
+
+      function setFailed() {
+        skeleton.style.display = 'none';
+        status.style.display = 'none';
+        const existing = frame.querySelector('.img-error');
+        if (existing) existing.remove();
+
+        const errorBox = document.createElement('div');
+        errorBox.className = 'img-error';
+        const msg = document.createElement('div');
+        msg.className = 'msg';
+        msg.textContent = 'This image failed to generate.';
+        const retryBtn = document.createElement('button');
+        retryBtn.className = 'img-retry';
+        retryBtn.type = 'button';
+        retryBtn.textContent = '↻ Retry';
+        retryBtn.onclick = () => {
+          attempt++;
+          const seed = randomImageSeed();
+          currentUrl = buildPollinationsUrl(enhanceImagePrompt(prompt, style), dimensions, seed);
+          img.src = currentUrl;
+          setLoading();
+        };
+        errorBox.appendChild(msg);
+        errorBox.appendChild(retryBtn);
+        frame.appendChild(errorBox);
+        if (callbacks.onState) callbacks.onState('failed');
+      }
+
+      img.onload = () => { if (img.src === currentUrl) setLoaded(); };
+      img.onerror = () => { if (img.src === currentUrl) setFailed(); };
+
+      const caption = document.createElement('div');
+      caption.className = 'img-card-caption';
+      caption.textContent = prompt;
+      caption.title = prompt;
+
+      const chips = document.createElement('div');
+      chips.className = 'img-chips';
+      const styleChip = document.createElement('span');
+      styleChip.className = 'img-chip';
+      styleChip.textContent = style === 'none' ? 'Raw prompt' : style;
+      const dimChip = document.createElement('span');
+      dimChip.className = 'img-chip';
+      dimChip.textContent = dim.label;
+      chips.appendChild(styleChip);
+      chips.appendChild(dimChip);
+
+      const actions = document.createElement('div');
+      actions.className = 'img-card-actions';
       const dlBtn = document.createElement('button');
       dlBtn.className = 'dl-img-btn';
-      dlBtn.innerHTML = '⬇️ Download Image';
-      dlBtn.onclick = (e) => { e.stopPropagation(); downloadIndividualImage(url, idx); };
+      dlBtn.textContent = '⬇️ Download Image';
+      dlBtn.onclick = (e) => { e.stopPropagation(); if (currentUrl) downloadIndividualImage(currentUrl, index, prompt); };
+      actions.appendChild(dlBtn);
 
-      card.appendChild(img);
-      card.appendChild(dlBtn);
+      card.appendChild(frame);
+      card.appendChild(caption);
+      card.appendChild(chips);
+      card.appendChild(actions);
+
+      currentUrl = item.url;
+      img.src = currentUrl;
+      setLoading();
+
       return card;
+    }
+
+    // Builds the "Generated N images for ..." header, optional live progress
+    // bar and the image grid. Works for live generations AND for re-rendering
+    // saved IMAGE_GRID: history payloads (v1 {prompt, urls} and v2
+    // {v:2, prompt, style, dimensions, images:[{url, seed}]}).
+    function buildImageGrid(payload, { live = false } = {}) {
+      const images = (Array.isArray(payload.images) && payload.images.length)
+        ? payload.images.map((im, i) => ({ url: im.url, seed: im.seed, index: i }))
+        : (Array.isArray(payload.urls) ? payload.urls.map((url, i) => ({ url, index: i })) : []);
+      const prompt = String(payload.prompt || 'Generated images');
+      const style = normalizeImageStyle(payload.style || 'photorealistic');
+      const dimensions = normalizeImageDimensions(payload.dimensions || '1024x1024');
+      const total = images.length;
+
+      const wrap = document.createElement('div');
+
+      const heading = document.createElement('div');
+      heading.style.marginTop = '4px';
+      heading.style.fontWeight = '850';
+      heading.textContent = `✨ Generated ${total} ${style === 'none' ? '' : style + ' '}image${total === 1 ? '' : 's'} for “${prompt}”`;
+      wrap.appendChild(heading);
+
+      let done = 0;
+      let failed = 0;
+      let progressLabel = null;
+      let progressFill = null;
+
+      if (live && total > 1) {
+        const progressRow = document.createElement('div');
+        progressRow.className = 'img-progress';
+        progressLabel = document.createElement('span');
+        progressLabel.textContent = `0/${total} images ready`;
+        const bar = document.createElement('span');
+        bar.className = 'bar';
+        progressFill = document.createElement('span');
+        bar.appendChild(progressFill);
+        progressRow.appendChild(progressLabel);
+        progressRow.appendChild(bar);
+        wrap.appendChild(progressRow);
+      }
+
+      const grid = document.createElement('div');
+      grid.className = 'image-grid';
+
+      images.forEach((im) => {
+        const card = buildImageCard({ ...im, prompt, style, dimensions }, {
+          live,
+          onState: (s) => {
+            if (!live) return;
+            if (s === 'loaded') done++;
+            else if (s === 'failed') failed++;
+            const finished = done + failed;
+            if (progressLabel) progressLabel.textContent = finished >= total ? 'All images finished' : `${finished}/${total} images ready`;
+            if (progressFill) progressFill.style.width = total ? Math.round((finished / total) * 100) + '%' : '100%';
+          }
+        });
+        grid.appendChild(card);
+      });
+
+      wrap.appendChild(grid);
+      return wrap;
+    }
+
+    function getLightbox() {
+      let overlay = document.getElementById('lightbox-overlay');
+      if (overlay) return overlay;
+
+      overlay = document.createElement('div');
+      overlay.id = 'lightbox-overlay';
+      overlay.setAttribute('role', 'dialog');
+      overlay.setAttribute('aria-modal', 'true');
+
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'lightbox-close';
+      closeBtn.type = 'button';
+      closeBtn.textContent = '✕';
+      closeBtn.setAttribute('aria-label', 'Close');
+
+      const img = document.createElement('img');
+      img.alt = '';
+
+      const bar = document.createElement('div');
+      bar.className = 'lightbox-bar';
+      const caption = document.createElement('div');
+      caption.className = 'lightbox-caption';
+      const dlBtn = document.createElement('button');
+      dlBtn.className = 'lightbox-btn primary';
+      dlBtn.type = 'button';
+      dlBtn.textContent = '⬇️ Download';
+      const openBtn = document.createElement('button');
+      openBtn.className = 'lightbox-btn';
+      openBtn.type = 'button';
+      openBtn.textContent = '↗ Open in new tab';
+
+      const keyFn = (e) => { if (e.key === 'Escape') closeLightbox(); };
+      function closeLightbox() {
+        overlay.classList.remove('open');
+        document.removeEventListener('keydown', keyFn);
+      }
+
+      closeBtn.onclick = closeLightbox;
+      overlay.onclick = (e) => { if (e.target === overlay) closeLightbox(); };
+      dlBtn.onclick = () => { if (img.src) downloadIndividualImage(img.src, 0, img.alt || 'image'); };
+      openBtn.onclick = () => { if (img.src) window.open(img.src, '_blank', 'noopener,noreferrer'); };
+
+      overlay.appendChild(closeBtn);
+      overlay.appendChild(img);
+      bar.appendChild(caption);
+      bar.appendChild(dlBtn);
+      bar.appendChild(openBtn);
+      overlay.appendChild(bar);
+      document.body.appendChild(overlay);
+
+      overlay._show = (src, captionText) => {
+        img.src = src;
+        img.alt = captionText || '';
+        caption.textContent = captionText || '';
+        caption.title = captionText || '';
+        overlay.classList.add('open');
+        document.addEventListener('keydown', keyFn);
+      };
+
+      return overlay;
+    }
+
+    function openImageLightbox(url, captionText) {
+      if (!url) return;
+      getLightbox()._show(url, captionText);
     }
 
     function autoResize(textarea) {
@@ -2609,14 +3095,22 @@ EXAMPLES:
       textarea.style.height = textarea.scrollHeight + 'px';
     }
 
-    async function downloadIndividualImage(url, index) {
+    async function downloadIndividualImage(url, index, prompt) {
       try {
-        const response = await fetch(url);
+        const response = await fetch(url, { referrerPolicy: 'no-referrer' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
         const blob = await response.blob();
+        const type = String(blob.type || 'image/jpeg').toLowerCase();
+        const ext = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
+        const slug = String(prompt || 'image')
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')
+          .slice(0, 40) || 'image';
         const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = blobUrl;
-        a.download = `generated-image-${index + 1}-${Date.now()}.jpg`;
+        a.download = `${slug}-${index + 1}.${ext}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2626,8 +3120,16 @@ EXAMPLES:
       }
     }
 
-    async function processImageGeneration(rawPrompt, count = 1, dimensions = "1024x1024", styleModifier = "photorealistic") {
-      const prompt = rawPrompt.trim();
+    // One pipeline for all image generation (modal, /image command, and the
+    // AI generate_image tool). Ratios/styles are normalized here, so a user
+    // choice can never be silently discarded.
+    async function processImageGeneration(rawPrompt, opts = {}) {
+      const prompt = String(rawPrompt || '').trim();
+      if (!prompt) return;
+      const count = Math.min(Math.max(Number(opts.count) || 1, 1), 4);
+      const dimensions = normalizeImageDimensions(opts.dimensions || '1024x1024');
+      const style = normalizeImageStyle(opts.style || 'photorealistic');
+
       const currentSession = userSessions[currentSessionId];
       if (!currentSession) return;
 
@@ -2650,31 +3152,23 @@ EXAMPLES:
       } catch (dbErr) { console.warn('DB save warning:', dbErr); }
       currentSession.messages.push({ role: 'user', content: `/image ${prompt}`, createdAtMs: Date.now() });
 
-      const aiRow = buildMessageRow('ai', '🎨 Generating...');
+      const aiRow = buildMessageRow('ai', '🎨 Generating…');
       const aiTextNode = aiRow.querySelector('.text');
       el.chatContainer.appendChild(aiRow);
 
-      let enhancedPrompt = prompt;
-      if (styleModifier === 'photorealistic') enhancedPrompt += ", highly detailed photograph, 8k resolution, raw photo, ultra-realistic DSLR shot, natural sharp lighting, fine texture, unedited portrait";
-      else if (styleModifier === 'cinematic') enhancedPrompt += ", cinematic film shot, IMAX 35mm lens, atmospheric depth, photo, realistic shot";
-      else if (styleModifier) enhancedPrompt += `, in ${styleModifier} style`;
-
-      const [width, height] = dimensions.split('x');
-      const imageUrls = Array.from({ length: count }, () => {
-        const seed = Math.floor(Math.random() * 9000000) + 1000000;
-        return `https://image.pollinations.ai/prompt/${encodeURIComponent(enhancedPrompt)}?width=${width}&height=${height}&seed=${seed}&nologo=true&enhance=true`;
+      const enhancedPrompt = enhanceImagePrompt(prompt, style);
+      const images = Array.from({ length: count }, () => {
+        const seed = randomImageSeed();
+        return { url: buildPollinationsUrl(enhancedPrompt, dimensions, seed), seed };
       });
 
-      const payloadObj = { prompt, urls: imageUrls };
+      // v2 payload keeps style/dimensions/seeds so history re-renders
+      // faithfully. (v1 payloads {prompt, urls} from older chats still work.)
+      const payloadObj = { v: 2, prompt, style, dimensions, images };
       const imagePayload = `IMAGE_GRID:${JSON.stringify(payloadObj)}`;
 
       aiTextNode.replaceChildren();
-      aiTextNode.innerHTML = `<div>Generated ${count} Realistic Image(s) for "${prompt}":</div>`;
-
-      const grid = document.createElement('div');
-      grid.className = 'image-grid';
-      imageUrls.forEach((url, idx) => grid.appendChild(buildImageCard(url, prompt, idx)));
-      aiTextNode.appendChild(grid);
+      aiTextNode.appendChild(buildImageGrid(payloadObj, { live: true }));
 
       try {
         await supabaseClient.from('chats').insert({
@@ -2702,7 +3196,7 @@ EXAMPLES:
       if (!prompt) return alert('Please enter an image prompt.');
       closeImageModal();
       el.imgPromptInput.value = '';
-      await processImageGeneration(prompt, count, ratio, style);
+      await processImageGeneration(prompt, { count, dimensions: ratio, style });
     }
 
     function memoryKey(suffix) { return `yf_${suffix}_${currentUserId || 'guest'}`; }
@@ -2811,7 +3305,7 @@ EXAMPLES:
       if (text.startsWith('/image')) {
         const prompt = text.replace('/image', '').trim();
         if (!prompt) return alert('Please provide a prompt after /image (e.g. /image realistic lion in savanna)');
-        await processImageGeneration(prompt, 2, "1024x1024", "photorealistic");
+        await processImageGeneration(prompt, { count: 2, dimensions: '1024x1024', style: 'photorealistic' });
         return;
       }
 
@@ -3005,51 +3499,23 @@ EXAMPLES:
                 4
               );
 
-              const dimensions =
-                [
-                  '1024x1024',
-                  '1024x1536',
-                  '1536x1024'
-                ].includes(toolArgs.dimensions)
-                  ? toolArgs.dimensions
-                  : '1024x1024';
+              // Shared normalizers — every ratio/style the modal offers is
+              // valid here too, so the user's choice is never discarded.
+              const dimensions = normalizeImageDimensions(toolArgs.dimensions);
 
               const style =
-                [
-                  'photorealistic',
-                  'cinematic',
-                  'anime',
-                  'digital art',
-                  'illustration',
-                  'none'
-                ].includes(toolArgs.style)
-                  ? toolArgs.style
-                  : 'photorealistic';
+                normalizeImageStyle(toolArgs.style);
+
+              const enhancedPrompt =
+                enhanceImagePrompt(prompt, style);
 
               const imageUrls = Array.from(
                 { length: count },
-                () => {
-                  const seed =
-                    Math.floor(Math.random() * 9000000) +
-                    1000000;
-
-                  const [width, height] =
-                    dimensions.split('x');
-
-                  return (
-                    'https://image.pollinations.ai/prompt/' +
-                    encodeURIComponent(
-                      style !== 'none'
-                        ? `${style}, ${prompt}`
-                        : prompt
-                    ) +
-                    `?width=${width}` +
-                    `&height=${height}` +
-                    `&seed=${seed}` +
-                    '&nologo=true' +
-                    '&enhance=true'
-                  );
-                }
+                () => buildPollinationsUrl(
+                  enhancedPrompt,
+                  dimensions,
+                  randomImageSeed()
+                )
               );
 
               const generatedImages =
@@ -3165,9 +3631,7 @@ EXAMPLES:
 
               await processImageGeneration(
                 prompt,
-                count,
-                dimensions,
-                style
+                { count, dimensions, style }
               );
 
               return;
@@ -3357,6 +3821,31 @@ EXAMPLES:
       setChatFontSize(settings.chatFontSize);
 
       attachEnterToSendHandler();
+
+      // Image modal options are populated from the shared constants, so the
+      // UI can never drift from what the generator actually supports.
+      try {
+        const ratioSelect = document.getElementById('imgRatioSelect');
+        if (ratioSelect) {
+          ratioSelect.replaceChildren(...Object.entries(IMAGE_DIMENSIONS).map(([value, info]) => {
+            const o = document.createElement('option');
+            o.value = value;
+            o.textContent = info.label;
+            if (value === '1024x1024') o.selected = true;
+            return o;
+          }));
+        }
+        const styleSelect = document.getElementById('imgStyleSelect');
+        if (styleSelect) {
+          styleSelect.replaceChildren(...Object.entries(IMAGE_STYLES).map(([value, info]) => {
+            const o = document.createElement('option');
+            o.value = value;
+            o.textContent = info.label;
+            if (value === 'photorealistic') o.selected = true;
+            return o;
+          }));
+        }
+      } catch (e) { console.warn('Could not populate image modal options:', e); }
 
       supabaseClient.auth.onAuthStateChange(async (_event, session) => {
         if (!session || !session.user) {
