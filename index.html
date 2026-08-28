@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
-  <title>Your Friend - AI Assistant</title>
+  <title>Your Friend AI — The AI that remembers what matters</title>
+  <meta name="description" content="Your Friend AI is a free AI assistant with memory you can read, edit, and delete. Tell it once and it carries what matters into every chat." />
+  <meta property="og:title" content="Your Friend AI — The AI that remembers what matters" />
+  <meta property="og:description" content="A free AI assistant with memory you control: read it, edit it, delete it." />
+  <meta property="og:type" content="website" />
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
@@ -399,6 +403,7 @@
     }
 
     header .title-wrap{ display:flex; align-items:center; gap:10px; }
+    .brand-ai{font-style:normal;font-size:.62rem;font-weight:950;letter-spacing:.08em;padding:2px 6px;border-radius:7px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;vertical-align:middle;}
     header .spark{
       width:10px; height:10px; border-radius:50%;
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
@@ -813,6 +818,114 @@
       box-shadow: 0 18px 60px rgba(255,107,107,.10);
     }
 
+    /* ---------- Main views + bottom navigation ---------- */
+    #view-area{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      position:relative;
+      overflow:hidden;
+    }
+    .view{ display:none; }
+    .view.is-active{
+      display:flex;
+      flex-direction:column;
+      flex:1;
+      min-height:0;
+    }
+    .view-scroll{
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+      padding:16px var(--pad-x) 24px;
+      display:flex;
+      justify-content:center;
+    }
+    .view-card{
+      width:min(760px, 100%);
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:var(--bg-card);
+      box-shadow:var(--shadow);
+      padding:clamp(16px,3.4vw,26px);
+      display:flex;
+      flex-direction:column;
+      gap:11px;
+      align-self:flex-start;
+    }
+    .view-head{ text-align:left; margin-bottom:2px; }
+    .view-head h2{ font-size:1.25rem; font-weight:950; letter-spacing:.2px; margin-bottom:4px; }
+    .view-sub{ font-size:.84rem; line-height:1.5; color:var(--text-sub); font-weight:750; max-width:60ch; }
+    .view-card textarea{
+      width:100%;
+      min-height:88px;
+      resize:vertical;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:var(--bg-input);
+      color:var(--text-main);
+      padding:11px 12px;
+      font:800 .92rem inherit;
+    }
+    .view-card .settings-row{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      flex-wrap:wrap; text-align:left;
+    }
+    .view-card select, .view-card input[type="number"]{
+      max-width:220px; padding:9px 10px; border:1px solid var(--border);
+      border-radius:11px; background:var(--bg-card); color:var(--text-main); font:850 .86rem inherit;
+    }
+    .library-group{
+      border-top:1px solid var(--border);
+      padding-top:14px;
+      margin-top:6px;
+      text-align:left;
+    }
+    .library-group:first-of-type{ border-top:0; padding-top:0; margin-top:0; }
+    .library-title{ font-weight:950; font-size:.98rem; display:block; margin-bottom:9px; }
+
+    #main-nav{
+      display:flex;
+      align-items:stretch;
+      gap:2px;
+      border-top:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(10,15,27,.72), rgba(10,15,27,.92));
+      backdrop-filter:blur(14px);
+      padding:5px 6px max(5px, env(safe-area-inset-bottom));
+      position:relative;
+      z-index:2;
+    }
+    html[data-theme="light"] #main-nav{
+      background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.98));
+    }
+    .nav-tab{
+      flex:1 1 0;
+      min-width:0;
+      min-height:46px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      border:0;
+      border-radius:12px;
+      background:transparent;
+      color:var(--text-sub);
+      font:850 .7rem inherit;
+      cursor:pointer;
+      transition:background .18s ease, color .18s ease;
+    }
+    .nav-tab:hover{ background:rgba(255,255,255,.06); color:var(--text-main); }
+    .nav-tab.is-active{
+      color:var(--text-main);
+      background:linear-gradient(135deg, rgba(124,92,255,.20), rgba(255,77,141,.14));
+    }
+    .nav-icon{ font-size:1.05rem; line-height:1; }
+    .nav-label{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+
     @media (max-width: 480px){
       header{ padding: 10px 10px; }
       .icon-btn{ padding: 7px 10px; font-size: .95rem; }
@@ -971,6 +1084,53 @@
       .settings-row .label{font-size:.9rem;}
     }
 
+    /* ===== Mobile pass: navigation, screens, tap targets ===== */
+    @media (max-width:768px){
+      /* The Create tab in the bottom nav makes this header button redundant. */
+      .header-actions .header-create-btn{ display:none; }
+
+      #main-nav{ padding:4px 4px max(4px, env(safe-area-inset-bottom)); gap:1px; }
+      .nav-tab{ min-height:52px; border-radius:11px; font-size:.68rem; }
+      .nav-icon{ font-size:1.15rem; }
+
+      .view-scroll{ padding:12px 10px 20px; }
+      .view-card{ padding:15px 13px; border-radius:16px; gap:10px; }
+      .view-head h2{ font-size:1.12rem; }
+      .view-sub{ font-size:.8rem; }
+      .view-card textarea{ min-height:76px; font-size:.9rem; padding:10px 11px; }
+      .view-card .settings-row{ gap:8px; }
+      .view-card select, .view-card input[type="number"]{
+        max-width:none; width:100%; flex:1 1 140px;
+      }
+      .view-card > div[style*="display:flex"] > button{ flex:1 1 140px; }
+      .library-title{ font-size:.94rem; }
+
+      /* Keep the composer reachable above the nav bar. */
+      footer{ padding-bottom:max(8px, env(safe-area-inset-bottom)); }
+    }
+
+    @media (max-width:390px){
+      .nav-tab{ min-height:50px; font-size:.64rem; gap:2px; }
+      .nav-icon{ font-size:1.05rem; }
+      .view-scroll{ padding:10px 8px 18px; }
+      .view-card{ padding:13px 11px; }
+    }
+
+    @media (max-width:340px){
+      .nav-label{ display:none; }
+      .nav-tab{ min-height:46px; }
+      .nav-icon{ font-size:1.25rem; }
+    }
+
+    /* Short landscape phones: shrink the bar so the chat keeps its height. */
+    @media (max-height:480px) and (orientation:landscape) and (max-width:948px){
+      #main-nav{ padding:2px 4px max(2px, env(safe-area-inset-bottom)); }
+      .nav-tab{ min-height:38px; flex-direction:row; gap:5px; font-size:.68rem; }
+      .nav-icon{ font-size:.95rem; }
+      .view-scroll{ padding:8px 10px 14px; }
+      .view-card{ padding:12px; }
+    }
+
     /* ===== Image generator (v2): loading, retry, lightbox ===== */
     .img-frame{position:relative;width:100%;overflow:hidden;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.10);min-height:120px;}
     html[data-theme="light"] .img-frame{background:rgba(16,24,40,.04);}
@@ -1041,7 +1201,12 @@
     .preview-dot{width:8px;height:8px;border-radius:50%;background:var(--accent-2);}.preview-dot:nth-child(2){background:var(--warning)}.preview-dot:nth-child(3){background:var(--accent-3)}
     .preview-title{margin-left:auto;font-size:.72rem;color:var(--text-sub);font-weight:900;}
     .preview-message{display:flex;gap:9px;align-items:flex-start;margin:13px 0;}.preview-avatar{width:28px;height:28px;border-radius:10px;display:grid;place-items:center;flex:none;font-size:.66rem;font-weight:900;color:#fff;background:linear-gradient(135deg,var(--accent),var(--accent-2));}.preview-message.ai .preview-avatar{background:linear-gradient(135deg,var(--accent-3),var(--accent));}.preview-bubble{padding:10px 11px;border-radius:14px;background:rgba(255,255,255,.07);color:var(--text-sub);font-size:.78rem;line-height:1.5;flex:1;}.preview-message.ai .preview-bubble{background:rgba(38,214,166,.1);color:var(--text-main);}
-    .feature-list{display:grid;gap:10px;margin-top:5px;}.feature-item{display:flex;gap:11px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.04);}.feature-icon{width:29px;height:29px;border-radius:10px;display:grid;place-items:center;background:rgba(124,92,255,.18);font-size:.9rem;flex:none;}.feature-item strong{display:block;font-size:.84rem;margin-bottom:2px;}.feature-item span{display:block;color:var(--text-sub);font-size:.75rem;line-height:1.4;font-weight:700;}
+    .preview-memory{display:grid;gap:6px;margin-top:10px;padding:10px;border:1px solid rgba(38,214,166,.28);border-radius:13px;background:rgba(38,214,166,.055);}
+    .preview-memory-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.045);border:1px solid var(--border);}
+    .preview-memory-row span{font-size:.76rem;font-weight:850;color:var(--text-main);}
+    .preview-memory-row em{font-style:normal;font-size:.68rem;font-weight:850;color:var(--accent-3);white-space:nowrap;}
+    .welcome-also{margin-top:11px;font-size:.74rem;font-weight:850;color:var(--text-sub);text-align:center;}
+    .feature-list{display:grid;gap:10px;margin-top:12px;}.feature-item{display:flex;gap:11px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:15px;background:rgba(255,255,255,.04);}.feature-icon{width:29px;height:29px;border-radius:10px;display:grid;place-items:center;background:rgba(124,92,255,.18);font-size:.9rem;flex:none;}.feature-item strong{display:block;font-size:.84rem;margin-bottom:2px;}.feature-item span{display:block;color:var(--text-sub);font-size:.75rem;line-height:1.4;font-weight:700;}
 
 
     .image-history-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}.image-history-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:zoom-in;background:rgba(255,255,255,.04)}.image-history-grid img:hover{filter:saturate(1.1);transform:scale(1.03)}.image-history-empty{color:var(--text-sub);font-size:.76rem;font-weight:750;padding:7px 2px}
@@ -1058,6 +1223,29 @@
     .editing-badge{display:none;align-items:center;gap:7px;align-self:center;width:100%;max-width:900px;color:var(--text-sub);font-size:.75rem;font-weight:850;padding:0 2px 5px;}.editing-badge.show{display:flex}.editing-badge button{border:0;background:transparent;color:var(--accent);font-weight:900;cursor:pointer;}
 
     .memory-list{display:grid;gap:7px;margin-top:9px;}.memory-list-empty{padding:12px;border:1px dashed var(--border);border-radius:12px;color:var(--text-sub);font-size:.8rem;font-weight:800;}.memory-item{display:flex;align-items:flex-start;gap:7px;padding:9px;border:1px solid var(--border);background:rgba(255,255,255,.035);border-radius:12px;}.memory-item-text{flex:1;color:var(--text-main);font-size:.8rem;line-height:1.45;font-weight:750;}.memory-item button{min-height:28px;border:1px solid var(--border);background:rgba(255,255,255,.06);color:var(--text-sub);border-radius:8px;padding:4px 7px;font-size:.72rem;font-weight:900;cursor:pointer;}.memory-item button:hover{color:var(--text-main);background:rgba(124,92,255,.15)}.memory-item button.danger:hover{color:var(--danger);background:rgba(255,107,107,.12)}.memory-stat{display:flex;justify-content:space-between;gap:8px;color:var(--text-sub);font-size:.73rem;font-weight:800;margin-top:6px;}.memory-stat strong{color:var(--accent-3);}
+    .memory-kind{border:1px solid var(--border);border-radius:16px;padding:14px;margin:2px 0 12px;background:rgba(255,255,255,.02);}
+    .memory-kind-saved{border-color:rgba(38,214,166,.34);background:rgba(38,214,166,.055);}
+    .memory-kind-chat{border-color:rgba(124,92,255,.26);}
+    .memory-kind-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;text-align:left;flex-wrap:wrap;}
+    .memory-kind-title{font-size:.95rem;font-weight:950;color:var(--text-main);margin-bottom:3px;}
+    .memory-kind-sub{font-size:.76rem;line-height:1.45;color:var(--text-sub);font-weight:750;max-width:44ch;}
+    .memory-kind-sub strong{color:var(--text-main);}
+    .memory-kind-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+    .memory-kind-count{font-size:.72rem;font-weight:900;color:var(--accent-3);white-space:nowrap;}
+    .memory-add-btn{min-height:32px;border:1px solid var(--border);background:rgba(124,92,255,.16);color:var(--text-main);border-radius:10px;padding:6px 11px;font-size:.78rem;font-weight:900;cursor:pointer;flex-shrink:0;}
+    .memory-add-btn:hover{background:rgba(124,92,255,.28);}
+    .memory-link-danger{border:0;background:transparent;color:var(--danger);font-size:.74rem;font-weight:900;cursor:pointer;padding:9px 0 0;text-align:left;text-decoration:underline;text-underline-offset:3px;}
+    .memory-kind .memory-list{margin-top:11px;}
+    .memory-kind .memory-editor{margin-top:11px;}
+    .settings-collapsible{border:1px solid var(--border);border-radius:16px;margin:10px 0;overflow:hidden;background:rgba(255,255,255,.02);}
+    .settings-collapsible summary{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 14px;cursor:pointer;list-style:none;font-weight:950;font-size:.9rem;color:var(--text-main);text-align:left;}
+    .settings-collapsible summary::-webkit-details-marker{display:none;}
+    .settings-collapsible summary .chev{transition:transform .2s ease;color:var(--text-sub);font-size:.8rem;}
+    .settings-collapsible[open] summary .chev{transform:rotate(90deg);}
+    .settings-collapsible summary .sc-hint{font-size:.74rem;font-weight:800;color:var(--text-sub);margin-left:auto;margin-right:8px;}
+    .settings-collapsible .sc-body{padding:0 14px 12px;}
+    .settings-collapsible-danger summary{color:var(--danger);}
+    .settings-collapsible-danger{border-color:rgba(255,107,107,.24);}
     .settings-section-label{text-align:left;color:var(--text-sub);font-size:.73rem;font-weight:950;text-transform:uppercase;letter-spacing:.1em;margin:5px 3px -2px;}.settings-row select{max-width:180px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;background:var(--bg-card);color:var(--text-main);font:850 .85rem inherit;}.settings-row input[type="file"]{max-width:220px;font-size:.75rem;color:var(--text-sub);}
     .privacy-note{font-size:.74rem;line-height:1.45;color:var(--text-sub);font-weight:750;text-align:left;padding:10px 2px;}.privacy-note strong{color:var(--text-main);}
     [data-motion="reduced"] *,[data-motion="reduced"] *::before,[data-motion="reduced"] *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important;}
@@ -1072,35 +1260,39 @@
   <section id="welcome-screen" aria-labelledby="welcome-title">
     <div class="welcome-card">
       <div class="welcome-copy">
-        <div class="welcome-brand"><span class="welcome-logo" aria-hidden="true">✦</span> Your Friend · AI assistant</div>
-        <h1 id="welcome-title">Ideas in. <span>Helpful answers out.</span></h1>
-        <p class="welcome-lede">Hello! This is your first stop for a friendly, full-stack AI assistant. Chat, create images, build PDFs, and keep your important context close—without the clutter.</p>
+        <div class="welcome-brand"><span class="welcome-logo" aria-hidden="true">✦</span> Your Friend AI</div>
+        <h1 id="welcome-title">The AI that <span>remembers what matters.</span></h1>
+        <p class="welcome-lede">Tell it once. It carries the facts about you into every new chat — and you can read, edit, or delete any of it at any time.</p>
         <div class="welcome-actions">
-          <button class="welcome-btn primary" type="button" onclick="startChatFromWelcome()">💬 Chat with AI</button>
-          <button class="welcome-btn" type="button" onclick="openAuthFromWelcome('login')">Login</button>
-          <button class="welcome-btn" type="button" onclick="openAuthFromWelcome('signup')">Sign up</button>
+          <button class="welcome-btn primary" type="button" onclick="startChatFromWelcome()">Start chatting →</button>
+          <button class="welcome-btn" type="button" onclick="openAuthFromWelcome('login')">Sign in</button>
         </div>
-        <div class="welcome-note">Free AI tools, built for everyone. Your conversations stay tied to your account.</div>
+        <div class="welcome-note">Free, and your memory belongs to you — never a black box.</div>
       </div>
-      <div class="welcome-preview" aria-label="Feature preview">
-        <div class="preview-label">A calmer way to work with AI</div>
+      <div class="welcome-preview" aria-label="Saved memory preview">
+        <div class="preview-label">📌 Saved Memory · used in every chat</div>
         <div class="preview-window">
-          <div class="preview-top"><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-title">Your Friend</span></div>
-          <div class="preview-message"><div class="preview-avatar">YOU</div><div class="preview-bubble">Help me turn a rough idea into a clear plan.</div></div>
-          <div class="preview-message ai"><div class="preview-avatar">YF</div><div class="preview-bubble"><strong>Absolutely.</strong><br />I’ll break it into simple next steps and keep the important details in view.</div></div>
+          <div class="preview-top"><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-title">Your Friend AI</span></div>
+          <div class="preview-message"><div class="preview-avatar">YOU</div><div class="preview-bubble">Suggest a weekend plan for me.</div></div>
+          <div class="preview-message ai"><div class="preview-avatar">YF</div><div class="preview-bubble">You live in Pune and like quiet mornings, so I’d start with a slow café walk before anything loud.</div></div>
+        </div>
+        <div class="preview-memory" aria-hidden="true">
+          <div class="preview-memory-row"><span>Lives in Pune</span><em>Edit · Delete</em></div>
+          <div class="preview-memory-row"><span>Likes quiet mornings</span><em>Edit · Delete</em></div>
+          <div class="preview-memory-row"><span>Works as a designer</span><em>Edit · Delete</em></div>
         </div>
         <div class="feature-list">
-          <div class="feature-item"><div class="feature-icon">⚡</div><div><strong>Fast, focused chat</strong><span>Markdown, code blocks, copy tools, and helpful actions.</span></div></div>
-          <div class="feature-item"><div class="feature-icon">🧠</div><div><strong>Memory you control</strong><span>Review, edit, or switch off the context your assistant uses.</span></div></div>
-          <div class="feature-item"><div class="feature-icon">🎨</div><div><strong>Create more</strong><span>Generate images and polished PDFs from one workspace.</span></div></div>
+          <div class="feature-item"><div class="feature-icon">🧠</div><div><strong>Memory you can read</strong><span>A plain list of what it knows. Edit or delete any line.</span></div></div>
+          <div class="feature-item"><div class="feature-icon">🔒</div><div><strong>Yours, not hidden</strong><span>Privacy mode stops memory from being sent at all.</span></div></div>
         </div>
+        <div class="welcome-also">Also inside: 🎨 image generation &nbsp;·&nbsp; 📄 PDF export</div>
       </div>
     </div>
   </section>
 
   <div id="auth-modal" aria-modal="true" role="dialog">
     <div class="auth-card">
-      <div class="welcome-brand" style="justify-content:center;margin-bottom:4px;"><span class="welcome-logo" style="width:38px;height:38px;font-size:1rem;">✦</span> Your Friend</div>
+      <div class="welcome-brand" style="justify-content:center;margin-bottom:4px;"><span class="welcome-logo" style="width:38px;height:38px;font-size:1rem;">✦</span> Your Friend AI</div>
       <h2 id="authTitle">Sign in</h2>
       <div class="settings-row" style="border-radius:12px; padding:8px 10px;">
         <span style="color:var(--text-sub); font-weight:800;">Mode</span>
@@ -1114,7 +1306,7 @@
       <input type="text" id="username" placeholder="Username (for new accounts)" style="display:none;" />
       <button id="authActionBtn" type="button" onclick="handleAuth()">Continue</button>
       <div id="authHint" class="sub" style="color:var(--text-sub); font-size:.9rem; text-align:center; font-weight:800;">
-        Hello! This is my first full-stack AI assistant website.
+        Tell it once. It remembers what matters — in every chat.
       </div>
     </div>
   </div>
@@ -1124,15 +1316,16 @@
       <div class="settings-header">
         <div style="flex:1;text-align:left;min-width:0;">
           <h2 style="font-size:1.2rem; letter-spacing:.2px;">Settings</h2>
-          <div class="subhead">Make it yours. On phone, everything stays clean.</div>
+          <div class="subhead">The essentials up top. Everything else stays tucked away.</div>
         </div>
         <button type="button" class="icon-btn" style="padding:8px 11px;flex-shrink:0;" title="Close settings" aria-label="Close settings" onclick="closeSettings()">✕</button>
       </div>
 
+      <!-- ============ BASIC ============ -->
       <div class="settings-row">
         <div class="left">
           <div class="label">Theme</div>
-          <div class="sub">Choose Light or Dark</div>
+          <div class="sub">Light or dark</div>
         </div>
         <div class="segmented">
           <button type="button" id="theme-light" class="active" onclick="setTheme('light')">Light</button>
@@ -1141,78 +1334,68 @@
       </div>
 
       <div class="settings-row">
-        <div class="left">
-          <div class="label">Font Size</div>
-          <div class="sub">Adjust chat text size</div>
-        </div>
-        <input id="fontSizeRange" type="range" min="0.9" max="1.2" step="0.02" value="0.98" oninput="setChatFontSize(this.value)" />
-      </div>
-
-      <div class="settings-row">
-        <div class="left">
-          <div class="label">Compact Mode</div>
-          <div class="sub">Reduce spacing in chat</div>
-        </div>
-        <button class="toggle" id="compactToggle" type="button" onclick="toggleCompactMode()"></button>
+        <div class="left"><div class="label">Language</div><div class="sub">Interface language</div></div>
+        <select id="languageSelect" aria-label="Language"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="hi">हिन्दी</option></select>
       </div>
 
       <div class="settings-row">
         <div class="left">
           <div class="label">Enter to Send</div>
-          <div class="sub">When ON, Enter sends. Shift+Enter makes a new line.</div>
+          <div class="sub">When ON, Enter sends. Shift+Enter adds a line.</div>
         </div>
         <button class="toggle on" id="enterSendToggle" type="button" onclick="toggleEnterToSend()"></button>
       </div>
 
-      <div class="settings-row">
-        <div class="left">
-          <div class="label">Sound</div>
-          <div class="sub">Play small sounds on actions</div>
-        </div>
-        <button class="toggle" id="soundToggle" type="button" onclick="toggleSound()"></button>
-      </div>
+      <!-- ============ ADVANCED ============ -->
+      <details class="settings-collapsible" id="settingsAdvanced">
+        <summary>Advanced<span class="sc-hint">Model, memory, appearance</span><span class="chev" aria-hidden="true">▶</span></summary>
+        <div class="sc-body">
+          <div class="settings-section-label">AI</div>
+          <div class="settings-row"><div class="left"><div class="label">AI model</div><div class="sub">Used for new requests</div></div><select id="modelSelect" aria-label="AI model"><option value="llama-3.3-70b-versatile">Balanced · Llama 3.3 70B</option><option value="llama-3.1-8b-instant">Fast · Llama 3.1 8B</option><option value="openai/gpt-oss-120b">Advanced · GPT OSS 120B</option></select></div>
+          <div class="settings-row"><div class="left"><div class="label">Response length</div><div class="sub">Maximum AI response size</div></div><select id="responseLengthSelect" style="background:transparent;border:0;color:var(--text-main);font-weight:900;"><option value="2048">Short</option><option value="4096" selected>Balanced</option><option value="6144">Long</option></select></div>
+          <div class="settings-row"><div class="left"><div class="label">🧠 Memory</div><div class="sub">Send your memory to the AI</div></div><button class="toggle on" id="memoryToggle" type="button" onclick="toggleMemory()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Privacy mode</div><div class="sub">Don’t send saved memory in AI requests</div></div><button class="toggle" id="privacyToggle" type="button" onclick="togglePrivacyMode()"></button></div>
 
-      <div class="settings-row">
-        <div class="left">
-          <div class="label">Auto Scroll</div>
-          <div class="sub">Keep chat pinned to bottom</div>
+          <div class="settings-section-label">Chat appearance</div>
+          <div class="settings-row">
+            <div class="left"><div class="label">Font size</div><div class="sub">Chat text size</div></div>
+            <input id="fontSizeRange" type="range" min="0.9" max="1.2" step="0.02" value="0.98" oninput="setChatFontSize(this.value)" />
+          </div>
+          <div class="settings-row"><div class="left"><div class="label">Compact mode</div><div class="sub">Reduce spacing in chat</div></div><button class="toggle" id="compactToggle" type="button" onclick="toggleCompactMode()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Auto scroll</div><div class="sub">Keep chat pinned to bottom</div></div><button class="toggle on" id="autoScrollToggle" type="button" onclick="toggleAutoScroll()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Animations</div><div class="sub">Turn off for slower devices</div></div><button class="toggle on" id="animationToggle" type="button" onclick="toggleAnimations()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Sound</div><div class="sub">Play small sounds on actions</div></div><button class="toggle" id="soundToggle" type="button" onclick="toggleSound()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">📄 PDF preview</div><div class="sub">Show PDFs directly inside chat</div></div><button class="toggle on" id="pdfPreviewToggle" type="button" onclick="togglePdfPreview()"></button></div>
         </div>
-        <button class="toggle on" id="autoScrollToggle" type="button" onclick="toggleAutoScroll()"></button>
-      </div>
+      </details>
 
-      <div class="settings-row">
-        <div class="left"><div class="label">🧠 Memory</div><div class="sub">Use compact long-term memory</div></div>
-        <button class="toggle on" id="memoryToggle" type="button" onclick="toggleMemory()"></button>
-      </div>
-      <div class="settings-row">
-        <div class="left"><div class="label">📄 PDF Preview</div><div class="sub">Show PDFs directly inside chat</div></div>
-        <button class="toggle on" id="pdfPreviewToggle" type="button" onclick="togglePdfPreview()"></button>
-      </div>
-      <div class="settings-row">
-        <div class="left"><div class="label">💬 Response Length</div><div class="sub">Controls the maximum AI response size</div></div>
-        <select id="responseLengthSelect" style="background:transparent;border:0;color:var(--text-main);font-weight:900;">
-          <option value="2048">Short</option><option value="4096" selected>Balanced</option><option value="6144">Long</option>
-        </select>
-      </div>
-      <div class="settings-section-label">Personalization</div>
-      <div class="settings-row"><div class="left"><div class="label">Language</div><div class="sub">Preferred interface language</div></div><select id="languageSelect" aria-label="Language"><option value="en">English</option><option value="es">Español</option><option value="fr">Français</option><option value="de">Deutsch</option><option value="hi">हिन्दी</option></select></div>
-      <div class="settings-row"><div class="left"><div class="label">AI model</div><div class="sub">Choose the model for new requests</div></div><select id="modelSelect" aria-label="AI model"><option value="llama-3.3-70b-versatile">Balanced · Llama 3.3 70B</option><option value="llama-3.1-8b-instant">Fast · Llama 3.1 8B</option><option value="openai/gpt-oss-120b">Advanced · GPT OSS 120B</option></select></div>
-      <div class="settings-row"><div class="left"><div class="label">Animations</div><div class="sub">Reduce motion on slower devices</div></div><button class="toggle on" id="animationToggle" type="button" onclick="toggleAnimations()"></button></div>
-      <div class="settings-row"><div class="left"><div class="label">Privacy mode</div><div class="sub">Don’t include saved memory in AI requests</div></div><button class="toggle" id="privacyToggle" type="button" onclick="togglePrivacyMode()"></button></div>
-      <div class="privacy-note"><strong>Shortcuts:</strong> Enter sends, Shift + Enter adds a line, and Escape closes overlays. &nbsp; <strong>Security note:</strong> authentication is handled by Supabase. The browser only uses a publishable key; AI requests go through the configured backend proxy. Never add private API keys to this page.</div>
-      <div class="toolbar">
-        <button type="button" onclick="openMemoryEditor()">🧠 Edit Memory & Prompt</button>
-        <button type="button" onclick="shareConversation()">↗ Share</button>
-      </div>
-      <div class="toolbar">
-        <button type="button" onclick="exportAppData()">Export data</button>
-        <label class="icon-btn" style="justify-content:center;cursor:pointer;flex:1;">Import data<input id="importDataInput" type="file" accept="application/json" hidden /></label>
-        <button type="button" onclick="resetAllSettings()" style="background:rgba(255,107,107,.12);box-shadow:none;">Reset settings</button>
-      </div>
-      <div class="toolbar">
-        <button type="button" onclick="exportCurrentChat()">Export Chat</button>
-        <button type="button" onclick="clearCurrentChat()" style="background:rgba(255,107,107,.16); border:1px solid rgba(255,107,107,.20); box-shadow:none;">Clear Chat</button>
-      </div>
+      <!-- ============ YOUR DATA ============ -->
+      <details class="settings-collapsible" id="settingsData">
+        <summary>Your data<span class="sc-hint">Memory, share, export</span><span class="chev" aria-hidden="true">▶</span></summary>
+        <div class="sc-body">
+          <div class="toolbar">
+            <button type="button" onclick="openMemoryEditor()">🧠 Memory & prompt</button>
+            <button type="button" onclick="shareConversation()">↗ Share chat</button>
+          </div>
+          <div class="toolbar">
+            <button type="button" onclick="exportCurrentChat()">Export this chat</button>
+            <button type="button" onclick="exportAppData()">Export everything</button>
+            <label class="icon-btn" style="justify-content:center;cursor:pointer;flex:1;">Import data<input id="importDataInput" type="file" accept="application/json" hidden /></label>
+          </div>
+        </div>
+      </details>
+
+      <!-- ============ DANGER ============ -->
+      <details class="settings-collapsible settings-collapsible-danger" id="settingsDanger">
+        <summary>Reset & delete<span class="sc-hint">Careful</span><span class="chev" aria-hidden="true">▶</span></summary>
+        <div class="sc-body">
+          <div class="toolbar">
+            <button type="button" onclick="clearCurrentChat()" style="background:rgba(255,107,107,.16); border:1px solid rgba(255,107,107,.20); box-shadow:none;">Clear this chat</button>
+            <button type="button" onclick="resetAllSettings()" style="background:rgba(255,107,107,.12);box-shadow:none;">Reset settings</button>
+          </div>
+          <div class="privacy-note"><strong>Shortcuts:</strong> Enter sends, Shift + Enter adds a line, Escape closes overlays. &nbsp; <strong>Security:</strong> authentication is handled by Supabase. The browser only uses a publishable key; AI requests go through the backend proxy. Never add private API keys to this page.</div>
+        </div>
+      </details>
 
       <button type="button" onclick="closeSettings()">Done</button>
     </div>
@@ -1223,28 +1406,48 @@
       <div class="settings-header">
         <div style="flex:1;text-align:left;">
           <h2 style="font-size:1.2rem;">🧠 Memory & AI Instructions</h2>
-          <div class="subhead">Edit what your AI remembers and how it behaves.</div>
+          <div class="subhead">Two different things live here. They do not do the same job.</div>
         </div>
       </div>
-      <div class="settings-row" style="display:block;">
-        <div class="label">Chat memory summary</div>
-        <div class="sub" style="margin:4px 0 8px;">A compact memory summary is kept for this conversation to keep token usage low. Memory resets with every new chat.</div>
-        <textarea id="memoryEditor" class="memory-editor" placeholder="Chat memory summary..."></textarea>
-        <div class="memory-meta"><span id="memoryCharCount">0 characters</span><span>Keep it concise for lower token usage. Resets with every new chat.</span></div>
+
+      <div class="memory-kind memory-kind-saved">
+        <div class="memory-kind-head">
+          <div>
+            <div class="memory-kind-title">📌 Saved Memory</div>
+            <div class="memory-kind-sub">Stays with your account. Used in <strong>every</strong> chat, forever, until you delete it.</div>
+          </div>
+          <div class="memory-kind-actions">
+            <span id="savedMemoryCount" class="memory-kind-count">0 / 50 saved</span>
+            <button type="button" onclick="addSavedMemoryItem()" class="memory-add-btn">＋ Add</button>
+          </div>
+        </div>
+        <div id="savedMemoryList" class="memory-list"></div>
+        <button type="button" onclick="clearSavedMemories()" class="memory-link-danger">Delete all saved memory</button>
+      </div>
+
+      <div class="memory-kind memory-kind-chat">
+        <div class="memory-kind-head">
+          <div>
+            <div class="memory-kind-title">🧠 Conversation Context</div>
+            <div class="memory-kind-sub">A compact summary of <strong>this chat only</strong>. It resets when you start a new chat.</div>
+          </div>
+          <button type="button" onclick="addMemoryItem()" class="memory-add-btn">＋ Add</button>
+        </div>
+        <textarea id="memoryEditor" class="memory-editor" placeholder="Notes for this chat..."></textarea>
+        <div class="memory-meta"><span id="memoryCharCount">0 characters</span><span>Keep it concise for lower token usage.</span></div>
         <div class="memory-stat"><span>Estimated context usage</span><strong id="memoryTokenCount">0 tokens</strong></div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;"><div class="label">Saved memories</div><button type="button" onclick="addMemoryItem()" style="padding:7px 10px;font-size:.78rem;box-shadow:none;">＋ Add memory</button></div>
         <div id="memoryList" class="memory-list"></div>
       </div>
       <div class="settings-row" style="display:block;">
         <div class="label">System prompt</div>
-        <div class="sub" style="margin:4px 0 8px;">Customize the AI's personality and behavior.</div>
+        <div class="sub" style="margin:4px 0 8px;">Your instructions to the AI. Saved to your account and used in every chat.</div>
         <textarea id="systemPromptEditor" class="memory-editor" placeholder="System prompt..."></textarea>
       </div>
       <div class="toolbar">
         <button type="button" onclick="saveMemorySettings()">💾 Save</button>
-        <button type="button" onclick="rebuildMemorySummary()">🔄 Rebuild Summary</button>
+        <button type="button" onclick="rebuildMemorySummary()">🔄 Rebuild this chat's context</button>
         <button type="button" onclick="toggleMemoryContextPreview()" style="box-shadow:none;">👁 Show what gets sent</button>
-        <button type="button" onclick="resetMemorySettings()" style="background:rgba(255,107,107,.12);box-shadow:none;">↩ Reset</button>
+        <button type="button" onclick="resetMemorySettings()" style="background:rgba(255,107,107,.12);box-shadow:none;" title="Clears this chat's context only. Saved Memory is not touched.">↩ Reset this chat</button>
       </div>
       <div id="memoryContextPreview" class="memory-context-preview" hidden>
         <div class="label">Exact context sent to the AI</div>
@@ -1255,9 +1458,69 @@
     </div>
   </div>
 
-  <div id="image-modal" aria-modal="true" role="dialog">
-    <div class="image-tool-card">
-      <h2>🎨 Advanced Image Generator</h2>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <aside id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand" aria-hidden="true" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04);">
+        <span class="dot" style="width:12px; height:12px; border-radius:50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.20);"></span>
+        <span class="name" style="font-weight:900; letter-spacing:.2px;">Free AI tools, built for everyone</span>
+      </div>
+    </div>
+    <button class="new-chat-btn" onclick="createNewChat()" style="background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14)); border:1px solid rgba(124,92,255,.26); color:var(--text-main); padding:11px 12px; border-radius:14px; display:flex; align-items:center; gap:10px; font-size:.95rem; cursor:pointer; transition: transform .1s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; width:100%; justify-content:flex-start; font-weight:800; box-shadow: 0 10px 26px rgba(124,92,255,.12); position:relative; z-index:1;">
+      <span>+</span> New Chat
+    </button>
+    <div class="history-tools"><input id="historySearch" class="history-search" type="search" placeholder="Search chats…" aria-label="Search chats" /><span id="historyCount" class="history-count">0</span></div>
+    <div class="history-list" id="historyList"></div>
+
+    <div class="user-profile" style="border-top:1px solid rgba(255,255,255,.08); padding-top:12px; margin-top:12px; display:flex; align-items:center; justify-content:space-between; font-size:.95rem; gap:10px;">
+      <div class="user-left" style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <div class="user-avatar" aria-hidden="true" style="width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(255,77,141,.18)); border:1px solid rgba(124,92,255,.22); flex-shrink:0; box-shadow: 0 14px 30px rgba(124,92,255,.15);">U</div>
+        <span id="userDisplay" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()" style="background: rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.22); color: var(--danger); cursor:pointer; padding:8px 10px; border-radius: 12px; font-weight:800; transition: transform .1s ease, box-shadow .2s ease, background .2s ease;">Logout</button>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+      <div class="title-wrap">
+        <span class="spark"></span>
+        <span>Your Friend <em class="brand-ai">AI</em></span>
+      </div>
+      <div class="header-actions">
+        <button id="aiStatus" class="ai-status checking" type="button" title="AI provider status. Click to re-check." onclick="checkProxyHealth()">
+          <span class="ai-status-dot" aria-hidden="true"></span>
+          <span class="ai-status-text">Checking AI…</span>
+        </button>
+        <button class="icon-btn header-create-btn" title="Create images" aria-label="Go to Create" onclick="switchView('create')">🎨 <span class="label">Create</span></button>
+        <button class="icon-btn" title="Settings" aria-label="Open settings" onclick="openSettings()">⚙️ <span class="label">Settings</span></button>
+      </div>
+    </header>
+
+    <div id="view-area">
+      <section id="chat-view" class="view is-active" aria-label="Chat">
+        <div id="chat-container"></div>
+    <footer>
+      <div id="generationStatus" class="generation-bar" aria-live="polite" hidden><span class="generation-dot" aria-hidden="true"></span><span id="generationLabel">Your Friend is thinking…</span><button id="cancelGenerationBtn" type="button" onclick="cancelGeneration()">Cancel generation</button></div>
+      <div id="editingBadge" class="editing-badge"><span>Editing a sent message</span><button type="button" onclick="cancelEditing()">Cancel</button></div>
+      <div class="input-container">
+        <textarea id="userInput" placeholder="Message Your Friend or type /image prompt..." rows="1" oninput="autoResize(this)"></textarea>
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send">↑</button>
+      </div>
+    </footer>
+      </section>
+
+      <section id="create-view" class="view" aria-label="Create">
+        <div class="view-scroll">
+          <div class="view-card">
+            <div class="view-head">
+              <h2>🎨 Create</h2>
+              <p class="view-sub">Generate images with a style preset, aspect ratio and seed. Up to 40 a day.</p>
+            </div>
+
+      
       <textarea id="imgPromptInput" placeholder="Describe what you want to generate..." rows="3"></textarea>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:relative;z-index:1;">
         <button type="button" class="prompt-enhance-btn" onclick="enhanceModalPrompt()" style="padding:9px 11px;font-size:.8rem;box-shadow:none;">✨ Enhance prompt</button>
@@ -1310,76 +1573,51 @@
       <div id="imgReferencePreview" style="display:none;text-align:left;color:var(--text-sub);font-size:.75rem;font-weight:800;position:relative;z-index:1;"></div>
 
       <div style="display:flex; gap:10px; margin-top:8px;">
-        <button type="button" onclick="closeImageModal()" style="background:rgba(255,255,255,0.1); flex:1; border:1px solid rgba(255,255,255,.12); box-shadow:none;">Cancel</button>
-        <button type="button" onclick="generateImageFromModal()" style="flex:2;">Generate Batch ✨</button>
+        <button type="button" onclick="switchView('chat')" style="background:rgba(255,255,255,0.1); flex:1; border:1px solid rgba(255,255,255,.12); box-shadow:none;">← Back to chat</button>
+        <button type="button" onclick="generateImageFromModal()" style="flex:2 1 200px;">Generate Batch ✨</button>
       </div>
-    </div>
-  </div>
+          </div>
+        </div>
+      </section>
 
-  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-  <aside id="sidebar">
-    <div class="sidebar-top">
-      <div class="brand" aria-hidden="true" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04);">
-        <span class="dot" style="width:12px; height:12px; border-radius:50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.20);"></span>
-        <span class="name" style="font-weight:900; letter-spacing:.2px;">Free AI tools, built for everyone</span>
+      <section id="library-view" class="view" aria-label="Library">
+        <div class="view-scroll">
+          <div class="view-card">
+            <div class="view-head">
+              <h2>📁 Library</h2>
+              <p class="view-sub">Everything you have generated, in one place.</p>
+            </div>
+        <div id="pdfBackupSection" class="library-group">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;">
+          <span class="library-title">📄 PDFs</span>
+          <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
+        </div>
+        <input id="pdfSearchInput" class="history-search" type="search" placeholder="Search PDFs…" aria-label="Search PDFs" />
+        <div id="pdfBackupList"></div>
       </div>
-    </div>
-    <button class="new-chat-btn" onclick="createNewChat()" style="background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14)); border:1px solid rgba(124,92,255,.26); color:var(--text-main); padding:11px 12px; border-radius:14px; display:flex; align-items:center; gap:10px; font-size:.95rem; cursor:pointer; transition: transform .1s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; width:100%; justify-content:flex-start; font-weight:800; box-shadow: 0 10px 26px rgba(124,92,255,.12); position:relative; z-index:1;">
-      <span>+</span> New Chat
-    </button>
-    <div class="history-tools"><input id="historySearch" class="history-search" type="search" placeholder="Search chats…" aria-label="Search chats" /><span id="historyCount" class="history-count">0</span></div>
-    <div class="history-list" id="historyList"></div>
-
-    <div id="pdfBackupSection" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;">
-        <span style="font-weight:900; font-size:.9rem;">📚 PDF Backups</span>
-        <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
+        <div id="imageHistorySection" class="library-group">
+        <div class="library-title">🖼 Images</div>
+        <div id="imageHistoryList"></div>
       </div>
-      <input id="pdfSearchInput" class="history-search" type="search" placeholder="Search PDFs…" aria-label="Search PDFs" />
-      <div id="pdfBackupList"></div>
-    </div>
-    <div id="imageHistorySection" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
-      <div style="font-weight:900;font-size:.9rem;">🖼 Image gallery</div>
-      <div id="imageHistoryList"></div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <div class="user-profile" style="border-top:1px solid rgba(255,255,255,.08); padding-top:12px; margin-top:12px; display:flex; align-items:center; justify-content:space-between; font-size:.95rem; gap:10px;">
-      <div class="user-left" style="display:flex; align-items:center; gap:10px; min-width:0;">
-        <div class="user-avatar" aria-hidden="true" style="width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(255,77,141,.18)); border:1px solid rgba(124,92,255,.22); flex-shrink:0; box-shadow: 0 14px 30px rgba(124,92,255,.15);">U</div>
-        <span id="userDisplay" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</span>
-      </div>
-      <button class="logout-btn" onclick="logout()" style="background: rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.22); color: var(--danger); cursor:pointer; padding:8px 10px; border-radius: 12px; font-weight:800; transition: transform .1s ease, box-shadow .2s ease, background .2s ease;">Logout</button>
-    </div>
-  </aside>
-
-  <main>
-    <header>
-      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
-      <div class="title-wrap">
-        <span class="spark"></span>
-        <span>Your Friend</span>
-      </div>
-      <div class="header-actions">
-        <button id="aiStatus" class="ai-status checking" type="button" title="AI provider status. Click to re-check." onclick="checkProxyHealth()">
-          <span class="ai-status-dot" aria-hidden="true"></span>
-          <span class="ai-status-text">Checking AI…</span>
-        </button>
-        <button class="icon-btn" title="Image Generator" aria-label="Open image generator" onclick="openImageModal()">🎨 <span class="label">Image Tool</span></button>
-        <button class="icon-btn" title="Settings" aria-label="Open settings" onclick="openSettings()">⚙️ <span class="label">Settings</span></button>
-      </div>
-    </header>
-
-    <div id="chat-container"></div>
-
-    <footer>
-      <div id="generationStatus" class="generation-bar" aria-live="polite" hidden><span class="generation-dot" aria-hidden="true"></span><span id="generationLabel">Your Friend is thinking…</span><button id="cancelGenerationBtn" type="button" onclick="cancelGeneration()">Cancel generation</button></div>
-      <div id="editingBadge" class="editing-badge"><span>Editing a sent message</span><button type="button" onclick="cancelEditing()">Cancel</button></div>
-      <div class="input-container">
-        <textarea id="userInput" placeholder="Message Your Friend or type /image prompt..." rows="1" oninput="autoResize(this)"></textarea>
-        <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send">↑</button>
-      </div>
-    </footer>
+    <nav id="main-nav" aria-label="Main">
+      <button type="button" class="nav-tab is-active" data-view="chat" aria-current="page" onclick="switchView('chat')">
+        <span class="nav-icon" aria-hidden="true">💬</span><span class="nav-label">Chat</span>
+      </button>
+      <button type="button" class="nav-tab" data-view="create" onclick="switchView('create')">
+        <span class="nav-icon" aria-hidden="true">🎨</span><span class="nav-label">Create</span>
+      </button>
+      <button type="button" class="nav-tab" data-view="library" onclick="switchView('library')">
+        <span class="nav-icon" aria-hidden="true">📁</span><span class="nav-label">Library</span>
+      </button>
+      <button type="button" class="nav-tab" id="navSettingsTab" onclick="openSettings()">
+        <span class="nav-icon" aria-hidden="true">⚙️</span><span class="nav-label">Settings</span>
+      </button>
+    </nav>
   </main>
 
   <script>
@@ -2893,7 +3131,10 @@ EXAMPLES:
       el.memoryToggle = document.getElementById('memoryToggle');
       el.pdfPreviewToggle = document.getElementById('pdfPreviewToggle');
       el.responseLengthSelect = document.getElementById('responseLengthSelect');
-      el.imageModal = document.getElementById('image-modal');
+      el.chatView = document.getElementById('chat-view');
+      el.createView = document.getElementById('create-view');
+      el.libraryView = document.getElementById('library-view');
+      el.mainNav = document.getElementById('main-nav');
 
       el.historyList = document.getElementById('historyList');
       el.chatContainer = document.getElementById('chat-container');
@@ -2927,6 +3168,8 @@ EXAMPLES:
       el.historyCount = document.getElementById('historyCount');
       el.imageHistoryList = document.getElementById('imageHistoryList');
       el.memoryList = document.getElementById('memoryList');
+      el.savedMemoryList = document.getElementById('savedMemoryList');
+      el.savedMemoryCount = document.getElementById('savedMemoryCount');
       el.memoryTokenCount = document.getElementById('memoryTokenCount');
       el.animationToggle = document.getElementById('animationToggle');
       el.privacyToggle = document.getElementById('privacyToggle');
@@ -3279,8 +3522,34 @@ EXAMPLES:
 
     function openSettings(){ el.settingsModal.style.display = 'flex'; }
     function closeSettings(){ el.settingsModal.style.display = 'none'; }
-    function openImageModal(){ el.imageModal.style.display = 'flex'; }
-    function closeImageModal(){ el.imageModal.style.display = 'none'; }
+    /* ---- Main navigation: Chat / Create / Library (Settings stays a modal) ---- */
+    let currentView = 'chat';
+    function switchView(name) {
+      const views = { chat: el.chatView, create: el.createView, library: el.libraryView };
+      const key = views[name] ? name : 'chat';
+      Object.keys(views).forEach(k => views[k]?.classList.toggle('is-active', k === key));
+      el.mainNav?.querySelectorAll('.nav-tab[data-view]').forEach(btn => {
+        const active = btn.dataset.view === key;
+        btn.classList.toggle('is-active', active);
+        if (active) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
+      });
+      currentView = key;
+      document.body.dataset.view = key;
+      if (key === 'library') {
+        loadPdfHistory().then(renderPdfHistory).catch(() => {});
+        renderImageHistory();
+      }
+      if (key === 'chat') {
+        if (settings.autoScroll && el.chatContainer) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+        el.userInput?.focus();
+      }
+      if (key === 'create') el.imgPromptInput?.focus();
+      return key;
+    }
+    // Kept under their old names so existing callers and window bindings keep working.
+    function openImageModal(){ return switchView('create'); }
+    function closeImageModal(){ if (currentView === 'create') return switchView('chat'); }
     function insertPdfPrompt() { el.userInput.value = 'Create a PDF about '; el.userInput.focus(); autoResize(el.userInput); }
 
     function toggleSidebar() {
@@ -4078,12 +4347,55 @@ EXAMPLES:
     // One pipeline for all image generation (modal, /image command, and the
     // AI generate_image tool). Ratios/styles are normalized here, so a user
     // choice can never be silently discarded.
+    /* Image generation guardrails.
+       NOTE: these are a UX courtesy, NOT a security boundary — anything in the
+       browser can be bypassed. The real limits must live in the Worker/proxy
+       (per-user daily quota + cooldown, validated server-side). */
+    const IMG_DAILY_LIMIT = 40;
+    const IMG_COOLDOWN_MS = 4000;
+    function getImageQuota() {
+      const today = new Date().toISOString().slice(0, 10);
+      let quota = { date: today, used: 0, lastMs: 0 };
+      try {
+        const raw = JSON.parse(localStorage.getItem(memoryKey('img_quota')) || 'null');
+        if (raw && raw.date === today) quota = { ...quota, ...raw, date: today };
+      } catch {}
+      return quota;
+    }
+    function saveImageQuota(quota) {
+      try { localStorage.setItem(memoryKey('img_quota'), JSON.stringify(quota)); } catch {}
+    }
+    function checkImageQuota(count) {
+      const quota = getImageQuota();
+      const waitMs = quota.lastMs + IMG_COOLDOWN_MS - Date.now();
+      if (waitMs > 0) {
+        return { ok: false, reason: `Please wait ${Math.ceil(waitMs / 1000)}s before generating again.` };
+      }
+      if (quota.used + count > IMG_DAILY_LIMIT) {
+        return { ok: false, reason: `Daily image limit reached (${IMG_DAILY_LIMIT} images). It resets at midnight UTC.` };
+      }
+      return { ok: true, quota };
+    }
+    function consumeImageQuota(count) {
+      const quota = getImageQuota();
+      quota.used += count;
+      quota.lastMs = Date.now();
+      saveImageQuota(quota);
+      return quota;
+    }
+
     async function processImageGeneration(rawPrompt, opts = {}) {
       const prompt = String(rawPrompt || '').trim();
       if (!prompt) return;
       const count = Math.min(Math.max(Number(opts.count) || 1, 1), 4);
       const dimensions = normalizeImageDimensions(opts.dimensions || '1024x1024');
       const style = normalizeImageStyle(opts.style || 'photorealistic');
+
+      const quotaCheck = checkImageQuota(count);
+      if (!quotaCheck.ok) {
+        appendErrorUI(quotaCheck.reason);
+        return;
+      }
 
       const currentSession = userSessions[currentSessionId];
       if (!currentSession) return;
@@ -4110,6 +4422,7 @@ EXAMPLES:
       if (!existingTextNode) el.chatContainer.appendChild(aiRow);
 
       const enhancedPrompt = enhanceImagePrompt(prompt, style);
+      const quotaAfter = consumeImageQuota(count);
       const requestedSeed = Number(opts.seed) > 0 ? Number(opts.seed) : null;
       const images = Array.from({ length: count }, (_, index) => {
         const seed = requestedSeed ? requestedSeed + index : randomImageSeed();
@@ -4152,7 +4465,15 @@ EXAMPLES:
       const seedValue = Number(document.getElementById('imgSeedInput')?.value);
       const reference = document.getElementById('imgReferenceInput')?.files?.[0];
       if (!prompt) return alert('Please enter an image prompt.');
-      if (reference) prompt += `, use the uploaded reference image ${reference.name} for visual guidance`;
+      if (reference) {
+        if (!/^image\/(png|jpe?g|webp|gif)$/i.test(reference.type)) {
+          return alert('Reference image must be a PNG, JPEG, WebP, or GIF file.');
+        }
+        if (reference.size > 5 * 1024 * 1024) {
+          return alert('Reference image is too large. Please use a file under 5 MB.');
+        }
+        prompt += `, use the uploaded reference image ${reference.name} for visual guidance`;
+      }
       if (negative) prompt += `, avoid: ${negative}`;
       closeImageModal(); el.imgPromptInput.value='';
       if (document.getElementById('imgNegativePromptInput')) document.getElementById('imgNegativePromptInput').value='';
@@ -4311,6 +4632,128 @@ EXAMPLES:
         el.memoryList.appendChild(row);
       });
     }
+    /* ------------------------------------------------------------------
+       SAVED MEMORY — persists across every chat for this user.
+       This is deliberately separate from the per-chat conversation context
+       above (memorySummary), which resets when a new chat starts.
+       ------------------------------------------------------------------ */
+    const MAX_SAVED_MEMORIES = 50;
+    const MAX_SAVED_MEMORY_CHARS = 240;
+    let savedMemoryItems = null;
+    let savedMemoryCacheKey = null;
+
+    function readSavedMemories() {
+      // The key is user-scoped, so a login/logout switch must not serve a stale cache.
+      const key = memoryKey('saved_memories');
+      if (Array.isArray(savedMemoryItems) && savedMemoryCacheKey === key) return savedMemoryItems;
+      try {
+        const raw = localStorage.getItem(key);
+        const parsed = raw ? JSON.parse(raw) : [];
+        savedMemoryItems = Array.isArray(parsed)
+          ? parsed.map(item => String(item).trim()).filter(Boolean).slice(0, MAX_SAVED_MEMORIES)
+          : [];
+      } catch {
+        savedMemoryItems = [];
+      }
+      savedMemoryCacheKey = key;
+      return savedMemoryItems;
+    }
+    function getSavedMemories() { return readSavedMemories(); }
+    function writeSavedMemories(items) {
+      const clean = [];
+      const seen = new Set();
+      for (const raw of items || []) {
+        const text = String(raw).trim().replace(/^-\s*/, '').slice(0, MAX_SAVED_MEMORY_CHARS);
+        if (!text) continue;
+        const key = text.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        clean.push(text);
+        if (clean.length >= MAX_SAVED_MEMORIES) break;
+      }
+      savedMemoryItems = clean;
+      savedMemoryCacheKey = memoryKey('saved_memories');
+      try { localStorage.setItem(savedMemoryCacheKey, JSON.stringify(clean)); } catch {}
+      renderSavedMemoryList();
+      updateSavedMemoryCount();
+      return clean;
+    }
+    function addSavedMemoryItem() {
+      if (getSavedMemories().length >= MAX_SAVED_MEMORIES) return alert(`You can save up to ${MAX_SAVED_MEMORIES} memories across all chats.`);
+      const value = prompt('What should Your Friend always remember about you?');
+      if (!value?.trim()) return;
+      const normalized = value.trim().slice(0, MAX_SAVED_MEMORY_CHARS);
+      if (getSavedMemories().some(item => item.toLowerCase() === normalized.toLowerCase())) {
+        return alert('You already saved that memory.');
+      }
+      writeSavedMemories([...getSavedMemories(), normalized]);
+      beep(720, 0.04);
+    }
+    function editSavedMemoryItem(index) {
+      const items = getSavedMemories();
+      const value = prompt('Edit this memory', items[index] || '');
+      if (value === null || !value.trim()) return;
+      const normalized = value.trim().slice(0, MAX_SAVED_MEMORY_CHARS);
+      const dup = items.findIndex((item, i) => i !== index && item.toLowerCase() === normalized.toLowerCase());
+      if (dup >= 0) return alert('Another saved memory already uses that text.');
+      items[index] = normalized;
+      writeSavedMemories(items);
+    }
+    function deleteSavedMemoryItem(index) {
+      const items = getSavedMemories();
+      if (!items[index]) return;
+      if (!confirm('Delete this saved memory? It will stop being used in all your chats.')) return;
+      items.splice(index, 1);
+      writeSavedMemories(items);
+    }
+    function clearSavedMemories() {
+      if (!getSavedMemories().length) return alert('You have no saved memories yet.');
+      const confirmation = prompt(`This deletes all ${getSavedMemories().length} saved memories from every chat. Type RESET to continue.`);
+      if (confirmation !== 'RESET') return;
+      writeSavedMemories([]);
+    }
+    function getSavedMemoryContext() {
+      if (!settings.memoryEnabled || settings.privacyMode) return '';
+      const items = getSavedMemories();
+      if (!items.length) return '';
+      return items.map(item => `- ${item}`).join('\n');
+    }
+    function updateSavedMemoryCount() {
+      const countEl = el.savedMemoryCount;
+      if (countEl) countEl.textContent = `${getSavedMemories().length} / ${MAX_SAVED_MEMORIES} saved`;
+    }
+    function renderSavedMemoryList() {
+      if (!el.savedMemoryList) return;
+      el.savedMemoryList.replaceChildren();
+      updateSavedMemoryCount();
+      const items = getSavedMemories();
+      if (!items.length) {
+        const empty = document.createElement('div');
+        empty.className = 'memory-list-empty';
+        empty.textContent = 'Nothing saved yet. Add facts about you here and they carry into every new chat.';
+        el.savedMemoryList.appendChild(empty);
+        return;
+      }
+      items.forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'memory-item';
+        const text = document.createElement('div');
+        text.className = 'memory-item-text';
+        text.textContent = item;
+        const edit = document.createElement('button');
+        edit.type = 'button';
+        edit.textContent = 'Edit';
+        edit.onclick = () => editSavedMemoryItem(index);
+        const del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'danger';
+        del.textContent = 'Delete';
+        del.onclick = () => deleteSavedMemoryItem(index);
+        row.append(text, edit, del);
+        el.savedMemoryList.appendChild(row);
+      });
+    }
+
     function addMemoryItem() {
       if (getMemoryItems().length >= MAX_MEMORY_ITEMS) return alert(`You can save up to ${MAX_MEMORY_ITEMS} memories in a chat.`);
       const value = prompt('What should Your Friend remember for this chat?');
@@ -4348,6 +4791,7 @@ EXAMPLES:
       if (el.systemPromptEditor) el.systemPromptEditor.value = customSystemPrompt || DEFAULT_SYSTEM_PROMPT;
       updateMemoryCount();
       renderMemoryList();
+      renderSavedMemoryList();
       el.memoryModal.style.display = 'flex';
     }
     function closeMemoryEditor(){ el.memoryModal.style.display = 'none'; }
@@ -4392,10 +4836,15 @@ EXAMPLES:
     function buildMemoryContextPreviewText() {
       const editorSystemPrompt = (el.systemPromptEditor?.value || customSystemPrompt || DEFAULT_SYSTEM_PROMPT).trim() || DEFAULT_SYSTEM_PROMPT;
       const editorMemory = (el.memoryEditor?.value || memorySummary || '').trim();
-      const memoryBlock = (settings.memoryEnabled && !settings.privacyMode && editorMemory)
-        ? `\n\nRELEVANT LONG-TERM MEMORY CONTEXT:\n${editorMemory}`
+      const memoryEnabled = settings.memoryEnabled && !settings.privacyMode;
+      const savedMemory = memoryEnabled ? getSavedMemoryContext() : '';
+      const savedBlock = savedMemory
+        ? `\n\nSAVED MEMORY (saved by the user, applies to every chat):\n${savedMemory}`
         : '';
-      return `${editorSystemPrompt}${memoryBlock}\n\nTOOL USE RULES:\n(create_pdf / generate_image tools are included automatically)`;
+      const memoryBlock = (memoryEnabled && editorMemory)
+        ? `\n\nTHIS CHAT ONLY - CONVERSATION CONTEXT:\n${editorMemory}`
+        : '';
+      return `${editorSystemPrompt}${savedBlock}${memoryBlock}\n\nTOOL USE RULES:\n(create_pdf / generate_image tools are included automatically)`;
     }
 
     function toggleMemoryContextPreview() {
@@ -4523,15 +4972,50 @@ EXAMPLES:
       return refreshMemorySummaryIfNeeded();
     }
 
+    // Sends the signed-in user's Supabase access token so the Worker can verify
+    // WHO is calling and apply per-user limits. The Worker must validate this
+    // against Supabase — a frontend header is a claim, not proof, until checked.
+    async function getAuthHeaders() {
+      const headers = { 'Content-Type': 'application/json' };
+      try {
+        if (supabaseClient) {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          const token = session?.access_token;
+          if (token) headers['Authorization'] = `Bearer ${token}`;
+        }
+      } catch {}
+      return headers;
+    }
+
     async function proxyFetch(requestBody) {
       setAiStatus('busy', `⚠ AI trying ${getModelDisplayName(settings.model)}…`);
+      const body = JSON.stringify(requestBody);
+      const headers = await getAuthHeaders();
+      // Callers normally create the controller, but never assume it exists.
+      if (!currentRequestController) currentRequestController = new AbortController();
+      const signal = currentRequestController.signal;
       try {
-        const response = await fetch(PROXY_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestBody),
-          signal: currentRequestController.signal
-        });
+        let response;
+        try {
+          response = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers,
+            body,
+            signal
+          });
+        } catch (innerErr) {
+          // A Worker that has not yet allowed the Authorization header will fail
+          // the CORS preflight as a TypeError. Retry once unauthenticated so the
+          // app keeps working while the Worker is updated.
+          if (innerErr?.name === 'AbortError') throw innerErr;
+          if (!headers['Authorization']) throw innerErr;
+          response = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body,
+            signal
+          });
+        }
         if (response.ok) {
           setAiStatus('online', `● AI Online · Model: ${getModelDisplayName(settings.model)}`);
         }
@@ -4615,10 +5099,14 @@ EXAMPLES:
           ? (refreshMemorySummaryIfNeeded() || '').trim()
           : '';
         const hasValidMemory = Boolean(activeMemory && !/^no long-term memory/i.test(activeMemory));
+        const savedMemory = getSavedMemoryContext();
 
         let systemPromptText = getEffectiveSystemPrompt();
+        if (savedMemory) {
+          systemPromptText += '\n\nSAVED MEMORY (saved by the user, applies to every chat):\n' + savedMemory;
+        }
         if (hasValidMemory) {
-          systemPromptText += '\n\nRELEVANT LONG-TERM MEMORY CONTEXT:\n' + activeMemory;
+          systemPromptText += '\n\nTHIS CHAT ONLY - CONVERSATION CONTEXT:\n' + activeMemory;
         }
         systemPromptText += '\n\n' + TOOL_SYSTEM_INSTRUCTIONS;
 
@@ -5185,6 +5673,7 @@ EXAMPLES:
     window.toggleSidebar = toggleSidebar;
     window.openSettings = openSettings;
     window.closeSettings = closeSettings;
+    window.switchView = switchView;
     window.openImageModal = openImageModal;
     window.closeImageModal = closeImageModal;
     window.generateImageFromModal = generateImageFromModal;

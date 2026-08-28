@@ -1,22 +1,49 @@
-# Your Friend — Live Testing Guide
+# Your Friend AI — Testing Guide
 
-This guides you through the end-to-end checks that need a real browser and a real
-Cloudflare Worker. The Worker is reachable and reports **4 configured keys**:
+## Automated (run this first)
 
+The repo now has a real test suite. It loads the actual `index.html` into jsdom and
+exercises the shipped functions — it does not reimplement them.
+
+```bash
+cd tests
+npm install
+npm test
 ```
-GET https://groq-proxy.mr-hackerdon808.workers.dev/
--> {"ok":true,"service":"groq-proxy","status":"online","configured_keys":4}
-```
 
-> The sandbox used for editing `index.html` has no outbound HTTPS, so automated
-> POSTs could not be run from here. Run the browser steps below to verify the
-> Worker path for real.
+Current result: **51 passed, 0 failed.**
+
+It covers:
+
+- Saved Memory persists across chats; Conversation Context does not
+- Saved Memory is isolated per user and never serves a stale cache on account switch
+- Dedupe, the 50-item cap, and delete
+- Privacy mode and the Memory toggle both suppress the memory blocks
+- The exact system-prompt payload sent to the AI (`buildMemoryContextPreviewText`)
+- Image quota: daily cap, cooldown, daily-limit message
+- Reference-upload type and size validation
+- `proxyFetch` attaches `Authorization: Bearer <token>` when signed in
+- All 43 inline `onclick`/`oninput`/`onchange` handlers resolve in the live page
+- Landing page: headline, CTA count, brand, `<title>`, meta description
+- Settings: 3 basic rows visible, 3 collapsed groups, all 13 controls still present,
+  destructive actions inside the danger group
+
+Add a case to `tests/app.test.mjs` when you change memory, settings, images, or the proxy.
+
+---
+
+## Why the live checks below are still manual
+
+This sandbox resolves DNS for the Worker but the TLS handshake is refused
+(`OpenSSL SSL_connect: SSL_ERROR_SYSCALL`), so outbound calls to
+`groq-proxy.mr-hackerdon808.workers.dev` cannot be made from here. Everything involving
+the Worker, Supabase, or a real browser is therefore **unchecked** and needs a browser.
 
 ---
 
 ## 1. Worker health
 
-Open the site, then in the browser DevTools console run:
+In the browser DevTools console on the live site:
 
 ```js
 await fetch("https://groq-proxy.mr-hackerdon808.workers.dev/", { headers: { Accept: "application/json" } }).then(r => r.json())
@@ -24,17 +51,17 @@ await fetch("https://groq-proxy.mr-hackerdon808.workers.dev/", { headers: { Acce
 
 Expect: `{ ok: true, status: "online", configured_keys: 4 }`.
 
-On the page the new **AI status pill** (top right, next to Settings) should read:
+The AI status pill (top right) should read:
 
-- `● AI Online · Model: Llama 3.3 70B` after a successful check/message.
-- `⚠ AI trying …` while a message is being sent.
-- `⚠ AI temporarily busy · Trying another provider…` after a failed request.
-- `AI status unknown · Send a message` if the GET health probe is blocked by
-  CORS; this is **not** proof the POST path is down.
+- `● AI Online · Model: Llama 3.3 70B` after a successful check/message
+- `⚠ AI trying …` while sending
+- `⚠ AI temporarily busy · Trying another provider…` after a failure
+- `AI status unknown · Send a message` if the GET health probe is CORS-blocked — this is
+  **not** proof the POST path is down
 
-## 2. Real chat smoke tests
+## 2. Chat smoke tests
 
-In the browser console (must be logged in), use this helper:
+Console helper (must be logged in):
 
 ```js
 async function send(raw) {
@@ -45,49 +72,69 @@ async function send(raw) {
 }
 ```
 
-Then run and observe:
-
 | # | Test | Expected |
 |---|------|----------|
-| 1 | `send("Hi")` | Friendly reply, no red error, status pill goes online. |
-| 2 | `send("Write a very long message...")` (pasted, 10k+ chars) | Request is sent; server replies or a **friendly** busy error appears, not raw key errors. |
-| 3 | Send 5 messages quickly | No duplicate chat titles, no stuck "thinking" bar, no double-send. |
-| 4 | Settings → switch model (Balanced/Fast/Advanced) | Status pill updates to the new model name; next request uses it. |
-| 5 | Temporarily disable all providers in the Worker | UI shows "⚠ AI temporarily busy · Trying another provider…" and a friendly retry message, never API keys/stack traces. |
-| 6 | Rate-limit one Groq key | Worker falls back to another provider; user may see a short "busy" notice but not raw `429`. |
-| 7 | Stop generation | Cancel works, message row shows "Generation canceled. You can retry when ready." |
+| 1 | `send("Hi")` | Friendly reply, no red error, pill goes online |
+| 2 | Paste a 10k+ char message | Server replies or a friendly busy error, never raw key errors |
+| 3 | Send 5 messages quickly | No duplicate titles, no stuck thinking bar, no double-send |
+| 4 | Switch model in Settings → Advanced | Pill updates; next request uses the new model |
+| 5 | Disable all providers in the Worker | "AI temporarily busy" + friendly retry, never API keys |
+| 6 | Rate-limit one Groq key | Worker falls back; user sees "busy", not a raw `429` |
+| 7 | Stop generation | Cancel works, row shows "Generation canceled." |
 
-Use the Network panel and filter for `groq-proxy` to record the exact HTTP status.
-If you see `HTTP 400`, compare the request body (messages model/tools) against the
-Worker contract; the frontend already truncates long history segments and caps
-`max_tokens`.
+## 3. Memory — the new behaviour
 
-## 3. What changed in the frontend for these tests
+This is the feature that changed, so test it deliberately:
 
-- Added an **AI Online / busy / offline status pill** in the header.
-- Added a `proxyFetch()` wrapper that updates the pill on every request and maps
-  HTTP errors to friendly text (429/401/5xx/network) instead of leaking API details.
-- `getErrorMessage()` now redacts API keys/bearer tokens and caps sneaky long
-  payloads.
-- jsPDF is no longer loaded on first paint; it lazy-loads the first time a PDF is
-  generated.
-- Chat sidebar now renders its empty state before login ("Sign in to see and start
-  your chats") so "Search chats… 0" has context.
-- Memory modal adds **Show what gets sent**, dedupe, 50-item cap, and 240-char
-  per item limit.
-- PDF Backups add search, rename, file size, generation date, and duplicate
-  detection.
+1. Settings → Your data → Memory & prompt.
+2. Under **📌 Saved Memory**, add "Lives in Pune".
+3. Start a **new chat** and ask "Suggest a weekend plan."
+   - Expected: the reply reflects Pune. Saved Memory survived the new chat.
+4. Add something under **🧠 Conversation Context**, start another new chat.
+   - Expected: it is gone. Conversation Context is per-chat by design.
+5. Click **👁 Show what gets sent**.
+   - Expected: a `SAVED MEMORY (saved by the user, applies to every chat):` block and a
+     `THIS CHAT ONLY - CONVERSATION CONTEXT:` block, in that order.
+6. Turn on **Privacy mode** (Settings → Advanced) and re-open the preview.
+   - Expected: **both** memory blocks disappear.
+7. Log out and log in as a different account.
+   - Expected: the other account's Saved Memory is empty, not yours.
+8. Refresh the page.
+   - Expected: Saved Memory is still there.
 
-## 4. Remaining manual checklist
+## 4. Proxy auth — needs the Worker updated
 
-- [ ] Chat count updates after creating chats
-- [ ] Refresh doesn't remove chats
-- [ ] Chat search works for titles
-- [ ] Deleted chats disappear permanently
-- [ ] Memory delete/edit works and no duplicates are created
+The frontend now sends `Authorization: Bearer <Supabase access token>`.
+
+**Before the Worker is updated**, `Access-Control-Allow-Headers` probably does not list
+`Authorization`, so the browser preflight fails. The frontend detects that and retries
+once without the header so the app keeps working. Check in the Network panel:
+
+- [ ] Two POSTs to `/api/chat` for one message = preflight failed, fallback used → update
+      the Worker's CORS headers
+- [ ] One POST with `Authorization` present and `200` = Worker accepts it
+
+**Once the Worker validates the token, remove the fallback retry in `proxyFetch`**,
+otherwise it stays a bypass.
+
+## 5. Image generator
+
+- [ ] Batch of 4 generates; batch is capped at 4
+- [ ] Generating twice within 4s shows "Please wait Ns…"
+- [ ] After 40 images in a UTC day: "Daily image limit reached (40 images)"
+- [ ] Uploading a `.exe` as a reference is rejected
+- [ ] Uploading a >5 MB image is rejected
+- [ ] Note: the reference file is **not** actually sent to the image endpoint — it is only
+      mentioned in the text prompt. Implement or remove it.
+
+## 6. Remaining manual checklist
+
+- [ ] Chat count updates after creating chats; refresh keeps them
+- [ ] Chat search by title; deleted chats stay deleted
+- [ ] Memory edit/delete, no duplicates
 - [ ] PDF rename/delete survive refresh
-- [ ] Image generator (prompt/batch/seed/reference/cancel) on a real device
-- [ ] Settings each survive refresh (theme, font, compact, enter-to-send, sound,
-  auto-scroll, memory, PDF preview, response length, language, model, animations,
-  privacy mode)
-- [ ] Login/signup validation + persistence + logout
+- [ ] All settings survive refresh (theme, font, compact, enter-to-send, sound,
+      auto-scroll, memory, PDF preview, response length, language, model, animations,
+      privacy mode)
+- [ ] Login/signup validation, persistence across refresh, logout, expired session
+- [ ] Mobile: sidebar, modals, and the input bar at 360px / 390px / 768px
