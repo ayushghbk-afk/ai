@@ -185,22 +185,53 @@ all 43 inline handlers resolve to a function   PASS
 
 ---
 
-## 7. Not done — the remaining review items
+## 7. Core navigation — built
+
+Per the decision to keep single-screen switching (no routes), the four-tab bar now drives
+real screens inside the one file:
+
+```
+💬 Chat   🎨 Create   📁 Library   ⚙️ Settings
+```
+
+- **Chat** — `#chat-view`, holds `#chat-container` and the composer. Active on load.
+- **Create** — `#create-view`. The image generator was promoted out of its overlay
+  (`#image-modal` is gone) into a full screen with a heading and a description.
+- **Library** — `#library-view`. PDF Backups and the image gallery were **moved out of the
+  sidebar**, which now holds only chats. This is the concrete answer to review item #7.
+- **Settings** — stays a modal, as the review recommended.
+
+`switchView(name)` toggles `.is-active`, keeps `aria-current="page"` in sync, sets
+`body[data-view]`, and falls back to Chat on an unknown name. Entering Library refreshes
+both lists. `openImageModal()` / `closeImageModal()` are kept as thin wrappers so existing
+callers and `window` bindings did not have to change.
+
+The sidebar move was done by relocating the elements with their **original ids**, so
+`renderPdfHistory()`, `renderImageHistory()` and the search listener work untouched.
+
+## 8. Mobile pass
+
+- Bottom nav: 52px tap targets, `env(safe-area-inset-bottom)`, 4 tabs.
+- The header's Create button is hidden at ≤768px — the nav tab already does that job.
+- `≤390px`: tighter cards and smaller tab type. `≤340px`: labels drop, icons only.
+- Short landscape phones: the bar collapses to a single row so chat keeps its height.
+- Create screen controls go full-width on phones instead of sitting in a 220px column.
+- Modals already had `max-height: calc(100dvh - 32px)` + scroll; verified still present.
+
+**Not visually verified.** Chromium could not be downloaded in this sandbox (the browser
+CDN is blocked), so no screenshots were taken. What *was* verified is that the stylesheet
+parses cleanly — 441 rules, 13 media queries, 0 unreadable sheets — and that every new
+selector exists, including `.nav-tab` rules at all four breakpoints. Actual pixel layout
+at 360/390/768px still needs your eyes.
+
+---
+
+## 9. Still open
 
 | Item | Status | Why |
 |---|---|---|
-| #2 Route split (`/`, `/chat`, `/login`) | **Not done** | Needs a product decision on hash routing vs. multi-file. See below. |
-| #9 Worker-side auth, rate limits, quotas | **Not done** | The Worker is not in this repo. |
-| Mobile navigation pass | Not done | Needs a real device/viewport. |
-| Empty/loading/error states | Not done | Not started. |
-
-**On the route split:** the app is one `index.html` on GitHub Pages, so `/chat` and
-`/login` as real paths would 404 without a redirect hack. The practical options are hash
-routes (`#/`, `#/chat`, `#/login`) inside the same file, or splitting into
-`index.html` + `app.html`. The current change keeps one file and one screen at a time,
-which fixes most of the "where do I click" problem without that decision. Say which you
-want and it is a small change from here.
-
-**On navigation (`💬 Chat · 🎨 Create · 📁 Library · ⚙️ Settings`):** not built. Three of
-those four destinations do not exist as screens yet — Create, Library and Settings are
-modals today. Building the bar first would produce four tabs pointing at the same place.
+| #9 Worker-side auth, rate limits, quotas | **Not done** | The Worker is not in this repo. Highest remaining risk. |
+| Remove the `proxyFetch` auth fallback | Blocked on the Worker | Until the Worker validates the token, removing it breaks the app. |
+| Reference-image upload | Not done | The file is never sent — implement or remove. |
+| Empty/loading/error states | Not done | Review item #9. |
+| Dead CSS | Not done | `.image-tool-card` rules are now unused after the modal was promoted. |

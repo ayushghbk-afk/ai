@@ -818,6 +818,114 @@
       box-shadow: 0 18px 60px rgba(255,107,107,.10);
     }
 
+    /* ---------- Main views + bottom navigation ---------- */
+    #view-area{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      position:relative;
+      overflow:hidden;
+    }
+    .view{ display:none; }
+    .view.is-active{
+      display:flex;
+      flex-direction:column;
+      flex:1;
+      min-height:0;
+    }
+    .view-scroll{
+      flex:1;
+      overflow-y:auto;
+      overflow-x:hidden;
+      -webkit-overflow-scrolling:touch;
+      overscroll-behavior:contain;
+      padding:16px var(--pad-x) 24px;
+      display:flex;
+      justify-content:center;
+    }
+    .view-card{
+      width:min(760px, 100%);
+      border:1px solid var(--border);
+      border-radius:18px;
+      background:var(--bg-card);
+      box-shadow:var(--shadow);
+      padding:clamp(16px,3.4vw,26px);
+      display:flex;
+      flex-direction:column;
+      gap:11px;
+      align-self:flex-start;
+    }
+    .view-head{ text-align:left; margin-bottom:2px; }
+    .view-head h2{ font-size:1.25rem; font-weight:950; letter-spacing:.2px; margin-bottom:4px; }
+    .view-sub{ font-size:.84rem; line-height:1.5; color:var(--text-sub); font-weight:750; max-width:60ch; }
+    .view-card textarea{
+      width:100%;
+      min-height:88px;
+      resize:vertical;
+      border:1px solid var(--border);
+      border-radius:14px;
+      background:var(--bg-input);
+      color:var(--text-main);
+      padding:11px 12px;
+      font:800 .92rem inherit;
+    }
+    .view-card .settings-row{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      flex-wrap:wrap; text-align:left;
+    }
+    .view-card select, .view-card input[type="number"]{
+      max-width:220px; padding:9px 10px; border:1px solid var(--border);
+      border-radius:11px; background:var(--bg-card); color:var(--text-main); font:850 .86rem inherit;
+    }
+    .library-group{
+      border-top:1px solid var(--border);
+      padding-top:14px;
+      margin-top:6px;
+      text-align:left;
+    }
+    .library-group:first-of-type{ border-top:0; padding-top:0; margin-top:0; }
+    .library-title{ font-weight:950; font-size:.98rem; display:block; margin-bottom:9px; }
+
+    #main-nav{
+      display:flex;
+      align-items:stretch;
+      gap:2px;
+      border-top:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(10,15,27,.72), rgba(10,15,27,.92));
+      backdrop-filter:blur(14px);
+      padding:5px 6px max(5px, env(safe-area-inset-bottom));
+      position:relative;
+      z-index:2;
+    }
+    html[data-theme="light"] #main-nav{
+      background:linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.98));
+    }
+    .nav-tab{
+      flex:1 1 0;
+      min-width:0;
+      min-height:46px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      border:0;
+      border-radius:12px;
+      background:transparent;
+      color:var(--text-sub);
+      font:850 .7rem inherit;
+      cursor:pointer;
+      transition:background .18s ease, color .18s ease;
+    }
+    .nav-tab:hover{ background:rgba(255,255,255,.06); color:var(--text-main); }
+    .nav-tab.is-active{
+      color:var(--text-main);
+      background:linear-gradient(135deg, rgba(124,92,255,.20), rgba(255,77,141,.14));
+    }
+    .nav-icon{ font-size:1.05rem; line-height:1; }
+    .nav-label{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+
     @media (max-width: 480px){
       header{ padding: 10px 10px; }
       .icon-btn{ padding: 7px 10px; font-size: .95rem; }
@@ -974,6 +1082,53 @@
       .avatar{width:30px;height:30px;}
       .settings-row .sub{font-size:.78rem;}
       .settings-row .label{font-size:.9rem;}
+    }
+
+    /* ===== Mobile pass: navigation, screens, tap targets ===== */
+    @media (max-width:768px){
+      /* The Create tab in the bottom nav makes this header button redundant. */
+      .header-actions .header-create-btn{ display:none; }
+
+      #main-nav{ padding:4px 4px max(4px, env(safe-area-inset-bottom)); gap:1px; }
+      .nav-tab{ min-height:52px; border-radius:11px; font-size:.68rem; }
+      .nav-icon{ font-size:1.15rem; }
+
+      .view-scroll{ padding:12px 10px 20px; }
+      .view-card{ padding:15px 13px; border-radius:16px; gap:10px; }
+      .view-head h2{ font-size:1.12rem; }
+      .view-sub{ font-size:.8rem; }
+      .view-card textarea{ min-height:76px; font-size:.9rem; padding:10px 11px; }
+      .view-card .settings-row{ gap:8px; }
+      .view-card select, .view-card input[type="number"]{
+        max-width:none; width:100%; flex:1 1 140px;
+      }
+      .view-card > div[style*="display:flex"] > button{ flex:1 1 140px; }
+      .library-title{ font-size:.94rem; }
+
+      /* Keep the composer reachable above the nav bar. */
+      footer{ padding-bottom:max(8px, env(safe-area-inset-bottom)); }
+    }
+
+    @media (max-width:390px){
+      .nav-tab{ min-height:50px; font-size:.64rem; gap:2px; }
+      .nav-icon{ font-size:1.05rem; }
+      .view-scroll{ padding:10px 8px 18px; }
+      .view-card{ padding:13px 11px; }
+    }
+
+    @media (max-width:340px){
+      .nav-label{ display:none; }
+      .nav-tab{ min-height:46px; }
+      .nav-icon{ font-size:1.25rem; }
+    }
+
+    /* Short landscape phones: shrink the bar so the chat keeps its height. */
+    @media (max-height:480px) and (orientation:landscape) and (max-width:948px){
+      #main-nav{ padding:2px 4px max(2px, env(safe-area-inset-bottom)); }
+      .nav-tab{ min-height:38px; flex-direction:row; gap:5px; font-size:.68rem; }
+      .nav-icon{ font-size:.95rem; }
+      .view-scroll{ padding:8px 10px 14px; }
+      .view-card{ padding:12px; }
     }
 
     /* ===== Image generator (v2): loading, retry, lightbox ===== */
@@ -1303,9 +1458,69 @@
     </div>
   </div>
 
-  <div id="image-modal" aria-modal="true" role="dialog">
-    <div class="image-tool-card">
-      <h2>🎨 Advanced Image Generator</h2>
+  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+  <aside id="sidebar">
+    <div class="sidebar-top">
+      <div class="brand" aria-hidden="true" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04);">
+        <span class="dot" style="width:12px; height:12px; border-radius:50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.20);"></span>
+        <span class="name" style="font-weight:900; letter-spacing:.2px;">Free AI tools, built for everyone</span>
+      </div>
+    </div>
+    <button class="new-chat-btn" onclick="createNewChat()" style="background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14)); border:1px solid rgba(124,92,255,.26); color:var(--text-main); padding:11px 12px; border-radius:14px; display:flex; align-items:center; gap:10px; font-size:.95rem; cursor:pointer; transition: transform .1s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; width:100%; justify-content:flex-start; font-weight:800; box-shadow: 0 10px 26px rgba(124,92,255,.12); position:relative; z-index:1;">
+      <span>+</span> New Chat
+    </button>
+    <div class="history-tools"><input id="historySearch" class="history-search" type="search" placeholder="Search chats…" aria-label="Search chats" /><span id="historyCount" class="history-count">0</span></div>
+    <div class="history-list" id="historyList"></div>
+
+    <div class="user-profile" style="border-top:1px solid rgba(255,255,255,.08); padding-top:12px; margin-top:12px; display:flex; align-items:center; justify-content:space-between; font-size:.95rem; gap:10px;">
+      <div class="user-left" style="display:flex; align-items:center; gap:10px; min-width:0;">
+        <div class="user-avatar" aria-hidden="true" style="width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(255,77,141,.18)); border:1px solid rgba(124,92,255,.22); flex-shrink:0; box-shadow: 0 14px 30px rgba(124,92,255,.15);">U</div>
+        <span id="userDisplay" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</span>
+      </div>
+      <button class="logout-btn" onclick="logout()" style="background: rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.22); color: var(--danger); cursor:pointer; padding:8px 10px; border-radius: 12px; font-weight:800; transition: transform .1s ease, box-shadow .2s ease, background .2s ease;">Logout</button>
+    </div>
+  </aside>
+
+  <main>
+    <header>
+      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
+      <div class="title-wrap">
+        <span class="spark"></span>
+        <span>Your Friend <em class="brand-ai">AI</em></span>
+      </div>
+      <div class="header-actions">
+        <button id="aiStatus" class="ai-status checking" type="button" title="AI provider status. Click to re-check." onclick="checkProxyHealth()">
+          <span class="ai-status-dot" aria-hidden="true"></span>
+          <span class="ai-status-text">Checking AI…</span>
+        </button>
+        <button class="icon-btn header-create-btn" title="Create images" aria-label="Go to Create" onclick="switchView('create')">🎨 <span class="label">Create</span></button>
+        <button class="icon-btn" title="Settings" aria-label="Open settings" onclick="openSettings()">⚙️ <span class="label">Settings</span></button>
+      </div>
+    </header>
+
+    <div id="view-area">
+      <section id="chat-view" class="view is-active" aria-label="Chat">
+        <div id="chat-container"></div>
+    <footer>
+      <div id="generationStatus" class="generation-bar" aria-live="polite" hidden><span class="generation-dot" aria-hidden="true"></span><span id="generationLabel">Your Friend is thinking…</span><button id="cancelGenerationBtn" type="button" onclick="cancelGeneration()">Cancel generation</button></div>
+      <div id="editingBadge" class="editing-badge"><span>Editing a sent message</span><button type="button" onclick="cancelEditing()">Cancel</button></div>
+      <div class="input-container">
+        <textarea id="userInput" placeholder="Message Your Friend or type /image prompt..." rows="1" oninput="autoResize(this)"></textarea>
+        <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send">↑</button>
+      </div>
+    </footer>
+      </section>
+
+      <section id="create-view" class="view" aria-label="Create">
+        <div class="view-scroll">
+          <div class="view-card">
+            <div class="view-head">
+              <h2>🎨 Create</h2>
+              <p class="view-sub">Generate images with a style preset, aspect ratio and seed. Up to 40 a day.</p>
+            </div>
+
+      
       <textarea id="imgPromptInput" placeholder="Describe what you want to generate..." rows="3"></textarea>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;position:relative;z-index:1;">
         <button type="button" class="prompt-enhance-btn" onclick="enhanceModalPrompt()" style="padding:9px 11px;font-size:.8rem;box-shadow:none;">✨ Enhance prompt</button>
@@ -1358,76 +1573,51 @@
       <div id="imgReferencePreview" style="display:none;text-align:left;color:var(--text-sub);font-size:.75rem;font-weight:800;position:relative;z-index:1;"></div>
 
       <div style="display:flex; gap:10px; margin-top:8px;">
-        <button type="button" onclick="closeImageModal()" style="background:rgba(255,255,255,0.1); flex:1; border:1px solid rgba(255,255,255,.12); box-shadow:none;">Cancel</button>
-        <button type="button" onclick="generateImageFromModal()" style="flex:2;">Generate Batch ✨</button>
+        <button type="button" onclick="switchView('chat')" style="background:rgba(255,255,255,0.1); flex:1; border:1px solid rgba(255,255,255,.12); box-shadow:none;">← Back to chat</button>
+        <button type="button" onclick="generateImageFromModal()" style="flex:2 1 200px;">Generate Batch ✨</button>
       </div>
-    </div>
-  </div>
+          </div>
+        </div>
+      </section>
 
-  <div id="sidebar-overlay" onclick="toggleSidebar()"></div>
-
-  <aside id="sidebar">
-    <div class="sidebar-top">
-      <div class="brand" aria-hidden="true" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04);">
-        <span class="dot" style="width:12px; height:12px; border-radius:50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.20);"></span>
-        <span class="name" style="font-weight:900; letter-spacing:.2px;">Free AI tools, built for everyone</span>
+      <section id="library-view" class="view" aria-label="Library">
+        <div class="view-scroll">
+          <div class="view-card">
+            <div class="view-head">
+              <h2>📁 Library</h2>
+              <p class="view-sub">Everything you have generated, in one place.</p>
+            </div>
+        <div id="pdfBackupSection" class="library-group">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;">
+          <span class="library-title">📄 PDFs</span>
+          <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
+        </div>
+        <input id="pdfSearchInput" class="history-search" type="search" placeholder="Search PDFs…" aria-label="Search PDFs" />
+        <div id="pdfBackupList"></div>
       </div>
-    </div>
-    <button class="new-chat-btn" onclick="createNewChat()" style="background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14)); border:1px solid rgba(124,92,255,.26); color:var(--text-main); padding:11px 12px; border-radius:14px; display:flex; align-items:center; gap:10px; font-size:.95rem; cursor:pointer; transition: transform .1s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; width:100%; justify-content:flex-start; font-weight:800; box-shadow: 0 10px 26px rgba(124,92,255,.12); position:relative; z-index:1;">
-      <span>+</span> New Chat
-    </button>
-    <div class="history-tools"><input id="historySearch" class="history-search" type="search" placeholder="Search chats…" aria-label="Search chats" /><span id="historyCount" class="history-count">0</span></div>
-    <div class="history-list" id="historyList"></div>
-
-    <div id="pdfBackupSection" style="margin-top:16px; padding-top:14px; border-top:1px solid var(--border);">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:9px;">
-        <span style="font-weight:900; font-size:.9rem;">📚 PDF Backups</span>
-        <button type="button" onclick="openPdfHistory()" style="border:0; background:transparent; color:var(--accent); font-weight:900; cursor:pointer;">View</button>
+        <div id="imageHistorySection" class="library-group">
+        <div class="library-title">🖼 Images</div>
+        <div id="imageHistoryList"></div>
       </div>
-      <input id="pdfSearchInput" class="history-search" type="search" placeholder="Search PDFs…" aria-label="Search PDFs" />
-      <div id="pdfBackupList"></div>
-    </div>
-    <div id="imageHistorySection" style="margin-top:14px; padding-top:12px; border-top:1px solid var(--border);">
-      <div style="font-weight:900;font-size:.9rem;">🖼 Image gallery</div>
-      <div id="imageHistoryList"></div>
+          </div>
+        </div>
+      </section>
     </div>
 
-    <div class="user-profile" style="border-top:1px solid rgba(255,255,255,.08); padding-top:12px; margin-top:12px; display:flex; align-items:center; justify-content:space-between; font-size:.95rem; gap:10px;">
-      <div class="user-left" style="display:flex; align-items:center; gap:10px; min-width:0;">
-        <div class="user-avatar" aria-hidden="true" style="width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(255,77,141,.18)); border:1px solid rgba(124,92,255,.22); flex-shrink:0; box-shadow: 0 14px 30px rgba(124,92,255,.15);">U</div>
-        <span id="userDisplay" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</span>
-      </div>
-      <button class="logout-btn" onclick="logout()" style="background: rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.22); color: var(--danger); cursor:pointer; padding:8px 10px; border-radius: 12px; font-weight:800; transition: transform .1s ease, box-shadow .2s ease, background .2s ease;">Logout</button>
-    </div>
-  </aside>
-
-  <main>
-    <header>
-      <button class="menu-btn" onclick="toggleSidebar()" aria-label="Open menu">☰</button>
-      <div class="title-wrap">
-        <span class="spark"></span>
-        <span>Your Friend <em class="brand-ai">AI</em></span>
-      </div>
-      <div class="header-actions">
-        <button id="aiStatus" class="ai-status checking" type="button" title="AI provider status. Click to re-check." onclick="checkProxyHealth()">
-          <span class="ai-status-dot" aria-hidden="true"></span>
-          <span class="ai-status-text">Checking AI…</span>
-        </button>
-        <button class="icon-btn" title="Image Generator" aria-label="Open image generator" onclick="openImageModal()">🎨 <span class="label">Image Tool</span></button>
-        <button class="icon-btn" title="Settings" aria-label="Open settings" onclick="openSettings()">⚙️ <span class="label">Settings</span></button>
-      </div>
-    </header>
-
-    <div id="chat-container"></div>
-
-    <footer>
-      <div id="generationStatus" class="generation-bar" aria-live="polite" hidden><span class="generation-dot" aria-hidden="true"></span><span id="generationLabel">Your Friend is thinking…</span><button id="cancelGenerationBtn" type="button" onclick="cancelGeneration()">Cancel generation</button></div>
-      <div id="editingBadge" class="editing-badge"><span>Editing a sent message</span><button type="button" onclick="cancelEditing()">Cancel</button></div>
-      <div class="input-container">
-        <textarea id="userInput" placeholder="Message Your Friend or type /image prompt..." rows="1" oninput="autoResize(this)"></textarea>
-        <button id="sendBtn" class="send-btn" onclick="sendMessage()" title="Send">↑</button>
-      </div>
-    </footer>
+    <nav id="main-nav" aria-label="Main">
+      <button type="button" class="nav-tab is-active" data-view="chat" aria-current="page" onclick="switchView('chat')">
+        <span class="nav-icon" aria-hidden="true">💬</span><span class="nav-label">Chat</span>
+      </button>
+      <button type="button" class="nav-tab" data-view="create" onclick="switchView('create')">
+        <span class="nav-icon" aria-hidden="true">🎨</span><span class="nav-label">Create</span>
+      </button>
+      <button type="button" class="nav-tab" data-view="library" onclick="switchView('library')">
+        <span class="nav-icon" aria-hidden="true">📁</span><span class="nav-label">Library</span>
+      </button>
+      <button type="button" class="nav-tab" id="navSettingsTab" onclick="openSettings()">
+        <span class="nav-icon" aria-hidden="true">⚙️</span><span class="nav-label">Settings</span>
+      </button>
+    </nav>
   </main>
 
   <script>
@@ -2941,7 +3131,10 @@ EXAMPLES:
       el.memoryToggle = document.getElementById('memoryToggle');
       el.pdfPreviewToggle = document.getElementById('pdfPreviewToggle');
       el.responseLengthSelect = document.getElementById('responseLengthSelect');
-      el.imageModal = document.getElementById('image-modal');
+      el.chatView = document.getElementById('chat-view');
+      el.createView = document.getElementById('create-view');
+      el.libraryView = document.getElementById('library-view');
+      el.mainNav = document.getElementById('main-nav');
 
       el.historyList = document.getElementById('historyList');
       el.chatContainer = document.getElementById('chat-container');
@@ -3329,8 +3522,34 @@ EXAMPLES:
 
     function openSettings(){ el.settingsModal.style.display = 'flex'; }
     function closeSettings(){ el.settingsModal.style.display = 'none'; }
-    function openImageModal(){ el.imageModal.style.display = 'flex'; }
-    function closeImageModal(){ el.imageModal.style.display = 'none'; }
+    /* ---- Main navigation: Chat / Create / Library (Settings stays a modal) ---- */
+    let currentView = 'chat';
+    function switchView(name) {
+      const views = { chat: el.chatView, create: el.createView, library: el.libraryView };
+      const key = views[name] ? name : 'chat';
+      Object.keys(views).forEach(k => views[k]?.classList.toggle('is-active', k === key));
+      el.mainNav?.querySelectorAll('.nav-tab[data-view]').forEach(btn => {
+        const active = btn.dataset.view === key;
+        btn.classList.toggle('is-active', active);
+        if (active) btn.setAttribute('aria-current', 'page');
+        else btn.removeAttribute('aria-current');
+      });
+      currentView = key;
+      document.body.dataset.view = key;
+      if (key === 'library') {
+        loadPdfHistory().then(renderPdfHistory).catch(() => {});
+        renderImageHistory();
+      }
+      if (key === 'chat') {
+        if (settings.autoScroll && el.chatContainer) el.chatContainer.scrollTop = el.chatContainer.scrollHeight;
+        el.userInput?.focus();
+      }
+      if (key === 'create') el.imgPromptInput?.focus();
+      return key;
+    }
+    // Kept under their old names so existing callers and window bindings keep working.
+    function openImageModal(){ return switchView('create'); }
+    function closeImageModal(){ if (currentView === 'create') return switchView('chat'); }
     function insertPdfPrompt() { el.userInput.value = 'Create a PDF about '; el.userInput.focus(); autoResize(el.userInput); }
 
     function toggleSidebar() {
@@ -5454,6 +5673,7 @@ EXAMPLES:
     window.toggleSidebar = toggleSidebar;
     window.openSettings = openSettings;
     window.closeSettings = closeSettings;
+    window.switchView = switchView;
     window.openImageModal = openImageModal;
     window.closeImageModal = closeImageModal;
     window.generateImageFromModal = generateImageFromModal;

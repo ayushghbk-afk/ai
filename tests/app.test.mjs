@@ -213,5 +213,84 @@ ok('destructive actions are inside the danger group',
 ok('export/import are NOT at top level',
    !/exportAppData/.test(basicRows.map(r => r.outerHTML).join('')));
 
+console.log('\n== Main navigation: Chat / Create / Library ==');
+const navTabs = [...w.document.querySelectorAll('#main-nav .nav-tab')];
+ok('4 nav tabs exist', navTabs.length === 4, String(navTabs.length));
+ok('tab order is Chat, Create, Library, Settings',
+   navTabs.map(t => t.querySelector('.nav-label').textContent).join(',') === 'Chat,Create,Library,Settings',
+   navTabs.map(t => t.querySelector('.nav-label').textContent).join(','));
+
+const isActive = (id) => w.document.getElementById(id).classList.contains('is-active');
+ok('chat view is active on load', isActive('chat-view'));
+ok('create view is hidden on load', !isActive('create-view'));
+ok('library view is hidden on load', !isActive('library-view'));
+ok('Chat tab is marked current', navTabs[0].getAttribute('aria-current') === 'page');
+
+w.eval(`switchView('create')`);
+ok('switchView(create) activates create view', isActive('create-view') && !isActive('chat-view'));
+ok('Create tab becomes current', navTabs[1].getAttribute('aria-current') === 'page');
+ok('Chat tab is no longer current', navTabs[0].getAttribute('aria-current') === null);
+ok('body[data-view] tracks the view', w.document.body.dataset.view === 'create');
+
+w.eval(`switchView('library')`);
+ok('switchView(library) activates library view', isActive('library-view') && !isActive('create-view'));
+
+w.eval(`switchView('nonsense')`);
+ok('unknown view falls back to chat', isActive('chat-view') && w.document.body.dataset.view === 'chat');
+
+console.log('\n== Back-compat: old modal helpers still work ==');
+w.eval(`openImageModal()`);
+ok('openImageModal() now switches to Create', isActive('create-view'), w.document.body.dataset.view);
+w.eval(`closeImageModal()`);
+ok('closeImageModal() returns to Chat', isActive('chat-view'));
+w.eval(`switchView('chat'); closeImageModal()`);
+ok('closeImageModal() outside Create is a no-op', isActive('chat-view'));
+
+console.log('\n== Create screen owns the image generator ==');
+const createView = w.document.getElementById('create-view');
+['imgPromptInput','imgCountSelect','imgRatioSelect','imgStyleSelect','imgSeedInput','imgReferenceInput']
+  .forEach(id => ok(`#${id} lives inside #create-view`, createView.contains(w.document.getElementById(id))));
+ok('the old #image-modal overlay is gone', !w.document.getElementById('image-modal'));
+ok('Create screen has a heading', /Create/.test(createView.querySelector('h2').textContent));
+
+console.log('\n== Library screen owns PDFs and images; sidebar is decluttered ==');
+const libraryView = w.document.getElementById('library-view');
+ok('#pdfBackupList moved into Library', libraryView.contains(w.document.getElementById('pdfBackupList')));
+ok('#imageHistoryList moved into Library', libraryView.contains(w.document.getElementById('imageHistoryList')));
+ok('#pdfSearchInput moved into Library', libraryView.contains(w.document.getElementById('pdfSearchInput')));
+const sidebar = w.document.getElementById('sidebar');
+ok('sidebar no longer holds PDF backups', !sidebar.contains(w.document.getElementById('pdfBackupList')));
+ok('sidebar no longer holds the image gallery', !sidebar.contains(w.document.getElementById('imageHistoryList')));
+ok('sidebar still holds the chat list', sidebar.contains(w.document.getElementById('historyList')));
+
+console.log('\n== Chat view keeps the composer ==');
+const chatView = w.document.getElementById('chat-view');
+ok('#chat-container is inside #chat-view', chatView.contains(w.document.getElementById('chat-container')));
+ok('the input bar is inside #chat-view', chatView.contains(w.document.getElementById('userInput')));
+ok('the nav bar is outside #view-area', !w.document.getElementById('view-area').contains(w.document.getElementById('main-nav')));
+
+console.log('\n== Stylesheet parses and the new rules survive ==');
+const sheet = w.document.styleSheets[0];
+ok('the inline stylesheet parsed', !!sheet);
+const selectors = [];
+let ruleCount = 0, mediaCount = 0;
+for (const r of sheet.cssRules) {
+  ruleCount++;
+  if (r.selectorText) selectors.push(r.selectorText);
+  if (r.type === 4) {
+    mediaCount++;
+    for (const inner of r.cssRules) { ruleCount++; if (inner.selectorText) selectors.push(r.conditionText + ' :: ' + inner.selectorText); }
+  }
+}
+ok('a substantial rule set parsed (no silent CSS syntax error)', ruleCount > 400, `${ruleCount} rules, ${mediaCount} media queries`);
+const hasSel = (needle) => selectors.some(sel => sel.split(',').some(part => part.trim().endsWith(needle)));
+['#view-area', '.view', '.view.is-active', '.view-scroll', '.view-card', '.view-head',
+ '.library-group', '.library-title', '#main-nav', '.nav-tab', '.nav-tab.is-active',
+ '.nav-icon', '.nav-label', '.brand-ai', '.memory-kind-saved', '.memory-kind-chat',
+ '.settings-collapsible', '.preview-memory', '.header-create-btn']
+  .forEach(sel => ok(`CSS rule present: ${sel}`, hasSel(sel)));
+const mobileNav = selectors.filter(sel => sel.startsWith('(max-width') && sel.includes('.nav-tab'));
+ok('.nav-tab has mobile breakpoint rules', mobileNav.length >= 3, mobileNav.join(' | '));
+
 console.log(`\n${fail === 0 ? 'ALL GREEN' : 'FAILURES PRESENT'} — ${pass} passed, ${fail} failed`);
 process.exit(fail === 0 ? 0 : 1);
