@@ -26,7 +26,11 @@ It covers:
 - All 43 inline `onclick`/`oninput`/`onchange` handlers resolve in the live page
 - Landing page: headline, CTA count, brand, `<title>`, meta description
 - Settings: 3 basic rows visible, 3 collapsed groups, all 13 controls still present,
-  destructive actions inside the danger group
+  destructive actions inside the danger group; live settings search (`filterSettings`)
+  filters rows/groups and shows a no-results card
+- List systems: chat history renders pinned/today/yesterday/week/month/older groups
+  with hover-reveal actions; memory lists show numbered chips + capacity bars
+  (`tests/smoke.mjs` covers the new UI functions)
 
 Add a case to `tests/app.test.mjs` when you change memory, settings, images, or the proxy.
 

@@ -235,3 +235,54 @@ at 360/390/768px still needs your eyes.
 | Reference-image upload | Not done | The file is never sent — implement or remove. |
 | Empty/loading/error states | Not done | Review item #9. |
 | Dead CSS | Not done | `.image-tool-card` rules are now unused after the modal was promoted. |
+
+---
+
+## 10. Settings tab & list-system UI pass (branch `arena/01a04dd3-ai`)
+
+A UI-only pass over the Settings modal, the chat history list, the memory lists and
+the Library lists. No behaviour or storage keys changed; the harness still passes
+**105/105**, and a new smoke test (`tests/smoke.mjs`) exercises the new UI functions.
+
+### Settings modal
+
+- Sticky glass header with a gear chip, title, subtitle and close button; the card
+  scrolls underneath it.
+- **Settings search** (`filterSettings`): live filter across all 13 rows, collapses
+  groups with no matches, hides empty section labels, shows a "no results" card.
+- Rows now have an emoji chip (🌗 Theme, 🌐 Language, ⏎ Enter to Send, …), hover
+  states, and consistent selects/toggles. Section labels are uppercase with icons
+  (⭐ General, 🤖 AI, 💬 Chat appearance).
+- The three basic rows stay direct children of `.settings-card` and the 13-row
+  count is unchanged, so the existing harness assertions still hold.
+- Click on the dim backdrop closes the modal (`closeSettingsOnBackdrop`); Esc
+  already did. Opening Settings clears the search, restores every row, and focuses
+  the search box; closing returns focus to the chat input.
+- **Bug fixed:** `resetAllSettings()` only updated 4 of 8 toggles — memory, privacy,
+  animations and PDF-preview toggles stayed stale in the UI. It now resets every
+  control (toggles, font-size slider, theme buttons, selects) whether or not a user
+  is signed in.
+
+### Chat history list (the "list system")
+
+- Rows are grouped under labels: 📌 Pinned, Today, Yesterday, This week, This month,
+  Older (flat list while searching).
+- Each row: clickable title button with a meta line (`3 messages · 2h ago`) and
+  hover-reveal actions (pin / rename / delete) — always visible on touch devices,
+  visible on the active chat.
+- Richer empty states (icon + title + hint) for no-chats, signed-out and search
+  misses; the chat counter became a pill.
+
+### Memory lists
+
+- Saved Memory and Conversation Context items: numbered chips (01, 02…), icon-only
+  edit/delete buttons with tooltips, hover states, word-wrap safety, and illustrated
+  empty states.
+- **Capacity progress bars**: `x / 50` for Saved Memory, and a 6,000-char bar under
+  the conversation-context editor, both driven by the existing counters.
+
+### Library
+
+- PDF backups became proper rows (`.pdf-item`) with grouped action buttons instead
+  of inline-styled clutter; groups are now bordered cards and "View" is a pill
+  button. Empty/search-miss states share a class.
