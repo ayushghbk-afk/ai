@@ -235,3 +235,58 @@ at 360/390/768px still needs your eyes.
 | Reference-image upload | Not done | The file is never sent — implement or remove. |
 | Empty/loading/error states | Not done | Review item #9. |
 | Dead CSS | Not done | `.image-tool-card` rules are now unused after the modal was promoted. |
+
+---
+
+## 10. Settings dialog + list UI pass (branch `arena/01a04dd3-ai`)
+
+**The headline bug: the settings switches lied to you.** The blanket card rule
+`.settings-card button` (specificity 0-1-1) beat `.toggle` (0-1-0) — but *not*
+`.toggle.on` (0-2-0). Result: an **OFF** switch showed the full bright accent
+gradient while an **ON** switch showed the faint translucent one. On and off were
+visually inverted, and every switch carried the primary-button glow shadow
+(verified in the jsdom cascade). The same leak hit the settings ✕ close button,
+the memory modal's ＋Add buttons, and "Delete all saved memory" — all rendered as
+white-on-gradient pills instead of ghost/subtle styles.
+
+**Fix:** the blanket rule is now
+`.settings-card :where(button:not(.toggle):not(.icon-btn):not(.memory-add-btn):not(.memory-link-danger))`.
+`:where()` keeps its specificity at 0-1-0 so the utility classes always win;
+plain buttons (Done, Save, toolbars) keep the gradient. Empirically verified:
+switches/ghosts/links no longer inherit the shadow; the primary Done button
+still does.
+
+More of what changed:
+
+- **Font-size slider** was styled like a text field (13px padding, border, box
+  background). `input[type="range"]` now gets a clean slider treatment
+  (`accent-color`, no box) plus a live `98%` readout.
+- **Every switch** is a real ARIA switch (`role="switch"`, `aria-checked`,
+  label) and all 8 state changes go through one helper (`setToggleState`), so
+  the visual class and the ARIA state cannot drift.
+- **`openSettings()` re-syncs everything** (`syncSettingsUI`) — before, it just
+  showed the modal, so any state changed with the dialog closed (reset, account
+  switch) left the controls lying. The Settings nav tab now shows active while
+  its dialog is open, and clicking the backdrop closes the dialog (parity with
+  Escape).
+- **`resetAllSettings()` actually resets.** It now re-syncs the slider and its
+  readout, re-applies compact spacing vars (`--chat-gap` stayed compact while
+  the switch showed off), and clears the legacy unscoped `animations` key. The
+  boot-time legacy reads of unscoped `responseLength` / `animations` are gone —
+  the user-scoped `memoryKey(...)` copies are the single source of truth,
+  synced by `loadPersonalAISettings()`.
+- **History list & Library PDF list are a class system now.** Rows were 100%
+  inline `style.cssText` strings: no hover states possible, and the white-alpha
+  fills/borders vanished in the light theme. Now `.history-item[+:hover/.active]`,
+  `.history-title`, `.history-actions`, `.history-pill`, `.history-empty` and
+  `.pdf-item*`, all with light-theme variants. Row actions hide until
+  hover/focus on precise pointers and stay visible on touch. Delete actions are
+  marked `.danger`. Sidebar chrome (brand, New Chat, profile, logout) moved from
+  inline styles to classes for the same light-theme reason.
+- **Deleting the open chat** now continues in the *most recently active* chat,
+  not the first key in insertion order.
+- Conversation-context empty state no longer calls itself "saved memories".
+
+Tests: 137 passed / 0 failed (was 105), including new coverage for the button
+rule exclusions, ARIA switches, openSettings re-sync, reset re-sync, and the
+class-based empty/history rendering.

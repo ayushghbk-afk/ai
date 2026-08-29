@@ -11,7 +11,7 @@ npm install
 npm test
 ```
 
-Current result: **51 passed, 0 failed.**
+Current result: **137 passed, 0 failed.**
 
 It covers:
 
@@ -27,6 +27,15 @@ It covers:
 - Landing page: headline, CTA count, brand, `<title>`, meta description
 - Settings: 3 basic rows visible, 3 collapsed groups, all 13 controls still present,
   destructive actions inside the danger group
+- Settings dialog CSS: the blanket card-button rule excludes `.toggle`, `.icon-btn`,
+  and the memory buttons, so switches/ghosts/danger links keep their own styling
+- Every settings switch has `role="switch"` + `aria-checked` (+ label), and toggling
+  flips class and ARIA state together
+- `openSettings()` re-syncs every control (no stale switches) and marks the nav tab
+- `resetAllSettings()` re-syncs the font slider, its % readout, and compact spacing vars
+- Chat history rows are class-based (no inline styles), sorted newest first, with
+  pin/rename/danger-delete actions and a `.history-empty` state
+- Sidebar chrome (brand, New Chat, profile, logout) is class-based for light-theme safety
 
 Add a case to `tests/app.test.mjs` when you change memory, settings, images, or the proxy.
 

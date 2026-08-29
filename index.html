@@ -238,7 +238,32 @@
       background: rgba(16,24,40,.04);
     }
 
-    .auth-card button, .settings-card button, .image-tool-card button{
+    /* Sliders are not text boxes: undo the text-field chrome above and let
+       the native track show through, tinted with the accent colour. */
+    .settings-card input[type="range"], .image-tool-card input[type="range"]{
+      padding:0;
+      border:0;
+      background:transparent;
+      box-shadow:none;
+      height:26px;
+      width:160px;
+      max-width:44vw;
+      accent-color:var(--accent);
+      cursor:pointer;
+    }
+    .settings-card input[type="range"]:focus{ box-shadow:none; }
+    .font-size-value{ min-width:42px; text-align:right; color:var(--text-sub); font-size:.8rem; font-weight:900; }
+
+    /* Primary buttons inside cards. The :not() exclusions keep utility
+       buttons (.toggle switches, .icon-btn ghosts, memory add/●danger links)
+       from being restyled — without them this rule's higher specificity
+       overrode those classes entirely (off-toggles showed the bright accent
+       gradient, the settings ✕ rendered as a giant CTA, and the danger link
+       turned into a white-on-gradient pill). :where() keeps this rule's
+       specificity low so the utility classes always win. */
+    .auth-card :where(button:not(.toggle):not(.icon-btn):not(.memory-add-btn):not(.memory-link-danger)),
+    .settings-card :where(button:not(.toggle):not(.icon-btn):not(.memory-add-btn):not(.memory-link-danger)),
+    .image-tool-card :where(button:not(.toggle):not(.icon-btn):not(.memory-add-btn):not(.memory-link-danger)){
       padding:12px 14px;
       border-radius:14px;
       border:none;
@@ -253,7 +278,9 @@
       z-index:1;
     }
 
-    .auth-card button:hover, .settings-card button:hover, .image-tool-card button:hover{
+    .auth-card :where(button:not(.toggle):not(.icon-btn):not(.memory-add-btn):not(.memory-link-danger)):hover,
+    .settings-card :where(button:not(.toggle):not(.icon-btn):not(.memory-add-btn):not(.memory-link-danger)):hover,
+    .image-tool-card :where(button:not(.toggle):not(.icon-btn):not(.memory-add-btn):not(.memory-link-danger)):hover{
       filter: saturate(1.1) brightness(1.05);
       box-shadow: var(--glow-purple);
     }
@@ -316,13 +343,16 @@
 
     .toggle{
       width:48px; height:28px;
+      padding:0;
       border-radius:999px;
       border:1px solid var(--border);
       background: rgba(255,255,255,.05);
       position:relative;
       cursor:pointer;
       flex-shrink:0;
+      transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
     }
+    html[data-theme="light"] .toggle{ background: rgba(16,24,40,.08); }
     .toggle::after{
       content:"";
       position:absolute;
@@ -333,8 +363,11 @@
       transition: transform .18s ease, background .18s ease;
       box-shadow: 0 8px 18px rgba(0,0,0,.18);
     }
+    html[data-theme="light"] .toggle::after{ background:#fff; box-shadow:0 3px 8px rgba(16,24,40,.28); }
+    .toggle:focus-visible{ outline:none; box-shadow:0 0 0 3px rgba(124,92,255,.30); }
     .toggle.on{
       background: linear-gradient(135deg, rgba(124,92,255,.32), rgba(255,77,141,.20));
+      border-color: rgba(124,92,255,.45);
     }
     .toggle.on::after{ transform: translateX(20px); }
 
@@ -358,6 +391,68 @@
       background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(244,247,255,.95));
       border-right:1px solid rgba(16,24,40,.08);
     }
+
+    /* Sidebar chrome — these used to be inline styles with white-alpha
+       fills that vanished in the light theme. Both themes covered now. */
+    #sidebar .brand{
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:14px;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+    #sidebar .brand .dot{
+      width:12px; height:12px; border-radius:50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.20);
+      flex-shrink:0;
+    }
+    #sidebar .brand .name{ font-weight:900; letter-spacing:.2px; color:var(--text-main); }
+    html[data-theme="light"] #sidebar .brand{ background:rgba(16,24,40,.035); border-color:rgba(16,24,40,.09); }
+
+    .new-chat-btn{
+      background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14));
+      border:1px solid rgba(124,92,255,.26);
+      color:var(--text-main);
+      padding:11px 12px; border-radius:14px;
+      display:flex; align-items:center; gap:10px;
+      font-size:.95rem; cursor:pointer;
+      transition: transform .1s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease;
+      width:100%; justify-content:flex-start; font-weight:800;
+      box-shadow: 0 10px 26px rgba(124,92,255,.12);
+      position:relative; z-index:1;
+    }
+    .new-chat-btn:hover{ border-color:rgba(124,92,255,.45); box-shadow:0 12px 30px rgba(124,92,255,.20); transform:translateY(-1px); }
+    .new-chat-btn:active{ transform:translateY(0) scale(.99); }
+    .new-chat-btn:focus-visible{ outline:none; box-shadow:0 0 0 3px rgba(124,92,255,.30); }
+    html[data-theme="light"] .new-chat-btn{ background:linear-gradient(135deg, rgba(124,92,255,.14), rgba(255,77,141,.10)); }
+
+    .user-profile{
+      border-top:1px solid rgba(255,255,255,.08);
+      padding-top:12px; margin-top:12px;
+      display:flex; align-items:center; justify-content:space-between;
+      font-size:.95rem; gap:10px;
+    }
+    html[data-theme="light"] .user-profile{ border-top-color:rgba(16,24,40,.10); }
+    .user-left{ display:flex; align-items:center; gap:10px; min-width:0; }
+    .user-avatar{
+      width:34px; height:34px; border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900; color:var(--text-main);
+      background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(255,77,141,.18));
+      border:1px solid rgba(124,92,255,.22);
+      flex-shrink:0;
+      box-shadow: 0 14px 30px rgba(124,92,255,.15);
+    }
+    .user-name{ white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .logout-btn{
+      background: rgba(255,107,107,.10);
+      border:1px solid rgba(255,107,107,.22);
+      color: var(--danger); cursor:pointer;
+      padding:8px 10px; border-radius: 12px; font-weight:800;
+      transition: transform .1s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .logout-btn:hover{ background:rgba(255,107,107,.16); box-shadow:0 10px 24px rgba(255,107,107,.12); }
+    html[data-theme="light"] .logout-btn{ background:rgba(220,60,60,.08); border-color:rgba(220,60,60,.25); }
 
     /* Desktop breakpoint is 769px so 768px-wide devices (iPad portrait and
        many Android tablets) keep the mobile drawer. The old 768px split made
@@ -442,6 +537,8 @@
       transform: translateY(-1px);
     }
     .icon-btn:active{ transform: translateY(0px) scale(.99); }
+    html[data-theme="light"] .icon-btn{ background: rgba(16,24,40,.04); border-color: rgba(16,24,40,.10); }
+    html[data-theme="light"] .icon-btn:hover{ background: rgba(16,24,40,.07); }
 
     .ai-status{
       display:flex;
@@ -1212,7 +1309,76 @@
     .image-history-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:8px}.image-history-grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--border);cursor:zoom-in;background:rgba(255,255,255,.04)}.image-history-grid img:hover{filter:saturate(1.1);transform:scale(1.03)}.image-history-empty{color:var(--text-sub);font-size:.76rem;font-weight:750;padding:7px 2px}
     .empty-state{width:min(900px,100%);margin:auto;padding:28px 16px 42px;text-align:center;}.empty-state-logo{width:62px;height:62px;display:grid;place-items:center;margin:0 auto 14px;border-radius:22px;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;font-size:1.7rem;box-shadow:0 18px 42px rgba(124,92,255,.26);}.empty-state h1{font-size:clamp(1.5rem,4vw,2.2rem);letter-spacing:-.04em;margin-bottom:8px}.empty-state p{max-width:540px;margin:0 auto 20px;color:var(--text-sub);line-height:1.55;font-weight:700}.quick-prompts{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}.quick-prompts button{padding:10px 12px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,.05);color:var(--text-main);font:800 .8rem inherit;cursor:pointer}.quick-prompts button:hover{background:rgba(124,92,255,.14);border-color:rgba(124,92,255,.35)}
 
-    .history-tools{display:flex;gap:7px;align-items:center;margin:12px 0 9px;}.history-search{min-width:0;flex:1;padding:10px 11px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.05);color:var(--text-main);font:800 .84rem inherit;outline:none;}.history-search:focus{border-color:rgba(124,92,255,.5);box-shadow:0 0 0 3px rgba(124,92,255,.12);}.history-count{color:var(--text-sub);font-size:.7rem;font-weight:900;white-space:nowrap;}.history-item button{min-width:30px;min-height:30px;}.history-item .history-icon{border:0;background:transparent;color:var(--text-sub);cursor:pointer;border-radius:8px;font-size:.86rem;}.history-item .history-icon:hover{background:rgba(255,255,255,.1);color:var(--text-main);}
+    .history-tools{display:flex;gap:7px;align-items:center;margin:12px 0 9px;}.history-search{min-width:0;flex:1;padding:10px 11px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.05);color:var(--text-main);font:800 .84rem inherit;outline:none;}.history-search:focus{border-color:rgba(124,92,255,.5);box-shadow:0 0 0 3px rgba(124,92,255,.12);}.history-count{color:var(--text-sub);font-size:.7rem;font-weight:900;white-space:nowrap;}
+
+    /* ---- Chat history list (sidebar) — class system, both themes ---- */
+    .history-item{
+      padding:9px 9px 9px 11px;
+      font-size:.88rem;
+      color:var(--text-sub);
+      border-radius:14px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      border:1px solid rgba(255,255,255,.04);
+      background:rgba(255,255,255,.02);
+      gap:7px;
+      user-select:none;
+      margin-bottom:7px;
+      transition:background .15s ease, border-color .15s ease, color .15s ease;
+    }
+    .history-item:hover{ background:rgba(255,255,255,.055); border-color:rgba(255,255,255,.10); color:var(--text-main); }
+    .history-item.active{
+      background:linear-gradient(135deg,rgba(124,92,255,.18),rgba(255,77,141,.12));
+      border-color:rgba(124,92,255,.35);
+      color:var(--text-main);
+      box-shadow:var(--glow-purple);
+    }
+    html[data-theme="light"] .history-item{ background:rgba(16,24,40,.025); border-color:rgba(16,24,40,.07); }
+    html[data-theme="light"] .history-item:hover{ background:rgba(16,24,40,.055); border-color:rgba(16,24,40,.13); }
+    html[data-theme="light"] .history-item.active{
+      background:linear-gradient(135deg,rgba(124,92,255,.14),rgba(255,77,141,.09));
+      border-color:rgba(124,92,255,.42);
+    }
+    .history-title{ min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+    .history-actions{ display:flex; align-items:center; gap:2px; flex-shrink:0; }
+    .history-pill{
+      padding:5px 7px;border-radius:999px;font-weight:900;font-size:.7rem;color:var(--text-main);
+      background:linear-gradient(135deg,rgba(124,92,255,.16),rgba(38,214,166,.1));
+      border:1px solid rgba(124,92,255,.22);
+    }
+    .history-item button{min-width:30px;min-height:30px;}
+    .history-item .history-icon{border:0;background:transparent;color:var(--text-sub);cursor:pointer;border-radius:8px;font-size:.86rem;transition:background .15s ease,color .15s ease,opacity .15s ease;}
+    .history-item .history-icon:hover{background:rgba(255,255,255,.1);color:var(--text-main);}
+    .history-item .history-icon.danger:hover{background:rgba(255,107,107,.14);color:var(--danger);}
+    html[data-theme="light"] .history-item .history-icon:hover{background:rgba(16,24,40,.08);}
+    html[data-theme="light"] .history-item .history-icon.danger:hover{background:rgba(220,60,60,.12);}
+    /* On precise pointers, tuck the row actions away until the row is
+       hovered/focused (or active) — keeps long lists scannable. Touch
+       devices (hover:none) always show them so nothing is unreachable. */
+    @media (hover:hover) and (pointer:fine){
+      .history-item .history-icon{opacity:0;}
+      .history-item:hover .history-icon,
+      .history-item:focus-within .history-icon,
+      .history-item.active .history-icon{opacity:1;}
+    }
+    .history-empty{text-align:center;color:var(--text-sub);padding:20px 8px;font-size:.82rem;font-weight:800;}
+
+    /* ---- Saved items lists (Library PDFs) — class system, both themes ---- */
+    .pdf-item{display:flex;align-items:flex-start;gap:8px;padding:8px;margin-bottom:6px;border-radius:10px;border:1px solid transparent;background:rgba(255,255,255,.035);transition:background .15s ease,border-color .15s ease;}
+    .pdf-item:hover{background:rgba(255,255,255,.06);border-color:var(--border);}
+    html[data-theme="light"] .pdf-item{background:rgba(16,24,40,.03);}
+    html[data-theme="light"] .pdf-item:hover{background:rgba(16,24,40,.055);border-color:rgba(16,24,40,.10);}
+    .pdf-item-info{min-width:0;flex:1;}
+    .pdf-item-name{font-weight:800;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-main);}
+    .pdf-item-name.is-dup{color:#ffc700;}
+    .pdf-item-meta{color:var(--text-sub);font-size:.7rem;margin-top:2px;}
+    .pdf-item-btn{border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;transition:background .15s ease;}
+    .pdf-item-btn:hover{background:rgba(124,92,255,.28);}
+    .pdf-item-btn.danger{background:rgba(255,107,107,.12);}
+    .pdf-item-btn.danger:hover{background:rgba(255,107,107,.22);}
+    .pdf-list-empty{color:var(--text-sub);font-size:.82rem;padding:8px 2px;font-weight:700;}
 
     .message-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:8px;padding-top:7px;border-top:1px solid rgba(255,255,255,.07);position:relative;z-index:2;}.message-action-btn{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.045);color:var(--text-sub);border-radius:9px;min-height:30px;padding:5px 8px;font:800 .72rem inherit;cursor:pointer;transition:background .15s ease,color .15s ease,border-color .15s ease,transform .1s ease;}.message-action-btn:hover{background:rgba(124,92,255,.16);color:var(--text-main);border-color:rgba(124,92,255,.3);transform:translateY(-1px);}.message-action-btn.active{background:rgba(38,214,166,.14);color:var(--accent-3);border-color:rgba(38,214,166,.3);}.message-action-btn.danger:hover{color:var(--danger);background:rgba(255,107,107,.12);border-color:rgba(255,107,107,.25);}
     .message-status{font-size:.76rem;font-weight:800;color:var(--text-sub);margin-left:2px;}.message-status.error{color:var(--danger);}
@@ -1318,7 +1484,7 @@
           <h2 style="font-size:1.2rem; letter-spacing:.2px;">Settings</h2>
           <div class="subhead">The essentials up top. Everything else stays tucked away.</div>
         </div>
-        <button type="button" class="icon-btn" style="padding:8px 11px;flex-shrink:0;" title="Close settings" aria-label="Close settings" onclick="closeSettings()">✕</button>
+        <button type="button" class="icon-btn" style="flex-shrink:0;" title="Close settings" aria-label="Close settings" onclick="closeSettings()">✕</button>
       </div>
 
       <!-- ============ BASIC ============ -->
@@ -1343,7 +1509,7 @@
           <div class="label">Enter to Send</div>
           <div class="sub">When ON, Enter sends. Shift+Enter adds a line.</div>
         </div>
-        <button class="toggle on" id="enterSendToggle" type="button" onclick="toggleEnterToSend()"></button>
+        <button class="toggle on" id="enterSendToggle" type="button" role="switch" aria-checked="true" aria-label="Enter to send" onclick="toggleEnterToSend()"></button>
       </div>
 
       <!-- ============ ADVANCED ============ -->
@@ -1352,20 +1518,21 @@
         <div class="sc-body">
           <div class="settings-section-label">AI</div>
           <div class="settings-row"><div class="left"><div class="label">AI model</div><div class="sub">Used for new requests</div></div><select id="modelSelect" aria-label="AI model"><option value="llama-3.3-70b-versatile">Balanced · Llama 3.3 70B</option><option value="llama-3.1-8b-instant">Fast · Llama 3.1 8B</option><option value="openai/gpt-oss-120b">Advanced · GPT OSS 120B</option></select></div>
-          <div class="settings-row"><div class="left"><div class="label">Response length</div><div class="sub">Maximum AI response size</div></div><select id="responseLengthSelect" style="background:transparent;border:0;color:var(--text-main);font-weight:900;"><option value="2048">Short</option><option value="4096" selected>Balanced</option><option value="6144">Long</option></select></div>
-          <div class="settings-row"><div class="left"><div class="label">🧠 Memory</div><div class="sub">Send your memory to the AI</div></div><button class="toggle on" id="memoryToggle" type="button" onclick="toggleMemory()"></button></div>
-          <div class="settings-row"><div class="left"><div class="label">Privacy mode</div><div class="sub">Don’t send saved memory in AI requests</div></div><button class="toggle" id="privacyToggle" type="button" onclick="togglePrivacyMode()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Response length</div><div class="sub">Maximum AI response size</div></div><select id="responseLengthSelect"><option value="2048">Short</option><option value="4096" selected>Balanced</option><option value="6144">Long</option></select></div>
+          <div class="settings-row"><div class="left"><div class="label">🧠 Memory</div><div class="sub">Send your memory to the AI</div></div><button class="toggle on" id="memoryToggle" type="button" role="switch" aria-checked="true" aria-label="Memory" onclick="toggleMemory()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Privacy mode</div><div class="sub">Don’t send saved memory in AI requests</div></div><button class="toggle" id="privacyToggle" type="button" role="switch" aria-checked="false" aria-label="Privacy mode" onclick="togglePrivacyMode()"></button></div>
 
           <div class="settings-section-label">Chat appearance</div>
           <div class="settings-row">
             <div class="left"><div class="label">Font size</div><div class="sub">Chat text size</div></div>
-            <input id="fontSizeRange" type="range" min="0.9" max="1.2" step="0.02" value="0.98" oninput="setChatFontSize(this.value)" />
+            <input id="fontSizeRange" type="range" min="0.9" max="1.2" step="0.02" value="0.98" aria-label="Chat font size" oninput="setChatFontSize(this.value)" />
+            <span id="fontSizeValue" class="font-size-value" aria-hidden="true">98%</span>
           </div>
-          <div class="settings-row"><div class="left"><div class="label">Compact mode</div><div class="sub">Reduce spacing in chat</div></div><button class="toggle" id="compactToggle" type="button" onclick="toggleCompactMode()"></button></div>
-          <div class="settings-row"><div class="left"><div class="label">Auto scroll</div><div class="sub">Keep chat pinned to bottom</div></div><button class="toggle on" id="autoScrollToggle" type="button" onclick="toggleAutoScroll()"></button></div>
-          <div class="settings-row"><div class="left"><div class="label">Animations</div><div class="sub">Turn off for slower devices</div></div><button class="toggle on" id="animationToggle" type="button" onclick="toggleAnimations()"></button></div>
-          <div class="settings-row"><div class="left"><div class="label">Sound</div><div class="sub">Play small sounds on actions</div></div><button class="toggle" id="soundToggle" type="button" onclick="toggleSound()"></button></div>
-          <div class="settings-row"><div class="left"><div class="label">📄 PDF preview</div><div class="sub">Show PDFs directly inside chat</div></div><button class="toggle on" id="pdfPreviewToggle" type="button" onclick="togglePdfPreview()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Compact mode</div><div class="sub">Reduce spacing in chat</div></div><button class="toggle" id="compactToggle" type="button" role="switch" aria-checked="false" aria-label="Compact mode" onclick="toggleCompactMode()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Auto scroll</div><div class="sub">Keep chat pinned to bottom</div></div><button class="toggle on" id="autoScrollToggle" type="button" role="switch" aria-checked="true" aria-label="Auto scroll" onclick="toggleAutoScroll()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Animations</div><div class="sub">Turn off for slower devices</div></div><button class="toggle on" id="animationToggle" type="button" role="switch" aria-checked="true" aria-label="Animations" onclick="toggleAnimations()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">Sound</div><div class="sub">Play small sounds on actions</div></div><button class="toggle" id="soundToggle" type="button" role="switch" aria-checked="false" aria-label="Sound" onclick="toggleSound()"></button></div>
+          <div class="settings-row"><div class="left"><div class="label">📄 PDF preview</div><div class="sub">Show PDFs directly inside chat</div></div><button class="toggle on" id="pdfPreviewToggle" type="button" role="switch" aria-checked="true" aria-label="PDF preview" onclick="togglePdfPreview()"></button></div>
         </div>
       </details>
 
@@ -1462,23 +1629,23 @@
 
   <aside id="sidebar">
     <div class="sidebar-top">
-      <div class="brand" aria-hidden="true" style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background: rgba(255,255,255,.04);">
-        <span class="dot" style="width:12px; height:12px; border-radius:50%; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 0 0 4px rgba(124,92,255,.14), 0 0 35px rgba(124,92,255,.20);"></span>
-        <span class="name" style="font-weight:900; letter-spacing:.2px;">Free AI tools, built for everyone</span>
+      <div class="brand" aria-hidden="true">
+        <span class="dot"></span>
+        <span class="name">Free AI tools, built for everyone</span>
       </div>
     </div>
-    <button class="new-chat-btn" onclick="createNewChat()" style="background: linear-gradient(135deg, rgba(124,92,255,.18), rgba(255,77,141,.14)); border:1px solid rgba(124,92,255,.26); color:var(--text-main); padding:11px 12px; border-radius:14px; display:flex; align-items:center; gap:10px; font-size:.95rem; cursor:pointer; transition: transform .1s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease; width:100%; justify-content:flex-start; font-weight:800; box-shadow: 0 10px 26px rgba(124,92,255,.12); position:relative; z-index:1;">
+    <button class="new-chat-btn" onclick="createNewChat()">
       <span>+</span> New Chat
     </button>
     <div class="history-tools"><input id="historySearch" class="history-search" type="search" placeholder="Search chats…" aria-label="Search chats" /><span id="historyCount" class="history-count">0</span></div>
     <div class="history-list" id="historyList"></div>
 
-    <div class="user-profile" style="border-top:1px solid rgba(255,255,255,.08); padding-top:12px; margin-top:12px; display:flex; align-items:center; justify-content:space-between; font-size:.95rem; gap:10px;">
-      <div class="user-left" style="display:flex; align-items:center; gap:10px; min-width:0;">
-        <div class="user-avatar" aria-hidden="true" style="width:34px; height:34px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-weight:900; background: linear-gradient(135deg, rgba(124,92,255,.28), rgba(255,77,141,.18)); border:1px solid rgba(124,92,255,.22); flex-shrink:0; box-shadow: 0 14px 30px rgba(124,92,255,.15);">U</div>
-        <span id="userDisplay" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">User</span>
+    <div class="user-profile">
+      <div class="user-left">
+        <div class="user-avatar" aria-hidden="true">U</div>
+        <span id="userDisplay" class="user-name">User</span>
       </div>
-      <button class="logout-btn" onclick="logout()" style="background: rgba(255,107,107,.10); border:1px solid rgba(255,107,107,.22); color: var(--danger); cursor:pointer; padding:8px 10px; border-radius: 12px; font-weight:800; transition: transform .1s ease, box-shadow .2s ease, background .2s ease;">Logout</button>
+      <button class="logout-btn" onclick="logout()">Logout</button>
     </div>
   </aside>
 
@@ -1614,7 +1781,7 @@
       <button type="button" class="nav-tab" data-view="library" onclick="switchView('library')">
         <span class="nav-icon" aria-hidden="true">📁</span><span class="nav-label">Library</span>
       </button>
-      <button type="button" class="nav-tab" id="navSettingsTab" onclick="openSettings()">
+      <button type="button" class="nav-tab" id="navSettingsTab" aria-haspopup="dialog" onclick="openSettings()">
         <span class="nav-icon" aria-hidden="true">⚙️</span><span class="nav-label">Settings</span>
       </button>
     </nav>
@@ -3059,56 +3226,56 @@ EXAMPLES:
 
       if (!allPdfs.length) {
         const empty = document.createElement('div');
+        empty.className = 'pdf-list-empty';
         empty.textContent = 'No PDF backups yet.';
-        empty.style.cssText = 'color:var(--text-sub);font-size:.82rem;padding:8px 2px;font-weight:700;';
         container.appendChild(empty);
         return;
       }
       if (!filtered.length) {
         const empty = document.createElement('div');
+        empty.className = 'pdf-list-empty';
         empty.textContent = 'No PDFs match your search.';
-        empty.style.cssText = 'color:var(--text-sub);font-size:.82rem;padding:8px 2px;font-weight:700;';
         container.appendChild(empty);
         return;
       }
 
       for (const pdf of filtered.slice(0, 5)) {
         const item = document.createElement('div');
-        item.style.cssText = 'display:flex;align-items:flex-start;gap:8px;padding:8px;margin-bottom:6px;border-radius:10px;background:rgba(255,255,255,.035);';
+        item.className = 'pdf-item';
 
         const info = document.createElement('div');
-        info.style.cssText = 'min-width:0;flex:1;';
+        info.className = 'pdf-item-info';
 
         const name = document.createElement('div');
         name.textContent = pdf.title || pdf.filename || 'PDF';
         name.title = name.textContent;
-        name.style.cssText = 'font-weight:800;font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        name.className = 'pdf-item-name';
         if (dupNames.has(String(pdf.title || pdf.filename || '').toLowerCase())) {
           name.textContent += ' (duplicate)';
-          name.style.color = '#ffc700';
+          name.classList.add('is-dup');
         }
 
         const meta = document.createElement('div');
         const size = formatPdfSize(pdf.file_size);
         meta.textContent = [new Date(pdf.created_at).toLocaleDateString(), size].filter(Boolean).join(' · ');
-        meta.style.cssText = 'color:var(--text-sub);font-size:.7rem;margin-top:2px;';
+        meta.className = 'pdf-item-meta';
 
         info.appendChild(name);
         info.appendChild(meta);
 
         const rename = document.createElement('button');
         rename.type = 'button'; rename.textContent = '✎'; rename.title = 'Rename PDF'; rename.setAttribute('aria-label', rename.title);
-        rename.style.cssText = 'border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;';
+        rename.className = 'pdf-item-btn';
         rename.onclick = () => renamePdfBackup(pdf);
 
         const button = document.createElement('button');
         button.type = 'button'; button.textContent = '⬇️'; button.title = 'Download PDF'; button.setAttribute('aria-label', button.title);
-        button.style.cssText = 'border:0;border-radius:8px;padding:7px 9px;background:rgba(124,92,255,.15);color:var(--text-main);cursor:pointer;font-weight:900;';
+        button.className = 'pdf-item-btn';
         button.onclick = () => downloadBackedUpPdf(pdf);
 
         const del = document.createElement('button');
         del.type = 'button'; del.textContent = '🗑️'; del.title = 'Delete PDF'; del.setAttribute('aria-label', del.title);
-        del.style.cssText = 'border:0;border-radius:8px;padding:7px 9px;background:rgba(255,107,107,.12);color:var(--text-main);cursor:pointer;font-weight:900;';
+        del.className = 'pdf-item-btn danger';
         del.onclick = () => deletePdfBackup(pdf);
 
         item.appendChild(info);
@@ -3488,40 +3655,91 @@ EXAMPLES:
     }
 
     function setChatFontSize(v){
-      settings.chatFontSize = parseFloat(v);
+      const parsed = parseFloat(v);
+      if (Number.isFinite(parsed)) settings.chatFontSize = parsed;
+      else settings.chatFontSize = 0.98;
       document.documentElement.style.setProperty('--chat-font-size', settings.chatFontSize + 'rem');
       localStorage.setItem('chatFontSize', String(settings.chatFontSize));
+      // Keep the slider and its readout in sync (resetAllSettings changes it
+      // programmatically without touching the input element).
+      if (el.fontSizeRange && el.fontSizeRange.value !== String(settings.chatFontSize)) el.fontSizeRange.value = String(settings.chatFontSize);
+      const readout = document.getElementById('fontSizeValue');
+      if (readout) readout.textContent = `${Math.round(settings.chatFontSize * 100)}%`;
+    }
+
+    // Single place that flips a switch-style toggle's class AND its ARIA
+    // state, so the two can never drift apart.
+    function setToggleState(btn, on){
+      if (!btn) return;
+      btn.classList.toggle('on', !!on);
+      if (btn.getAttribute('role') === 'switch' || btn.classList.contains('toggle')) btn.setAttribute('aria-checked', on ? 'true' : 'false');
+    }
+
+    function applyCompactModeVars(){
+      document.documentElement.style.setProperty('--chat-gap', settings.compact ? '6px' : '10px');
+      document.documentElement.style.setProperty('--chat-padding', settings.compact ? '10px' : '18px');
     }
 
     function toggleCompactMode(){
       settings.compact = !settings.compact;
-      el.compactToggle.classList.toggle('on', settings.compact);
-      document.documentElement.style.setProperty('--chat-gap', settings.compact ? '6px' : '10px');
-      document.documentElement.style.setProperty('--chat-padding', settings.compact ? '10px' : '18px');
+      setToggleState(el.compactToggle, settings.compact);
+      applyCompactModeVars();
       localStorage.setItem('compactMode', String(settings.compact));
     }
 
     function toggleEnterToSend(){
       settings.enterToSend = !settings.enterToSend;
-      el.enterSendToggle.classList.toggle('on', settings.enterToSend);
+      setToggleState(el.enterSendToggle, settings.enterToSend);
       localStorage.setItem('enterToSend', String(settings.enterToSend));
     }
 
     function toggleSound(){
       settings.sound = !settings.sound;
-      el.soundToggle.classList.toggle('on', settings.sound);
+      setToggleState(el.soundToggle, settings.sound);
       localStorage.setItem('sound', String(settings.sound));
       beep(760, 0.03);
     }
 
     function toggleAutoScroll(){
       settings.autoScroll = !settings.autoScroll;
-      el.autoScrollToggle.classList.toggle('on', settings.autoScroll);
+      setToggleState(el.autoScrollToggle, settings.autoScroll);
       localStorage.setItem('autoScroll', String(settings.autoScroll));
     }
 
-    function openSettings(){ el.settingsModal.style.display = 'flex'; }
-    function closeSettings(){ el.settingsModal.style.display = 'none'; }
+    // Re-reads every settings control from live state so the modal never
+    // shows a stale switch/select/slider (e.g. after a reset or an
+    // account switch while the modal was closed).
+    function syncSettingsUI(){
+      const theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+      el.themeLightBtn?.classList.toggle('active', theme === 'light');
+      el.themeDarkBtn?.classList.toggle('active', theme === 'dark');
+      if (el.languageSelect) el.languageSelect.value = settings.language;
+      if (el.modelSelect) el.modelSelect.value = settings.model;
+      if (el.responseLengthSelect) el.responseLengthSelect.value = String(settings.responseLength);
+      if (el.fontSizeRange) el.fontSizeRange.value = String(settings.chatFontSize);
+      const readout = document.getElementById('fontSizeValue');
+      if (readout) readout.textContent = `${Math.round(settings.chatFontSize * 100)}%`;
+      setToggleState(el.enterSendToggle, settings.enterToSend);
+      setToggleState(el.memoryToggle, settings.memoryEnabled);
+      setToggleState(el.privacyToggle, settings.privacyMode);
+      setToggleState(el.compactToggle, settings.compact);
+      setToggleState(el.autoScrollToggle, settings.autoScroll);
+      setToggleState(el.animationToggle, settings.animations);
+      setToggleState(el.soundToggle, settings.sound);
+      setToggleState(el.pdfPreviewToggle, settings.pdfPreview);
+    }
+
+    function openSettings(){
+      syncSettingsUI();
+      el.settingsModal.style.display = 'flex';
+      // Treat the bottom-nav Settings tab as active while its dialog is open.
+      document.getElementById('navSettingsTab')?.classList.add('is-active');
+      el.settingsModal.querySelector('.settings-header .icon-btn')?.focus();
+    }
+    function closeSettings(){
+      el.settingsModal.style.display = 'none';
+      document.getElementById('navSettingsTab')?.classList.remove('is-active');
+    }
     /* ---- Main navigation: Chat / Create / Library (Settings stays a modal) ---- */
     let currentView = 'chat';
     function switchView(name) {
@@ -3785,23 +4003,42 @@ EXAMPLES:
       sessionNavigation = sessionIds;
 
       if (!visibleIds.length) {
-        const emptyDiv = document.createElement('div'); emptyDiv.style.cssText='text-align:center;color:var(--text-sub);padding:20px 8px;font-size:.82rem;font-weight:800;';
+        const emptyDiv = document.createElement('div'); emptyDiv.className = 'history-empty';
         emptyDiv.textContent = query ? 'No chats match your search.' : (currentUserId ? 'No chats yet. Start a new conversation!' : 'Sign in to see and start your chats.'); el.historyList.appendChild(emptyDiv); return;
       }
       const frag = document.createDocumentFragment();
       for (const id of visibleIds) {
         const session = userSessions[id];
-        const item = document.createElement('div'); item.className=`history-item ${id === currentSessionId ? 'active' : ''}`; item.title=sessionDisplayTitle(id,session);
-        item.style.cssText='padding:9px 9px 9px 11px;font-size:.88rem;color:var(--text-sub);border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.02);gap:7px;user-select:none;margin-bottom:7px;';
-        if (id === currentSessionId) item.style.cssText += 'background:linear-gradient(135deg,rgba(124,92,255,.18),rgba(255,77,141,.12));border-color:rgba(124,92,255,.35);color:var(--text-main);box-shadow:var(--glow-purple);';
-        const left=document.createElement('span'); left.style.cssText='min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;';
-        left.innerHTML=`${pinned.has(id) ? '<span aria-label="Pinned">📌 </span>' : ''}${escapeHtml(sessionDisplayTitle(id,session))}`;
-        const right=document.createElement('div'); right.style.cssText='display:flex;align-items:center;gap:2px;flex-shrink:0;';
-        const pill=document.createElement('span'); const userCount=(session?.messages||[]).filter(m=>m.role==='user').length; pill.textContent=userCount?`${userCount}`:'—'; pill.title=`${userCount} user message${userCount===1?'':'s'}`; pill.style.cssText='padding:5px 7px;border-radius:999px;font-weight:900;font-size:.7rem;color:var(--text-main);background:linear-gradient(135deg,rgba(124,92,255,.16),rgba(38,214,166,.1));border:1px solid rgba(124,92,255,.22);';
-        const pin=document.createElement('button'); pin.type='button'; pin.className='history-icon'; pin.textContent=pinned.has(id)?'📌':'☆'; pin.title=pinned.has(id)?'Unpin chat':'Pin chat'; pin.setAttribute('aria-label',pin.title); pin.onclick=e=>{e.stopPropagation();togglePinChat(id);};
-        const rename=document.createElement('button'); rename.type='button'; rename.className='history-icon'; rename.textContent='✎'; rename.title='Rename chat'; rename.setAttribute('aria-label',rename.title); rename.onclick=e=>{e.stopPropagation();renameChat(id);};
-        const del=document.createElement('button'); del.type='button'; del.className='history-icon'; del.textContent='×'; del.title='Delete chat'; del.setAttribute('aria-label',del.title); del.onclick=e=>{e.stopPropagation();deleteChat(id);};
-        right.append(pill,pin,rename,del); item.append(left,right); item.onclick=()=>switchSession(id); frag.appendChild(item);
+        const title = sessionDisplayTitle(id, session);
+        const item = document.createElement('div');
+        item.className = `history-item${id === currentSessionId ? ' active' : ''}`;
+        item.title = title;
+
+        const left = document.createElement('span');
+        left.className = 'history-title';
+        if (pinned.has(id)) {
+          const pinMark = document.createElement('span');
+          pinMark.textContent = '📌 ';
+          pinMark.setAttribute('aria-label', 'Pinned');
+          left.append(pinMark, document.createTextNode(title));
+        } else {
+          left.textContent = title;
+        }
+
+        const right = document.createElement('div');
+        right.className = 'history-actions';
+        const pill = document.createElement('span');
+        pill.className = 'history-pill';
+        const userCount = (session?.messages || []).filter(m => m.role === 'user').length;
+        pill.textContent = userCount ? `${userCount}` : '—';
+        pill.title = `${userCount} user message${userCount === 1 ? '' : 's'}`;
+        const pin = document.createElement('button'); pin.type = 'button'; pin.className = 'history-icon'; pin.textContent = pinned.has(id) ? '📌' : '☆'; pin.title = pinned.has(id) ? 'Unpin chat' : 'Pin chat'; pin.setAttribute('aria-label', pin.title); pin.onclick = e => { e.stopPropagation(); togglePinChat(id); };
+        const rename = document.createElement('button'); rename.type = 'button'; rename.className = 'history-icon'; rename.textContent = '✎'; rename.title = 'Rename chat'; rename.setAttribute('aria-label', rename.title); rename.onclick = e => { e.stopPropagation(); renameChat(id); };
+        const del = document.createElement('button'); del.type = 'button'; del.className = 'history-icon danger'; del.textContent = '×'; del.title = 'Delete chat'; del.setAttribute('aria-label', del.title); del.onclick = e => { e.stopPropagation(); deleteChat(id); };
+        right.append(pill, pin, rename, del);
+        item.append(left, right);
+        item.onclick = () => switchSession(id);
+        frag.appendChild(item);
       }
       el.historyList.appendChild(frag);
     }
@@ -3818,7 +4055,10 @@ EXAMPLES:
         try { localStorage.removeItem(sessionMemoryKey(sessionId)); } catch {}
 
         if (currentSessionId === sessionId) {
-          const sessionIds = Object.keys(userSessions);
+          // Continue in the most recently active chat, not whichever key
+          // happens to be first in insertion order.
+          const sessionIds = Object.keys(userSessions)
+            .sort((a, b) => Number(userSessions[b]?.lastCreatedAtMs || 0) - Number(userSessions[a]?.lastCreatedAtMs || 0));
           if (sessionIds.length > 0) {
             currentSessionId = sessionIds[0];
             await loadSessionMessagesFromSupabase(currentSessionId);
@@ -4533,12 +4773,12 @@ EXAMPLES:
         settings.model = localStorage.getItem(memoryKey('model')) || 'llama-3.3-70b-versatile';
         settings.animations = localStorage.getItem(memoryKey('animations')) !== 'false';
       } catch {}
-      el.memoryToggle?.classList.toggle('on', settings.memoryEnabled);
+      setToggleState(el.memoryToggle, settings.memoryEnabled);
       document.documentElement.dataset.motion = settings.animations ? 'full' : 'reduced';
-      el.pdfPreviewToggle?.classList.toggle('on', settings.pdfPreview);
+      setToggleState(el.pdfPreviewToggle, settings.pdfPreview);
       if (el.responseLengthSelect) el.responseLengthSelect.value = String(settings.responseLength);
-      el.privacyToggle?.classList.toggle('on', settings.privacyMode);
-      el.animationToggle?.classList.toggle('on', settings.animations);
+      setToggleState(el.privacyToggle, settings.privacyMode);
+      setToggleState(el.animationToggle, settings.animations);
       if (el.languageSelect) el.languageSelect.value = settings.language;
       if (el.modelSelect) el.modelSelect.value = settings.model;
     }
@@ -4609,7 +4849,7 @@ EXAMPLES:
       if (!items.length) {
         const empty = document.createElement('div');
         empty.className = 'memory-list-empty';
-        empty.textContent = 'No saved memories for this chat yet. Add details you want Your Friend to remember.';
+        empty.textContent = 'No notes for this chat yet. Add details you want Your Friend to remember while you chat here.';
         el.memoryList.appendChild(empty);
         return;
       }
@@ -4858,13 +5098,13 @@ EXAMPLES:
 
     function toggleAnimations(){
       settings.animations = !settings.animations;
-      el.animationToggle?.classList.toggle('on', settings.animations);
+      setToggleState(el.animationToggle, settings.animations);
       document.documentElement.dataset.motion = settings.animations ? 'full' : 'reduced';
       localStorage.setItem(memoryKey('animations'), String(settings.animations));
     }
     function togglePrivacyMode(){
       settings.privacyMode = !settings.privacyMode;
-      el.privacyToggle?.classList.toggle('on', settings.privacyMode);
+      setToggleState(el.privacyToggle, settings.privacyMode);
       localStorage.setItem(memoryKey('privacy_mode'), String(settings.privacyMode));
     }
     function shareConversation(){
@@ -4941,26 +5181,26 @@ EXAMPLES:
     }
     function resetAllSettings(){
       if (!confirm('Reset theme, chat preferences, and personalization settings? Your chats and memories will stay safe.')) return;
-      ['theme', 'compactMode', 'enterToSend', 'sound', 'autoScroll', 'chatFontSize', 'responseLength'].forEach(key => localStorage.removeItem(key));
+      // Unscoped legacy keys + every user-scoped key for the current account.
+      ['theme', 'compactMode', 'enterToSend', 'sound', 'autoScroll', 'chatFontSize', 'responseLength', 'animations'].forEach(key => localStorage.removeItem(key));
       ['memory_enabled', 'pdf_preview', 'response_length', 'privacy_mode', 'language', 'model', 'animations'].forEach(key => localStorage.removeItem(memoryKey(key)));
       settings = { compact: false, enterToSend: true, sound: false, autoScroll: true, chatFontSize: 0.98, memoryEnabled: true, pdfPreview: true, responseLength: 4096, privacyMode: false, animations: true, language: 'en', model: 'llama-3.3-70b-versatile' };
       setTheme(THEME_DEFAULT);
-      setChatFontSize(0.98);
-      el.compactToggle.classList.remove('on');
-      el.enterSendToggle.classList.add('on');
-      el.soundToggle.classList.remove('on');
-      el.autoScrollToggle.classList.add('on');
-      loadPersonalAISettings();
+      setChatFontSize(0.98);            // also re-syncs the slider + % readout
+      applyCompactModeVars();           // undo compact spacing if it was on
+      document.documentElement.dataset.motion = 'full';
+      loadPersonalAISettings();         // re-reads defaults and syncs scoped controls
+      syncSettingsUI();                 // re-syncs everything else (slider, toggles, theme buttons)
     }
 
     function toggleMemory(){
       settings.memoryEnabled = !settings.memoryEnabled;
-      el.memoryToggle.classList.toggle('on', settings.memoryEnabled);
+      setToggleState(el.memoryToggle, settings.memoryEnabled);
       localStorage.setItem(memoryKey('memory_enabled'), String(settings.memoryEnabled));
     }
     function togglePdfPreview(){
       settings.pdfPreview = !settings.pdfPreview;
-      el.pdfPreviewToggle.classList.toggle('on', settings.pdfPreview);
+      setToggleState(el.pdfPreviewToggle, settings.pdfPreview);
       localStorage.setItem(memoryKey('pdf_preview'), String(settings.pdfPreview));
     }
     function setResponseLength(v){
@@ -5546,12 +5786,15 @@ EXAMPLES:
       settings.sound = localStorage.getItem('sound') === 'true';
       settings.autoScroll = localStorage.getItem('autoScroll') !== 'false';
       settings.chatFontSize = parseFloat(localStorage.getItem('chatFontSize') || '0.98');
-      settings.responseLength = Number(localStorage.getItem('responseLength') || '4096');
+      // NOTE: responseLength / animations live under the user-scoped
+      // memoryKey(...) keys and are synced by loadPersonalAISettings(); the
+      // old unscoped reads here could resurrect stale values.
 
-      el.compactToggle?.classList.toggle('on', settings.compact);
-      el.enterSendToggle?.classList.toggle('on', settings.enterToSend);
-      el.soundToggle?.classList.toggle('on', settings.sound);
-      el.autoScrollToggle?.classList.toggle('on', settings.autoScroll);
+      setToggleState(el.compactToggle, settings.compact);
+      setToggleState(el.enterSendToggle, settings.enterToSend);
+      setToggleState(el.soundToggle, settings.sound);
+      setToggleState(el.autoScrollToggle, settings.autoScroll);
+      applyCompactModeVars();
       el.responseLengthSelect && (el.responseLengthSelect.value = String(settings.responseLength));
       el.responseLengthSelect?.addEventListener('change', e => setResponseLength(e.target.value));
       el.languageSelect?.addEventListener('change', e => { settings.language=e.target.value; localStorage.setItem(memoryKey('language'),settings.language); });
@@ -5560,7 +5803,6 @@ EXAMPLES:
 
       el.fontSizeRange && (el.fontSizeRange.value = String(settings.chatFontSize));
       setChatFontSize(settings.chatFontSize);
-      document.documentElement.dataset.motion = localStorage.getItem('animations') === 'false' ? 'reduced' : 'full';
       el.historySearch?.addEventListener('input', renderHistorySidebar);
       el.pdfSearchInput?.addEventListener('input', e => { pdfSearchTerm = e.target.value || ''; renderPdfHistory(); });
       renderHistorySidebar();
@@ -5572,6 +5814,11 @@ EXAMPLES:
       window.addEventListener('resize', () => { if (document.activeElement === el.userInput) el.userInput.scrollIntoView({ block:'nearest' }); });
       window.visualViewport?.addEventListener('resize', () => { if (document.activeElement === el.userInput) setTimeout(() => el.userInput.scrollIntoView({ block:'nearest' }), 40); });
       document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; closeSettings(); closeMemoryEditor(); closeImageModal(); if (el.authModal) el.authModal.style.display = 'none'; if (el.sidebar?.classList.contains('open')) toggleSidebar(); });
+
+      // Clicking the dimmed backdrop (not the card itself) closes the dialog,
+      // matching what the Escape key already does.
+      el.settingsModal?.addEventListener('click', e => { if (e.target === el.settingsModal) closeSettings(); });
+      el.memoryModal?.addEventListener('click', e => { if (e.target === el.memoryModal) closeMemoryEditor(); });
 
       attachEnterToSendHandler();
 

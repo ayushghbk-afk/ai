@@ -269,6 +269,79 @@ ok('#chat-container is inside #chat-view', chatView.contains(w.document.getEleme
 ok('the input bar is inside #chat-view', chatView.contains(w.document.getElementById('userInput')));
 ok('the nav bar is outside #view-area', !w.document.getElementById('view-area').contains(w.document.getElementById('main-nav')));
 
+console.log('\n== Settings dialog: primary button rule cannot swallow utility buttons ==');
+const sheetRulesArr = [...w.document.styleSheets[0].cssRules];
+const cardBtnRule = sheetRulesArr.find(r => r.selectorText && r.selectorText.includes('.settings-card') && r.selectorText.includes('button') && !r.selectorText.includes(':hover'));
+ok('the blanket card rule still exists', !!cardBtnRule);
+ok('it excludes .toggle switches', cardBtnRule && cardBtnRule.selectorText.includes(':not(.toggle)'), cardBtnRule?.selectorText || '');
+ok('it excludes .icon-btn ghosts', cardBtnRule && cardBtnRule.selectorText.includes(':not(.icon-btn)'));
+ok('it excludes memory add / danger-link buttons', cardBtnRule && cardBtnRule.selectorText.includes(':not(.memory-add-btn)') && cardBtnRule.selectorText.includes(':not(.memory-link-danger)'));
+const hasSelText = (needle) => sheetRulesArr.some(r => r.selectorText && r.selectorText.includes(needle));
+ok('range inputs get slider styling (not text-field styling)', hasSelText('input[type="range"]'));
+ok('history list has a real class system', hasSelText('.history-item') && hasSelText('.history-item.active') && hasSelText('.history-empty'));
+ok('PDF library list has a real class system', hasSelText('.pdf-item') && hasSelText('.pdf-list-empty'));
+
+console.log('\n== Settings dialog: every switch is a proper ARIA switch ==');
+const switchIds = ['enterSendToggle','memoryToggle','privacyToggle','compactToggle','autoScrollToggle','animationToggle','soundToggle','pdfPreviewToggle'];
+ok('all 8 switches exist', switchIds.every(id => w.document.getElementById(id)));
+ok('all switches have role=switch + aria-checked + a label',
+   switchIds.every(id => { const b = w.document.getElementById(id); return b.getAttribute('role') === 'switch' && ['true','false'].includes(b.getAttribute('aria-checked')) && b.getAttribute('aria-label'); }));
+ev(`settings.memoryEnabled = true; toggleMemory();`);
+{
+  const memT = w.document.getElementById('memoryToggle');
+  ok('toggleMemory flips class and aria-checked together', !memT.classList.contains('on') && memT.getAttribute('aria-checked') === 'false');
+}
+ev(`if (!settings.memoryEnabled) toggleMemory();`);
+
+console.log('\n== openSettings() re-syncs stale controls and lights the nav tab ==');
+ev(`settings.sound = true; localStorage.setItem('sound','true');
+    document.getElementById('soundToggle').classList.remove('on');
+    document.getElementById('soundToggle').setAttribute('aria-checked','false');`);
+ev(`openSettings();`);
+ok('the dialog opens', w.document.getElementById('settings-modal').style.display === 'flex');
+ok('the stale sound switch is re-synced on open',
+   w.document.getElementById('soundToggle').classList.contains('on') && w.document.getElementById('soundToggle').getAttribute('aria-checked') === 'true');
+ok('the Settings nav tab looks active while the dialog is open', w.document.getElementById('navSettingsTab').classList.contains('is-active'));
+ev(`closeSettings();`);
+ok('closing clears the nav tab state',
+   !w.document.getElementById('navSettingsTab').classList.contains('is-active') && w.document.getElementById('settings-modal').style.display === 'none');
+ev(`settings.sound = false; localStorage.setItem('sound','false'); setToggleState(document.getElementById('soundToggle'), false);`);
+
+console.log('\n== resetAllSettings leaves no stale control behind ==');
+ev(`document.getElementById('fontSizeRange').value = '1.2'; setChatFontSize(1.2);
+    settings.compact = true; applyCompactModeVars();`);
+ev(`resetAllSettings();`);
+ok('slider returns to the default after reset', w.document.getElementById('fontSizeRange').value === '0.98', w.document.getElementById('fontSizeRange').value);
+ok('the % readout follows the slider', w.document.getElementById('fontSizeValue').textContent === '98%', w.document.getElementById('fontSizeValue').textContent);
+ok('compact spacing vars are reverted', w.document.documentElement.style.getPropertyValue('--chat-gap').trim() === '10px');
+ok('font size css var is reverted', w.document.documentElement.style.getPropertyValue('--chat-font-size').trim() === '0.98rem');
+
+console.log('\n== History list: class-based rows, no inline styling ==');
+ev(`currentUserId = 'u1';
+    userSessions = {
+      'a1': { title:'First chat', messages:[{role:'user',content:'hello'}], lastCreatedAtMs: 2 },
+      'b2': { title:'Second chat', messages:[], lastCreatedAtMs: 1 },
+    };
+    currentSessionId = 'a1';
+    renderHistorySidebar();`);
+{
+  const items = [...w.document.querySelectorAll('#historyList .history-item')];
+  ok('two history items rendered', items.length === 2, String(items.length));
+  ok('items carry no inline styles', items.every(i => !i.getAttribute('style')));
+  ok('newest chat sorts first', items[0]?.querySelector('.history-title')?.textContent === 'First chat');
+  ok('the open chat is marked active', items[0]?.classList.contains('active'));
+  ok('row has title span + action cluster', !!(items[0]?.querySelector('.history-title') && items[0]?.querySelector('.history-actions')));
+  ok('pin / rename / delete actions exist', items[0]?.querySelectorAll('.history-actions .history-icon').length === 3);
+  ok('the delete action is marked dangerous', !!items[0]?.querySelector('.history-icon.danger'));
+  ok('message count pill has no inline styles', !items[0]?.querySelector('.history-pill')?.getAttribute('style'));
+}
+ev(`userSessions = {}; renderHistorySidebar();`);
+ok('the empty state uses .history-empty', !!w.document.querySelector('#historyList .history-empty'));
+
+console.log('\n== Sidebar chrome is class-based (light theme safe) ==');
+['#sidebar .brand', '#sidebar .new-chat-btn', '#sidebar .user-profile', '#sidebar .user-avatar', '#sidebar .logout-btn']
+  .forEach(sel => ok(`${sel} has no inline style`, !w.document.querySelector(sel)?.getAttribute('style')));
+
 console.log('\n== Stylesheet parses and the new rules survive ==');
 const sheet = w.document.styleSheets[0];
 ok('the inline stylesheet parsed', !!sheet);
