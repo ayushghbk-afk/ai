@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node app.test.mjs"
+    "test": "node app.test.mjs && node auth.test.mjs && node smoke.mjs",
+    "test:auth": "node auth.test.mjs"
   },
   "devDependencies": {
     "jsdom": "^25.0.0"

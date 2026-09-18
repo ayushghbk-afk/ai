@@ -11,7 +11,15 @@ npm install
 npm test
 ```
 
-Current result: **51 passed, 0 failed.**
+Current result: **105 (app) + 83 (auth) + smoke — all green, 0 failed.**
+
+`npm test` runs all three suites in order:
+
+| Suite | Covers |
+|---|---|
+| `app.test.mjs` | memory, settings, images, proxy, navigation, markup |
+| `auth.test.mjs` | sign-in / sign-up / session restore / first paint (added after the login bug) |
+| `smoke.mjs` | the UI-list functions from §10 |
 
 It covers:
 
@@ -24,6 +32,13 @@ It covers:
 - Reference-upload type and size validation
 - `proxyFetch` attaches `Authorization: Bearer <token>` when signed in
 - All 43 inline `onclick`/`oninput`/`onchange` handlers resolve in the live page
+- **Auth (the bug that made login impossible):** `isValidEmail` accepts real
+  addresses; a valid submit actually reaches `signInWithPassword` with the
+  password untrimmed; invalid input shows an inline error and makes **no** network
+  call; double-submit is locked; Supabase errors are translated; signup without a
+  session tells the user to confirm their email; Escape/✕ return a signed-out user
+  to the landing page; `TOKEN_REFRESHED` does not rebuild the shell; `data-theme`
+  is set before first paint; the app still boots when the Supabase CDN is blocked
 - Landing page: headline, CTA count, brand, `<title>`, meta description
 - Settings: 3 basic rows visible, 3 collapsed groups, all 13 controls still present,
   destructive actions inside the danger group; live settings search (`filterSettings`)
@@ -131,7 +146,35 @@ otherwise it stays a bypass.
 - [ ] Note: the reference file is **not** actually sent to the image endpoint — it is only
       mentioned in the text prompt. Implement or remove it.
 
-## 6. Remaining manual checklist
+## 6. Sign-in (the flow that was broken)
+
+Run this in a real browser — the sandbox cannot reach Supabase or load a browser.
+
+1. Hard-refresh the site. You should land on the landing page with **no theme
+   flash** (previously a light-theme user saw a dark page repaint itself).
+2. Click **Sign in**, type a real address and password, press **Enter** in the
+   password field.
+   - Expected: the button becomes "Signing in…" with a spinner, the dialog closes,
+     your chats appear. A wrong password shows a red message **inside** the dialog
+     ("Email or password is incorrect.") — not a browser alert.
+3. Click **✕** or press **Escape**.
+   - Expected: you return to the landing page. (Before this fix: an empty chat
+     shell with no way back to the sign-in form.)
+4. Click **Sign up** with a new address.
+   - Expected: either you land in the app, or you are told to check your inbox for
+     the confirmation link. If signup cannot complete, check
+     `Authentication → Providers → Email` in Supabase.
+5. Open the dialog, press Escape while the **Create** tab is open, then check the
+   nav — Escape should never move you between screens.
+6. DevTools → Network: one `POST /auth/v1/token?grant_type=password` per submit,
+   with a JSON body containing the exact email and password. If you see **zero**
+   requests, the form never reached Supabase — note the message in the dialog.
+7. Turn off Wi-Fi and try to sign in. Expected: "Cannot reach the server. Check
+   your connection and try again." — not a silent no-op.
+8. Light theme + reload: the first frame should already be light (no dark flash).
+9. Mobile (360px): the dialog fits, the on-screen keyboard's **Go** button submits.
+
+## 7. Remaining manual checklist
 
 - [ ] Chat count updates after creating chats; refresh keeps them
 - [ ] Chat search by title; deleted chats stay deleted
