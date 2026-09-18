@@ -286,3 +286,69 @@ the Library lists. No behaviour or storage keys changed; the harness still passe
 - PDF backups became proper rows (`.pdf-item`) with grouped action buttons instead
   of inline-styled clutter; groups are now bordered cards and "View" is a pill
   button. Empty/search-miss states share a class.
+
+---
+
+## 11. Login was impossible, and the sign-in dialog could strand you (branch `arena/01a0b2a6-ai`)
+
+Two reports — "login system is failing" and "UI is glitching" — turned out to be
+one broken validation regex plus a handful of real UI defects. Both were reproduced
+in a harness that drives the shipped page (`tests/auth.test.mjs`, **83 checks**).
+
+### 11.1 The email check rejected every address that was typed into it
+
+The shipped code was:
+
+```js
+if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return alert("Please enter a valid email address.");
+```
+
+Inside a **regex literal** `\\s` is not whitespace — it is an escaped backslash
+followed by a literal `s`. The class read as "not a backslash, not the letter s,
+not `@`". `user@example.com` contains an `s`, so it failed, `handleAuth` returned
+before ever calling Supabase, and no request was made. **Sign-in could not succeed
+for any user, in login or signup mode.** The harness pinpoints it: submitting a
+valid address produced the alert and zero `signInWithPassword` calls.
+
+Replaced with a normal `isValidEmail()` helper (12 cases pinned in the suite,
+including `a.b+tag@sub.domain.co` and `@example.com`).
+
+Related: `password.trim()` was silently stripping leading/trailing spaces before
+they were sent, so any password that *contained* one could never match the value
+that was stored. Passwords are no longer trimmed.
+
+### 11.2 What "the UI is glitching" actually was
+
+| # | Symptom | Cause | Fix |
+|---|---|---|---|
+| 1 | **Blank screen with no way back**. Escape (or the ✕ that did not exist) dismissed the sign-in dialog and left a signed-out user on an empty chat shell | the global keydown handler hid `#auth-modal` with `style.display='none'`; `setAuthModalVisible(true)` had hidden `#welcome-screen` and nothing restored it | `closeAuthModal()` returns to the landing page when signed out; the dialog has a real ✕; Escape now closes **one layer at a time** (lightbox → auth → memory → settings → sidebar) |
+| 2 | Page flashes the wrong theme, then repaints | `setTheme()` ran inside `window.onload` — after first paint | a small inline script at the top of `<head>` applies `data-theme`, `--chat-font-size`, compact spacing and reduced-motion **before** the stylesheet is used |
+| 3 | A dialog could end up behind the landing page | `#welcome-screen` was `z-index:1200`, every modal `1000–1100` | settings 1240 → auth 1250 → memory 1260 → lightbox 1300 |
+| 4 | Chat list wiped/re-rendered mid-use; shell flickers | the auth listener awaited a full re-hydration on **every** event including `TOKEN_REFRESHED`, and sign-in hydrated twice (`login()` + listener) | hydration is deduped per user, `TOKEN_REFRESHED`/`USER_UPDATED` are ignored, and the listener no longer awaits Supabase calls inside the callback (documented deadlock risk in supabase-js v2 — a plausible "stuck on Signing in…") |
+| 5 | A dropped connection looked like being signed out | the boot catch fell through to the landing page on any error | one retry for transient failures; if the session cannot be restored because the network is down, the user is told that instead of being logged out |
+
+### 11.3 The sign-in experience itself
+
+- **Real `<form>` + `type="submit"`** — Enter now submits from any field (it did
+  nothing before) and browsers offer to save the password.
+- **Inline feedback** (`#authMsg`, `role="status"`) replaces `window.alert()`.
+  Validation says what to fix, next to the field.
+- **Human error messages** for the real Supabase failures: *Email not confirmed*,
+  *Invalid login credentials*, rate limits, weak password, already-registered,
+  offline.
+- **Busy state**: submitting disables the button ("Signing in…" + spinner) and
+  cannot double-fire.
+- **Signup**: `autocomplete="new-password"`, username checked before the request,
+  and when email confirmation is enabled the user is told to check their inbox
+  instead of being bounced silently to a login box.
+- Password reveal toggle; the password field clears when the dialog closes.
+
+### 11.4 Verified
+
+```
+cd tests && npm test     # 105 (app) + 83 (auth) + smoke, 0 failures
+```
+
+Not verified (no browser in this sandbox — the Chromium CDN is blocked): real
+pixel layout, the actual Supabase round-trip, and iOS/Android keyboard behaviour.
+`TESTING.md` §6 carries the three-minute manual check.

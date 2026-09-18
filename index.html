@@ -9,6 +9,26 @@
   <meta property="og:description" content="A free AI assistant with memory you control: read it, edit it, delete it." />
   <meta property="og:type" content="website" />
 
+  <script>
+    // Pre-paint preferences. This runs BEFORE the stylesheet is applied, so the
+    // page never paints the wrong theme, then flips (that flash is a big part of
+    // what "the UI is glitching" looked like). Everything here is also applied
+    // again in window.onload — this is only about the first frame.
+    (function () {
+      try {
+        var root = document.documentElement;
+        root.setAttribute('data-theme', localStorage.getItem('theme') === 'light' ? 'light' : 'dark');
+        root.dataset.motion = localStorage.getItem('animations') === 'false' ? 'reduced' : 'full';
+        var fs = parseFloat(localStorage.getItem('chatFontSize'));
+        if (isFinite(fs) && fs >= 0.9 && fs <= 1.2) root.style.setProperty('--chat-font-size', fs + 'rem');
+        if (localStorage.getItem('compactMode') === 'true') {
+          root.style.setProperty('--chat-gap', '6px');
+          root.style.setProperty('--chat-padding', '10px');
+        }
+      } catch (e) { /* localStorage blocked (private mode) — defaults are fine */ }
+    })();
+  </script>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css" />
@@ -1387,6 +1407,66 @@
     @media (max-width:768px){.welcome-card{grid-template-columns:1fr;gap:14px}.welcome-copy{min-height:auto;padding:28px 22px}.welcome-preview{min-height:auto;padding:13px}.welcome-copy h1{font-size:clamp(2.25rem,12vw,3.7rem)}.welcome-actions{margin-bottom:20px}.feature-list{grid-template-columns:1fr 1fr}.feature-item{padding:9px}.feature-item span{font-size:.7rem}.message-actions{gap:4px}.message-action-btn{padding:6px 7px;font-size:.68rem}.generation-bar{padding:0 8px}.code-tools{width:100%;justify-content:flex-start}}
     @media (max-width:390px){.welcome-copy{padding:24px 18px}.feature-list{grid-template-columns:1fr}.welcome-preview{display:none}.welcome-actions .welcome-btn{flex:1 1 100%}}
 
+    /* ===== Auth modal: close button, inline feedback, password visibility =====
+       Dialogs must always sit above the full-screen landing page, otherwise the
+       login form can end up painted behind it. */
+    #auth-modal{ z-index:1250; }
+    #settings-modal{ z-index:1240; }
+    #memory-modal{ z-index:1260; }
+    #lightbox-overlay{ z-index:1300; }
+
+    .auth-card .auth-close{
+      position:absolute; top:10px; right:10px; z-index:4;
+      width:34px; height:34px; padding:0; min-width:0; line-height:1;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:11px; border:1px solid var(--border);
+      background:rgba(255,255,255,.06); color:var(--text-sub);
+      font-size:.9rem; font-weight:900; box-shadow:none;
+    }
+    .auth-card .auth-close:hover{
+      background:rgba(255,255,255,.12); color:var(--text-main);
+      box-shadow:none; transform:none; filter:none;
+    }
+    html[data-theme="light"] .auth-card .auth-close{ background:rgba(16,24,40,.05); }
+    html[data-theme="light"] .auth-card .auth-close:hover{ background:rgba(16,24,40,.10); }
+
+    #authForm{ display:flex; flex-direction:column; gap:12px; position:relative; z-index:1; }
+    .auth-pass-wrap{ position:relative; display:flex; }
+    .auth-pass-wrap input{ flex:1; min-width:0; padding-right:54px; }
+    .auth-card .auth-pass-toggle{
+      position:absolute; right:5px; top:50%; transform:translateY(-50%);
+      width:40px; height:40px; padding:0; min-width:0;
+      display:flex; align-items:center; justify-content:center;
+      border-radius:11px; border:none; background:transparent;
+      color:var(--text-sub); font-size:1rem; box-shadow:none;
+    }
+    .auth-card .auth-pass-toggle:hover{
+      background:rgba(255,255,255,.10); color:var(--text-main);
+      box-shadow:none; transform:translateY(-50%); filter:none;
+    }
+    html[data-theme="light"] .auth-card .auth-pass-toggle:hover{ background:rgba(16,24,40,.08); }
+
+    .auth-msg{
+      position:relative; z-index:1; display:flex; gap:8px; align-items:flex-start;
+      text-align:left; font-size:.87rem; font-weight:850; line-height:1.45;
+      padding:10px 12px; border-radius:13px; border:1px solid transparent;
+      word-break:break-word;
+    }
+    .auth-msg[hidden]{ display:none; }
+    .auth-msg.error{ color:#ffd1d1; background:rgba(255,107,107,.13); border-color:rgba(255,107,107,.30); }
+    .auth-msg.success{ color:#b8ffe7; background:rgba(38,214,166,.13); border-color:rgba(38,214,166,.32); }
+    .auth-msg.info{ color:var(--text-sub); background:rgba(255,255,255,.05); border-color:var(--border); }
+    html[data-theme="light"] .auth-msg.error{ color:#8a1f1f; }
+    html[data-theme="light"] .auth-msg.success{ color:#0a6b4e; }
+
+    #authActionBtn{ display:flex; align-items:center; justify-content:center; gap:8px; }
+    #authActionBtn:disabled{ opacity:.65; cursor:progress; filter:none; transform:none; box-shadow:none; }
+    #authActionBtn .btn-spinner{
+      width:14px; height:14px; border-radius:50%; flex-shrink:0;
+      border:2px solid rgba(255,255,255,.40); border-top-color:#fff;
+      animation:spin .8s linear infinite;
+    }
+
   </style>
 </head>
 <body>
@@ -1425,8 +1505,9 @@
     </div>
   </section>
 
-  <div id="auth-modal" aria-modal="true" role="dialog">
+  <div id="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
     <div class="auth-card">
+      <button type="button" class="auth-close" id="authCloseBtn" title="Close (Esc)" aria-label="Close sign-in" onclick="closeAuthModal()">✕</button>
       <div class="welcome-brand" style="justify-content:center;margin-bottom:4px;"><span class="welcome-logo" style="width:38px;height:38px;font-size:1rem;">✦</span> Your Friend AI</div>
       <h2 id="authTitle">Sign in</h2>
       <div class="settings-row" style="border-radius:12px; padding:8px 10px;">
@@ -1436,10 +1517,17 @@
           <button type="button" id="mode-signup" onclick="setAuthMode('signup')">Sign up</button>
         </div>
       </div>
-      <input type="email" id="email" placeholder="Email" autocomplete="email" />
-      <input type="password" id="password" placeholder="Password" autocomplete="current-password" />
-      <input type="text" id="username" placeholder="Username (for new accounts)" style="display:none;" />
-      <button id="authActionBtn" type="button" onclick="handleAuth()">Continue</button>
+      <!-- A real <form> so Enter submits from any field and mobile keyboards show "Go". -->
+      <form id="authForm" novalidate onsubmit="handleAuth(event)">
+        <input type="email" id="email" name="email" placeholder="Email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" />
+        <div class="auth-pass-wrap">
+          <input type="password" id="password" name="password" placeholder="Password" autocomplete="current-password" />
+          <button type="button" class="auth-pass-toggle" id="authPassToggle" title="Show password" aria-label="Show password" aria-pressed="false" onclick="togglePasswordVisibility()">👁</button>
+        </div>
+        <input type="text" id="username" name="username" placeholder="Username (for new accounts)" autocomplete="nickname" style="display:none;" />
+        <button id="authActionBtn" type="submit">Continue</button>
+      </form>
+      <div id="authMsg" class="auth-msg" role="status" aria-live="polite" hidden></div>
       <div id="authHint" class="sub" style="color:var(--text-sub); font-size:.9rem; text-align:center; font-weight:800;">
         Tell it once. It remembers what matters — in every chat.
       </div>
@@ -3309,6 +3397,9 @@ EXAMPLES:
       el.authActionBtn = document.getElementById('authActionBtn');
       el.modeLoginBtn = document.getElementById('mode-login');
       el.modeSignupBtn = document.getElementById('mode-signup');
+      el.authForm = document.getElementById('authForm');
+      el.authMsg = document.getElementById('authMsg');
+      el.authPassToggle = document.getElementById('authPassToggle');
 
       el.imgPromptInput = document.getElementById('imgPromptInput');
       el.fontSizeRange = document.getElementById('fontSizeRange');
@@ -3478,6 +3569,110 @@ EXAMPLES:
       el.emailInput?.focus();
     }
 
+    function isOverlayOpen(node) {
+      if (!node) return false;
+      return window.getComputedStyle(node).display !== 'none';
+    }
+
+    // Closing the sign-in dialog must never leave the user staring at an empty
+    // shell: anyone who is still signed out lands back on the landing page.
+    function closeAuthModal() {
+      setAuthModalVisible(false);
+      if (el.passwordInput) el.passwordInput.value = '';
+      if (!currentUserId) {
+        setAuthMode('login');
+        setWelcomeVisible(true);
+        el.welcomeScreen?.querySelector('.welcome-btn.primary')?.focus();
+      } else {
+        el.userInput?.focus();
+      }
+    }
+
+    // ---- Auth form feedback -------------------------------------------------
+    // Errors used to be window.alert() calls: blocking, unstylable, and silent
+    // about what to do next. They now render inside the dialog.
+    function setAuthMessage(text, kind = 'error') {
+      if (!el.authMsg) return;
+      const clean = String(text || '').trim();
+      if (!clean) { clearAuthMessage(); return; }
+      el.authMsg.textContent = clean;
+      el.authMsg.className = `auth-msg ${kind}`;
+      el.authMsg.hidden = false;
+    }
+    function clearAuthMessage() {
+      if (!el.authMsg) return;
+      el.authMsg.textContent = '';
+      el.authMsg.className = 'auth-msg';
+      el.authMsg.hidden = true;
+    }
+
+    let authBusy = false;
+    function setAuthBusy(busy, label) {
+      authBusy = !!busy;
+      if (!el.authActionBtn) return;
+      el.authActionBtn.disabled = !!busy;
+      el.authActionBtn.textContent = '';
+      if (busy) {
+        const spinner = document.createElement('span');
+        spinner.className = 'btn-spinner';
+        spinner.setAttribute('aria-hidden', 'true');
+        el.authActionBtn.append(spinner, document.createTextNode(label || 'Working…'));
+      } else {
+        el.authActionBtn.textContent = authMode === 'signup' ? 'Create account' : 'Sign in';
+      }
+      el.emailInput?.toggleAttribute('readonly', !!busy);
+      el.passwordInput?.toggleAttribute('readonly', !!busy);
+      el.usernameInput?.toggleAttribute('readonly', !!busy);
+    }
+
+    function togglePasswordVisibility() {
+      const input = el.passwordInput;
+      if (!input) return;
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      el.authPassToggle?.setAttribute('aria-pressed', String(show));
+      el.authPassToggle?.setAttribute('title', show ? 'Hide password' : 'Show password');
+      el.authPassToggle?.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      if (el.authPassToggle) el.authPassToggle.textContent = show ? '🙈' : '👁';
+      input.focus();
+    }
+
+    function clearAuthFields() {
+      if (el.emailInput) el.emailInput.value = '';
+      if (el.passwordInput) el.passwordInput.value = '';
+      if (el.usernameInput) el.usernameInput.value = '';
+      if (el.passwordInput) el.passwordInput.type = 'password';
+      el.authPassToggle?.setAttribute('aria-pressed', 'false');
+      clearAuthMessage();
+    }
+
+    // Deliberately conservative: must accept every real address and reject the
+    // obvious typos. The old pattern was over-escaped (`\\s`, `\\.`) inside a
+    // regex literal, so it matched a literal backslash — meaning it rejected
+    // EVERY normal address and login could never succeed.
+    const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[A-Za-z]{2,}$/;
+    function isValidEmail(email) {
+      const value = String(email || '').trim();
+      if (value.length < 6 || value.length > 254) return false;
+      if (value.includes('..')) return false;
+      return EMAIL_PATTERN.test(value);
+    }
+
+    // Supabase returns useful-but-blunt strings ("Invalid login credentials",
+    // "Email not confirmed"). Say what happened and what to do next.
+    function friendlyAuthError(err) {
+      const raw = getErrorMessage(err);
+      const text = String(raw || '').toLowerCase();
+      if (/invalid login credentials|invalid_grant|invalid password/.test(text)) return 'Email or password is incorrect. Check both and try again.';
+      if (/email not confirmed|not confirmed/.test(text)) return 'This email is not confirmed yet. Open the link we emailed you, then sign in.';
+      if (/already registered|already exists|user_already_exists/.test(text)) return 'That email already has an account. Switch to Login, or use "Forgot password" in Supabase to reset it.';
+      if (/password should be at least|password.*too short|weak_password/.test(text)) return 'That password is too short — use at least 6 characters.';
+      if (/rate limit|too many requests|over_email_send_rate_limit|429/.test(text)) return 'Too many attempts. Wait a minute, then try again.';
+      if (/failed to fetch|network|load failed|offline|timeout|timed out/.test(text)) return 'Cannot reach the server. Check your connection and try again.';
+      if (/signup.*disabled|signups.*disabled/.test(text)) return 'New sign-ups are disabled for this project. Use an existing account or enable sign-ups in Supabase.';
+      return raw || 'Something went wrong. Please try again.';
+    }
+
     function startChatFromWelcome() { openAuthFromWelcome('login'); }
     function showWelcomeScreen() {
       setAuthModalVisible(false);
@@ -3493,8 +3688,18 @@ EXAMPLES:
       sessionNavigation = [];
       memorySummary = '';
       memoryDirty = false;
+      editingMessageIndex = null;
+      lastFailedRequest = null;
+      sendInFlight = false;
+      currentRequestController = null;
+      // Drop per-user caches so the next account can never see the previous one's data.
+      savedMemoryItems = null;
+      savedMemoryCacheKey = null;
+      if (el.userDisplay) el.userDisplay.textContent = 'User';
+      el.editingBadge?.classList.remove('show');
       if (el.memoryEditor) el.memoryEditor.value = '';
       updateMemoryCount();
+      renderSavedMemoryList();
       renderMemoryList();
     }
 
@@ -3764,9 +3969,17 @@ EXAMPLES:
       const isLogin = mode === 'login';
       el.modeLoginBtn?.classList.toggle('active', isLogin);
       el.modeSignupBtn?.classList.toggle('active', !isLogin);
-      el.authTitle.innerText = isLogin ? 'Sign in' : 'Create account';
-      el.authActionBtn.innerText = isLogin ? 'Sign in' : 'Create account';
+      el.authTitle.textContent = isLogin ? 'Sign in' : 'Create account';
+      if (!authBusy) el.authActionBtn.textContent = isLogin ? 'Sign in' : 'Create account';
       el.usernameInput.style.display = isLogin ? 'none' : 'block';
+      // Browsers use these to decide whether to offer a saved or a fresh password.
+      el.passwordInput?.setAttribute('autocomplete', isLogin ? 'current-password' : 'new-password');
+      if (el.authHint) {
+        el.authHint.textContent = isLogin
+          ? 'Tell it once. It remembers what matters — in every chat.'
+          : 'Pick a username, then create your account. It takes a few seconds.';
+      }
+      clearAuthMessage();
     }
 
     function randomSessionId() {
@@ -3813,42 +4026,69 @@ EXAMPLES:
       }
     }
 
-    async function hydrateUserAndLoadChats(user) {
-      if (!user?.id) return;
-      currentUserId = user.id;
-      currentUser = null;
+    // Hydration is expensive (profile + every chat + PDFs) and it re-renders the
+    // whole shell. It used to run twice for a single sign-in — once from login()
+    // and again from the auth listener — which is what made the screen flicker
+    // and the chat list jump. Same user + already running = share the promise.
+    const hydrateState = { userId: null, promise: null };
 
-      try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session?.user) {
-          resetStateForLogout(); clearChatUI(); setAuthMode('login'); showWelcomeScreen(); return;
-        }
-      } catch (e) {
-        if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) {
-          resetStateForLogout(); clearChatUI(); setAuthMode('login'); showWelcomeScreen(); return;
-        }
+    async function hydrateUserAndLoadChats(user, options = {}) {
+      if (!user?.id) return;
+      const force = options.force === true;
+
+      if (!force && hydrateState.userId === user.id) {
+        if (hydrateState.promise) return hydrateState.promise;
+        return;
       }
 
-      const profile = await ensureProfileForUser(user);
-      currentUser = profile?.username || user.email?.split('@')[0] || 'User';
-      el.userDisplay.innerText = currentUser;
-      setAuthModalVisible(false);
-      setWelcomeVisible(false);
+      const run = (async () => {
+        currentUserId = user.id;
+        currentUser = null;
 
-      await loadAllChatsFromSupabase();
-      await loadPdfHistory();
-      if (!Object.keys(userSessions).length) createNewChat(true);
-      else {
-        const sessionIds = Object.keys(userSessions).sort((a, b) => Number(userSessions[b]?.lastCreatedAtMs || 0) - Number(userSessions[a]?.lastCreatedAtMs || 0));
-        currentSessionId = sessionIds[0] || null;
-        sessionNavigation = sessionIds;
-        memorySummary = getMemorySummaryForSession(currentSessionId);
-        memoryDirty = false;
-        if (el.memoryEditor) el.memoryEditor.value = memorySummary;
-        updateMemoryCount();
-        renderMemoryList();
-        renderHistorySidebar();
-        renderActiveChat();
+        try {
+          const { data: { session } } = await supabaseClient.auth.getSession();
+          if (!session?.user) {
+            resetStateForLogout(); clearChatUI(); setAuthMode('login'); showWelcomeScreen(); return;
+          }
+        } catch (e) {
+          if (isAuthMissingError(e) || isRlsOrAuthDenied(e)) {
+            resetStateForLogout(); clearChatUI(); setAuthMode('login'); showWelcomeScreen(); return;
+          }
+        }
+
+        const profile = await ensureProfileForUser(user);
+        currentUser = profile?.username || user.email?.split('@')[0] || 'User';
+        el.userDisplay.textContent = currentUser;
+        setAuthModalVisible(false);
+        setWelcomeVisible(false);
+
+        await loadAllChatsFromSupabase();
+        await loadPdfHistory();
+        if (!Object.keys(userSessions).length) createNewChat(true);
+        else {
+          const sessionIds = Object.keys(userSessions).sort((a, b) => Number(userSessions[b]?.lastCreatedAtMs || 0) - Number(userSessions[a]?.lastCreatedAtMs || 0));
+          currentSessionId = sessionIds[0] || null;
+          sessionNavigation = sessionIds;
+          memorySummary = getMemorySummaryForSession(currentSessionId);
+          memoryDirty = false;
+          if (el.memoryEditor) el.memoryEditor.value = memorySummary;
+          updateMemoryCount();
+          renderMemoryList();
+          renderHistorySidebar();
+          renderActiveChat();
+        }
+      })();
+
+      hydrateState.userId = user.id;
+      hydrateState.promise = run;
+      try {
+        return await run;
+      } catch (err) {
+        // Let a later attempt retry instead of remembering a failed hydration.
+        if (hydrateState.promise === run) { hydrateState.userId = null; hydrateState.promise = null; }
+        throw err;
+      } finally {
+        if (hydrateState.promise === run) hydrateState.promise = null;
       }
     }
 
@@ -5717,65 +5957,110 @@ EXAMPLES:
     }
 
     async function signUp(email, password, username) {
-      try {
-        const { data, error } = await supabaseClient.auth.signUp({ email, password });
-        if (error) return alert(getErrorMessage(error));
-        const userId = data?.user?.id;
-        if (!userId) return alert("Sign up succeeded, but user id was not returned.");
-        const { error: insertErr } = await supabaseClient.from("profiles").upsert({ id: userId, username }, { onConflict: 'id' });
-        if (insertErr) console.warn('Profile upsert error:', getErrorMessage(insertErr));
-        alert("Account created successfully!");
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (session?.user) {
-          await hydrateUserAndLoadChats(session.user);
-          setAuthModalVisible(false);
-        } else {
-          setAuthMode('login');
-          setAuthModalVisible(true);
-        }
-      } catch {
-        alert('Sign up failed. Please try again.');
+      const { data, error } = await supabaseClient.auth.signUp({
+        email,
+        password,
+        options: { data: { username } }
+      });
+      if (error) { setAuthMessage(friendlyAuthError(error), 'error'); return false; }
+
+      const userId = data?.user?.id;
+      // Supabase hides "already registered" behind an empty identities array.
+      if (data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+        setAuthMessage('That email already has an account. Switch to Login and sign in instead.', 'error');
+        return false;
       }
+      if (!userId) {
+        setAuthMessage('Sign up did not return an account. Please try again.', 'error');
+        return false;
+      }
+
+      const { error: insertErr } = await supabaseClient.from("profiles").upsert({ id: userId, username }, { onConflict: 'id' });
+      if (insertErr) console.warn('Profile upsert error:', getErrorMessage(insertErr));
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session?.user) {
+        setAuthModalVisible(false);
+        setWelcomeVisible(false);
+        setAuthMessage('', null);
+        await hydrateUserAndLoadChats(session.user);
+        return true;
+      }
+
+      // Email confirmation is switched on in the Supabase project: there is no
+      // session yet. Say so explicitly instead of dropping the user at a login
+      // box with no explanation.
+      setAuthMode('login');
+      setAuthMessage('Account created. Check your inbox for the confirmation link, then sign in here.', 'success');
+      setAuthModalVisible(true);
+      return false;
     }
 
     async function login(email, password) {
-      try {
-        const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-        if (error) return alert(getErrorMessage(error));
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        if (!session?.user) {
-          setAuthMode('login');
-          setAuthModalVisible(true);
-          return;
-        }
-        await hydrateUserAndLoadChats(session.user);
-        setAuthModalVisible(false);
-      } catch {
-        alert('Login failed. Please try again.');
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) { setAuthMessage(friendlyAuthError(error), 'error'); return false; }
+
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (!session?.user) {
+        setAuthMessage('Signed in, but no session came back. Reload the page and try again.', 'error');
+        return false;
       }
+      // The session is real: get the dialog out of the way first, then load.
+      // Waiting on a slow chat fetch behind a "Signing in…" overlay looked
+      // like a frozen sign-in.
+      setAuthModalVisible(false);
+      setWelcomeVisible(false);
+      setAuthMessage('', null);
+      await hydrateUserAndLoadChats(session.user);
+      return true;
     }
 
-    async function handleAuth() {
-      const email = el.emailInput.value.trim();
-      const password = el.passwordInput.value.trim();
-      const username = el.usernameInput.value.trim();
+    async function handleAuth(event) {
+      if (event && typeof event.preventDefault === 'function') event.preventDefault();
+      if (authBusy) return false;
 
-      if (!email) return alert("Please enter your email.");
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return alert("Please enter a valid email address.");
-      if (!password) return alert("Please enter your password.");
-      if (password.length < 6) return alert("Password must be at least 6 characters.");
-      if (authMode === 'signup' && !username) return alert("Please enter your username.");
-      if (authMode === 'signup' && username.length < 3) return alert("Username must be at least 3 characters.");
+      const email = (el.emailInput?.value || '').trim();
+      // Passwords are NOT trimmed: a leading/trailing space is a valid character
+      // and trimming it here silently broke sign-in for anyone who used one.
+      const password = el.passwordInput?.value || '';
+      const username = (el.usernameInput?.value || '').trim();
 
-      if (authMode === 'signup') await signUp(email, password, username);
-      else await login(email, password);
+      const reject = (message, field) => {
+        setAuthMessage(message, 'error');
+        field?.focus();
+        return false;
+      };
+
+      if (!email) return reject('Enter your email address.', el.emailInput);
+      if (!isValidEmail(email)) return reject('That email address does not look right. Example: you@example.com', el.emailInput);
+      if (!password) return reject('Enter your password.', el.passwordInput);
+      if (password.length < 6) return reject('Passwords need at least 6 characters.', el.passwordInput);
+      if (authMode === 'signup' && !username) return reject('Pick a username — at least 3 characters.', el.usernameInput);
+      if (authMode === 'signup' && username.length < 3) return reject('Usernames need at least 3 characters.', el.usernameInput);
+
+      clearAuthMessage();
+      setAuthBusy(true, authMode === 'signup' ? 'Creating account…' : 'Signing in…');
+      try {
+        if (authMode === 'signup') await signUp(email, password, username);
+        else await login(email, password);
+      } catch (err) {
+        console.error('Auth error:', err);
+        setAuthMessage(friendlyAuthError(err), 'error');
+      } finally {
+        setAuthBusy(false);
+      }
+      return false;
     }
 
     async function logout() {
       try { await supabaseClient.auth.signOut(); } catch (e) { console.warn('Sign out error:', e); }
+      // Forget the hydration marker so the next sign-in for this same user loads fresh.
+      hydrateState.userId = null;
+      hydrateState.promise = null;
       resetStateForLogout();
       clearChatUI();
       setAuthMode('login');
+      clearAuthFields();
       showWelcomeScreen();
     }
 
@@ -5872,7 +6157,18 @@ EXAMPLES:
       el.importDataInput?.addEventListener('change', e => importAppData(e.target.files?.[0]));
       window.addEventListener('resize', () => { if (document.activeElement === el.userInput) el.userInput.scrollIntoView({ block:'nearest' }); });
       window.visualViewport?.addEventListener('resize', () => { if (document.activeElement === el.userInput) setTimeout(() => el.userInput.scrollIntoView({ block:'nearest' }), 40); });
-      document.addEventListener('keydown', e => { if (e.key !== 'Escape') return; closeSettings(); closeMemoryEditor(); closeImageModal(); if (el.authModal) el.authModal.style.display = 'none'; if (el.sidebar?.classList.contains('open')) toggleSidebar(); });
+      // Escape closes ONE layer at a time, top-most first. The old handler closed
+      // everything at once and hid the auth modal without restoring the landing
+      // page, leaving a signed-out user on an empty shell with no way back in.
+      document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const lightbox = document.getElementById('lightbox-overlay');
+        if (lightbox?.classList.contains('open')) { lightbox.classList.remove('open'); return; }
+        if (isOverlayOpen(el.authModal)) { closeAuthModal(); return; }
+        if (isOverlayOpen(el.memoryModal)) { closeMemoryEditor(); return; }
+        if (isOverlayOpen(el.settingsModal)) { closeSettings(); return; }
+        if (el.sidebar?.classList.contains('open')) toggleSidebar();
+      });
 
       attachEnterToSendHandler();
 
@@ -5901,32 +6197,63 @@ EXAMPLES:
         }
       } catch (e) { console.warn('Could not populate image modal options:', e); }
 
-      supabaseClient.auth.onAuthStateChange(async (_event, session) => {
-        if (!session || !session.user) {
-          resetStateForLogout();
-          clearChatUI();
-          showWelcomeScreen();
-          return;
-        }
-        try { await hydrateUserAndLoadChats(session.user); }
-        catch (e) {
-          console.error('Auth listener hydrate error:', e);
-          resetStateForLogout();
-          clearChatUI();
-          showWelcomeScreen();
-        }
+      // IMPORTANT: never await Supabase calls inside this callback. supabase-js
+      // holds an internal lock while it runs the listener, so an awaited query
+      // in here can deadlock (their documented guidance) — a frozen "Signing
+      // in…" after a correct password. Defer to the next tick instead.
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        window.setTimeout(async () => {
+          try {
+            if (event === 'SIGNED_OUT' || !session?.user) {
+              hydrateState.userId = null;
+              hydrateState.promise = null;
+              resetStateForLogout();
+              clearChatUI();
+              setAuthMode('login');
+              clearAuthFields();
+              showWelcomeScreen();
+              return;
+            }
+            // A refreshed/updated token is still the same session. Re-hydrating
+            // here wiped the chat list mid-use and made the shell flicker.
+            if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') return;
+            // SIGNED_IN / INITIAL_SESSION / PASSWORD_RECOVERY: dedupe means the
+            // sign-in path above wins and this is a no-op when it already ran.
+            await hydrateUserAndLoadChats(session.user);
+          } catch (e) {
+            console.error('Auth listener hydrate error:', e);
+            resetStateForLogout();
+            clearChatUI();
+            showWelcomeScreen();
+          }
+        }, 0);
       });
 
       try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
         if (!session) {
+          const transient = /fetch|network|retryable|timeout|load failed/i.test(String(sessionError?.message || ''));
           setAuthMode('login');
           resetStateForLogout();
           clearChatUI();
           showWelcomeScreen();
+          if (transient) {
+            // Do not let a dropped connection look like "your account is gone".
+            showBootWarningBanner();
+            setAuthMessage('We could not restore your session — you appear to be offline. Reconnect and sign in again.', 'info');
+            setAuthModalVisible(true);
+          }
           return;
         }
-        await hydrateUserAndLoadChats(session.user);
+        try {
+          await hydrateUserAndLoadChats(session.user);
+        } catch (firstErr) {
+          // One retry: a single flaky request used to dump the user back on the
+          // landing page as if they had been signed out.
+          console.warn('Hydration failed, retrying once:', firstErr);
+          await new Promise(r => setTimeout(r, 1200));
+          await hydrateUserAndLoadChats(session.user, { force: true });
+        }
       } catch (err) {
         console.error('Init error:', err);
         setAuthMode('login');
@@ -5982,6 +6309,10 @@ EXAMPLES:
     window.setTheme = setTheme;
     window.logout = logout;
     window.handleAuth = handleAuth;
+    window.closeAuthModal = closeAuthModal;
+    window.togglePasswordVisibility = togglePasswordVisibility;
+    window.isValidEmail = isValidEmail;
+    window.clearAuthFields = clearAuthFields;
     window.sendMessage = sendMessage;
     window.deleteChat = deleteChat;
     window.downloadIndividualImage = downloadIndividualImage;
