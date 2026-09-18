@@ -1863,7 +1863,7 @@
   </main>
 
   <script>
-    const SUPABASE_URL = "https://mxhmcapcmeatnmwiwnri.supabase.co";
+    const SUPABASE_URL = "https://pfeejgfknowwishbcopb.supabase.co";
     const SUPABASE_KEY = "sb_publishable_zAZ8LWIFxUX8cF0H6Gy9uw_H0Yc0BgD";
 
     // BOOT GUARD — if a CDN script fails (flaky mobile network, blocked CDN),
@@ -6026,7 +6026,7 @@ EXAMPLES:
       if (event && typeof event.preventDefault === 'function') event.preventDefault();
       if (authBusy) return false;
 
-      const email = (el.emailInput?.value || '').trim();
+      const email = (el.emailInput?.value || '').trim().toLowerCase();
       // Passwords are NOT trimmed: a leading/trailing space is a valid character
       // and trimming it here silently broke sign-in for anyone who used one.
       const password = el.passwordInput?.value || '';
