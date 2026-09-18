@@ -6026,7 +6026,7 @@ EXAMPLES:
       if (event && typeof event.preventDefault === 'function') event.preventDefault();
       if (authBusy) return false;
 
-      const email = (el.emailInput?.value || '').trim();
+      const email = (el.emailInput?.value || '').trim().toLowerCase();
       // Passwords are NOT trimmed: a leading/trailing space is a valid character
       // and trimming it here silently broke sign-in for anyone who used one.
       const password = el.passwordInput?.value || '';
