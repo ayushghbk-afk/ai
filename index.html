@@ -3668,7 +3668,14 @@ EXAMPLES:
       if (/already registered|already exists|user_already_exists/.test(text)) return 'That email already has an account. Switch to Login, or use "Forgot password" in Supabase to reset it.';
       if (/password should be at least|password.*too short|weak_password/.test(text)) return 'That password is too short — use at least 6 characters.';
       if (/rate limit|too many requests|over_email_send_rate_limit|429/.test(text)) return 'Too many attempts. Wait a minute, then try again.';
-      if (/failed to fetch|network|load failed|offline|timeout|timed out/.test(text)) return 'Cannot reach the server. Check your connection and try again.';
+      if (/failed to fetch|network|load failed|offline|timeout|timed out/.test(text)) {
+        // Name the host that failed. A "check your connection" message sends the
+        // user to their router when the real problem is a dead/moved Supabase
+        // project (deleted ref -> NXDOMAIN -> "Failed to fetch").
+        let host = 'the server';
+        try { host = new URL(SUPABASE_URL).host; } catch {}
+        return `Cannot reach ${host}. Check your connection — but if you are online, the Supabase project for this app may have been deleted or its Project URL changed. Compare it with the URL in your Supabase dashboard (Settings → API) and update SUPABASE_URL/SUPABASE_KEY in index.html if they differ.`;
+      }
       if (/signup.*disabled|signups.*disabled/.test(text)) return 'New sign-ups are disabled for this project. Use an existing account or enable sign-ups in Supabase.';
       return raw || 'Something went wrong. Please try again.';
     }
